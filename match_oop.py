@@ -11,7 +11,7 @@ ap.add_argument("-i", "--images", required=True, help="Path to matched images")
 ap.add_argument("-v", "--visualize", help="Flag indicating wether or not to visualize each iteration")
 args = vars(ap.parse_args())
 
-class Mark_Detector:
+class Marker:
     def __init__ (self, **kwargs):
         self._Data=kwargs
     
@@ -110,6 +110,7 @@ class Mark_Detector:
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
         boundingBoxes = np.ones((1,4), dtype=int)
+        max_value_list = []
         #__loop over scaled image (start stop numstep) from the back
         for scale in np.linspace(0.2, 2.0, 40)[::-1]:
             resized = imutils.resize(gray, width= int(gray.shape[1] * scale))
@@ -143,8 +144,9 @@ class Mark_Detector:
                 (endX, endY) = (int((maxLoc[0] + tW) * r), int((maxLoc[1] + tH) * r))
                 temp = [startX, startY, endX, endY]
                 boundingBoxes = np.append(boundingBoxes, [temp], axis=0)
-                print(maxVal)
-                maxVal_match = maxVal
+                max_value_list = np.append(max_value_list, [maxVal], axis=0)
+                print("Max val = {} location {}".format(maxVal, temp))
+                
 
         #__if detected on this scale size
         if len(boundingBoxes) > 1:
@@ -155,7 +157,7 @@ class Mark_Detector:
             for (startX, startY, endX, endY) in pick:
                 cv2.rectangle(image, (startX, startY), (endX, endY), (0, 255, 0), 2)
 
-        return image
+        return image, boundingBoxes, max_value_list
             
 
 
@@ -164,10 +166,16 @@ class Mark_Detector:
 def main():
     for imagePath in glob.glob(args["images"] + "/*.png"):
         
-        LPMQ_template_loc = "/home/mhbrt/Desktop/Wind/Multiscale/temp4.png"
-        Detector_NunSukun_LPMQ = Mark_Detector(template_loc=LPMQ_template_loc, image_loc=imagePath, template_thresh = 0.7, nms_thresh = 0.3 )
-        result = Detector_NunSukun_LPMQ.Match_Template(visualize=True)
+        template_loc_LPMQ = "/home/mhbrt/Desktop/Wind/Multiscale/temp4.png"
+        nun_sukun_LPMQ = Marker(template_loc=template_loc_LPMQ, image_loc=imagePath, template_thresh = 0.7, nms_thresh = 0.3 )
+        (result, bounding_box, max_value) = nun_sukun_LPMQ.Match_Template(visualize=False)
         cv2.imshow("Match Result", result)
+        # if max_value != []:
+        #     print(max_value)
+        ##continue next file if not detected
+        # if max_value == []:
+        #     continue
+        # print(max_value)
         cv2.waitKey(0)
 
     cv2.destroyAllWindows()
