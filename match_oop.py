@@ -112,7 +112,7 @@ class Marker:
         boundingBoxes = np.ones((1,4), dtype=int)
         max_value_list = []
         #__loop over scaled image (start stop numstep) from the back
-        for scale in np.linspace(0.2, 2.0, 20)[::-1]:
+        for scale in np.linspace(0.2, 2.0, 100)[::-1]:
             resized = imutils.resize(gray, width= int(gray.shape[1] * scale))
             r = gray.shape[1] / float(resized.shape[1])
             #__if resized image smaller than template, then break the loop
@@ -166,9 +166,9 @@ class Marker:
 def main():
     for imagePath in glob.glob(args["images"] + "/*.png"):
         
-        template_loc_LPMQ = "/home/mhbrt/Desktop/Wind/Multiscale/temp4.png"
+        template_loc_LPMQ = "/home/mhbrt/Desktop/Wind/Multiscale/temp5.png"
         nun_sukun_LPMQ = Marker(template_loc=template_loc_LPMQ, image_loc=imagePath, template_thresh = 0.7, nms_thresh = 0.3 )
-        (result, bounding_box, max_value) = nun_sukun_LPMQ.Match_Template(visualize=True)
+        (result, bounding_box, max_value) = nun_sukun_LPMQ.Match_Template(visualize=False)
         cv2.imshow("Match Result", result)
         # if max_value != []:
         #     print(max_value)
