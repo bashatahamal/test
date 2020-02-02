@@ -6,8 +6,8 @@ import cv2
 
 #__argument parser 
 ap = argparse.ArgumentParser()
-ap.add_argument("-t", "--template", required=True, help="Path to template image")
-ap.add_argument("-i", "--image", required=True, help="Path to matched images")
+#ap.add_argument("-t", "--template", required=True, help="Path to template image")
+ap.add_argument("-i", "--images", required=True, help="Path to matched images")
 ap.add_argument("-v", "--visualize", help="Flag indicating wether or not to visualize each iteration")
 args = vars(ap.parse_args())
 
@@ -144,6 +144,7 @@ class Mark_Detector:
                 temp = [startX, startY, endX, endY]
                 boundingBoxes = np.append(boundingBoxes, [temp], axis=0)
                 print(maxVal)
+                maxVal_match = maxVal
 
         #__if detected on this scale size
         if len(boundingBoxes) > 1:
@@ -152,7 +153,7 @@ class Mark_Detector:
             print(len(pick))
             print(pick)
             for (startX, startY, endX, endY) in pick:
-			    cv2.rectangle(image, (startX, startY), (endX, endY), (0, 255, 0), 2)
+                cv2.rectangle(image, (startX, startY), (endX, endY), (0, 255, 0), 2)
 
         return image
             
@@ -161,14 +162,14 @@ class Mark_Detector:
 
 
 def main():
-    for imagePath in glob.glob(args(["images"] + "/*.png")):
+    for imagePath in glob.glob(args["images"] + "/*.png"):
         
-        LPMQ_template_loc = ""
+        LPMQ_template_loc = "/home/mhbrt/Desktop/Wind/Multiscale/temp4.png"
         Detector_NunSukun_LPMQ = Mark_Detector(template_loc=LPMQ_template_loc, image_loc=imagePath, template_thresh = 0.7, nms_thresh = 0.3 )
         result = Detector_NunSukun_LPMQ.Match_Template(visualize=True)
         cv2.imshow("Match Result", result)
         cv2.waitKey(0)
-        
+
     cv2.destroyAllWindows()
 
 if __name__ == '__main__':main()
