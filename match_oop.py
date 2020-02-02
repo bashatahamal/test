@@ -168,7 +168,7 @@ def main():
         
         template_loc_LPMQ = "/home/mhbrt/Desktop/Wind/Multiscale/temp4.png"
         nun_sukun_LPMQ = Marker(template_loc=template_loc_LPMQ, image_loc=imagePath, template_thresh = 0.7, nms_thresh = 0.3 )
-        (result, bounding_box, max_value) = nun_sukun_LPMQ.Match_Template(visualize=False)
+        (result, bounding_box, max_value) = nun_sukun_LPMQ.Match_Template(visualize=True)
         cv2.imshow("Match Result", result)
         # if max_value != []:
         #     print(max_value)
