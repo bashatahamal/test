@@ -112,7 +112,7 @@ class Marker:
         boundingBoxes = np.ones((1,4), dtype=int)
         max_value_list = []
         #__loop over scaled image (start stop numstep) from the back
-        for scale in np.linspace(0.2, 2.0, 40)[::-1]:
+        for scale in np.linspace(0.2, 2.0, 20)[::-1]:
             resized = imutils.resize(gray, width= int(gray.shape[1] * scale))
             r = gray.shape[1] / float(resized.shape[1])
             #__if resized image smaller than template, then break the loop
