@@ -160,9 +160,15 @@ class Mark_Detector:
 
 
 
-
-
 def main():
-    
+    for imagePath in glob.glob(args(["images"] + "/*.png")):
+        
+        LPMQ_template_loc = ""
+        Detector_NunSukun_LPMQ = Mark_Detector(template_loc=LPMQ_template_loc, image_loc=imagePath, template_thresh = 0.7, nms_thresh = 0.3 )
+        result = Detector_NunSukun_LPMQ.Match_Template(visualize=True)
+        cv2.imshow("Match Result", result)
+        cv2.waitKey(0)
+        
+    cv2.destroyAllWindows()
 
 if __name__ == '__main__':main()
