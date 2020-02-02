@@ -52,7 +52,7 @@ for imagePath in glob.glob(args["images"] + "/*.png"):
 		# matching to find the template in the image
 		edged = cv2.Canny(resized, 50, 200)
 		#cv2.imshow("edged",resized)
-		result = cv2.matchTemplate(resized, template, cv2.TM_CCOEFF)
+		result = cv2.matchTemplate(edged, template, cv2.TM_CCOEFF)
 		#result = NormalizeData(result)
 		(_, maxVal, _, maxLoc) = cv2.minMaxLoc(result)
 		#print(maxVal)

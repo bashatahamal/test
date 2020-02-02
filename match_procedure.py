@@ -124,7 +124,8 @@ def MatchTemplate(template, image, threshold, nms_thresh):
 		# check to see if the iteration should be visualized
 		if args.get("visualize", False):
 			# draw a bounding box around the detected region
-			clone = np.dstack([edged, edged, edged])
+			#clone = np.dstack([edged, edged, edged])
+			clone = np.dstack([resized, resized, resized])
 			cv2.rectangle(clone, (maxLoc[0], maxLoc[1]),
 				(maxLoc[0] + tW, maxLoc[1] + tH), (0, 0, 255), 2)
 			cv2.imshow("Visualize", clone)
