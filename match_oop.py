@@ -12,6 +12,7 @@ ap.add_argument("-v", "--visualize", help="Flag indicating wether or not to visu
 args = vars(ap.parse_args())
 
 class Marker:
+    # an_image = 0
     def __init__ (self, **kwargs):
         self._Data=kwargs
     
@@ -23,6 +24,8 @@ class Marker:
         return self._Data["template_thresh"]
     def GetNMS_Threshold(self):
         return self._Data["nms_thresh"]
+    def GetOriginalImage(self):
+        return self.image
 
     def non_max_suppression_slow(self, boxes, overlapThresh):
 	    # if there are no boxes, return an empty list
@@ -87,7 +90,7 @@ class Marker:
 
         # return only the bounding boxes that were picked
         return boxes[pick]
-    
+ 
     def Match_Template(self, visualize=False):
         #__get template
         template = cv2.imread(self.GetTemplate_Location())
@@ -106,7 +109,9 @@ class Marker:
         (tH,tW) = template.shape[:2]
 
         #__get image
+        
         image = cv2.imread(self.GetImage_Location())
+        self.image=image
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
         boundingBoxes = np.ones((1,4), dtype=int)
@@ -157,7 +162,15 @@ class Marker:
             for (startX, startY, endX, endY) in pick:
                 cv2.rectangle(image, (startX, startY), (endX, endY), (0, 255, 0), 2)
 
-        return image, boundingBoxes, max_value_list
+        # return image, boundingBoxes, max_value_list
+        if len(max_value_list) > 1:
+            max_local_value = max(max_value_list)
+        if len(max_value_list) == 1:
+            max_local_value = max_value_list
+        if max_value_list == []:
+            pick = 0
+            max_local_value = 0
+        return image, pick, max_local_value
             
 
 
@@ -166,35 +179,92 @@ class Marker:
 def main():
     for imagePath in glob.glob(args["images"] + "/*.png"):
         
-        template_loc = "/home/mhbrt/Desktop/Wind/Multiscale/marker/tanwin_LPMQ.png"
-        tanwin_LPMQ = Marker(template_loc=template_loc, image_loc=imagePath, template_thresh = 0.7, nms_thresh = 0.3 )
-        (result, bounding_box, max_value) = tanwin_LPMQ.Match_Template(visualize=False)
-        cv2.imshow("Tanwin", result)
-        template_loc = "/home/mhbrt/Desktop/Wind/Multiscale/marker/tanwin_1_LPMQ.png"
-        tanwin_1_LPMQ = Marker(template_loc=template_loc, image_loc=imagePath, template_thresh = 0.7, nms_thresh = 0.3 )
-        (result1, bounding_box, max_value) = tanwin_1_LPMQ.Match_Template(visualize=False)
-        cv2.imshow("Tanwin_1", result1)
-        template_loc = "/home/mhbrt/Desktop/Wind/Multiscale/marker/nun_stand_LPMQ.png"
-        nun_stand_LPMQ = Marker(template_loc=template_loc, image_loc=imagePath, template_thresh = 0.7, nms_thresh = 0.3 )
-        (result12, bounding_box, max_value) = nun_stand_LPMQ.Match_Template(visualize=False)
-        cv2.imshow("Nun Sukun Stand", result12)
-        template_loc = "/home/mhbrt/Desktop/Wind/Multiscale/marker/nun_mid_LPMQ.png"
-        nun_mid_LPMQ = Marker(template_loc=template_loc, image_loc=imagePath, template_thresh = 0.7, nms_thresh = 0.3 )
-        (result13, bounding_box, max_value) = nun_mid_LPMQ.Match_Template(visualize=False)
-        cv2.imshow("Nun Sukun Mid", result13)
-        template_loc = "/home/mhbrt/Desktop/Wind/Multiscale/marker/mim_end_LPMQ.png"
-        mim_end_LPMQ = Marker(template_loc=template_loc, image_loc=imagePath, template_thresh = 0.7, nms_thresh = 0.3 )
-        (result4, bounding_box, max_value) = mim_end_LPMQ.Match_Template(visualize=False)
-        cv2.imshow("Mim Sukun End", result4)
+        #___tanwin_LPMQ
+        template_loc_tanwin   = "/home/mhbrt/Desktop/Wind/Multiscale/marker/tanwin_LPMQ.png"
+        template_loc_tanwin_1 = "/home/mhbrt/Desktop/Wind/Multiscale/marker/tanwin_1_LPMQ.png"
+        thresh_tanwin   = 0.7
+        thresh_tanwin_1 = 0.7
+        nms_thresh = 0.3
         
+        tanwin_LPMQ   = Marker(template_loc=template_loc_tanwin, image_loc=imagePath, template_thresh = thresh_tanwin, nms_thresh = nms_thresh )
+        tanwin_1_LPMQ = Marker(template_loc=template_loc_tanwin_1, image_loc=imagePath, template_thresh = thresh_tanwin_1, nms_thresh = nms_thresh )
+
+        (result_tanwin, box_tanwin, value_tanwin) = tanwin_LPMQ.Match_Template(visualize=False)
+        (result_tanwin_1, box_tanwin_1, value_tanwin_1) = tanwin_1_LPMQ.Match_Template(visualize=False)
+
+        #__nun_sukun_LPMQ
+        template_loc_nun_stand_LPMQ = "/home/mhbrt/Desktop/Wind/Multiscale/marker/nun_stand_LPMQ.png"
+        template_loc_nun_mid_LPMQ   = "/home/mhbrt/Desktop/Wind/Multiscale/marker/nun_mid_LPMQ.png"
+        template_loc_nun_end_LPMQ   = "/home/mhbrt/Desktop/Wind/Multiscale/marker/nun_end_LPMQ.png"
+        template_loc_nun_beg_LPMQ   = "/home/mhbrt/Desktop/Wind/Multiscale/marker/nun_beg_LPMQ.png"
+        thresh_nun_stand_LPMQ = 0.7
+        thresh_nun_mid_LPMQ   = 0.7
+        thresh_nun_end_LPMQ   = 0.7
+        thresh_nun_beg_LPMQ   = 0.7
         
+        nun_stand_LPMQ = Marker(template_loc=template_loc_nun_stand_LPMQ, image_loc=imagePath, template_thresh = thresh_nun_stand_LPMQ, nms_thresh = nms_thresh )
+        nun_mid_LPMQ   = Marker(template_loc=template_loc_nun_mid_LPMQ, image_loc=imagePath, template_thresh = thresh_nun_mid_LPMQ, nms_thresh = nms_thresh )
+        nun_end_LPMQ   = Marker(template_loc=template_loc_nun_end_LPMQ, image_loc=imagePath, template_thresh = thresh_nun_end_LPMQ, nms_thresh = nms_thresh )
+        nun_beg_LPMQ   = Marker(template_loc=template_loc_nun_beg_LPMQ, image_loc=imagePath, template_thresh = thresh_nun_beg_LPMQ, nms_thresh = nms_thresh )
+
+        (result_nun_stand_LPMQ, box_nun_stand_LPMQ, value_nun_stand_LPMQ) = nun_stand_LPMQ.Match_Template(visualize=False)
+        (result_nun_mid_LPMQ, box_nun_mid_LPMQ, value_nun_mid_LPMQ) = nun_mid_LPMQ.Match_Template(visualize=False)
+        (result_nun_end_LPMQ, box_nun_end_LPMQ, value_nun_end_LPMQ) = nun_end_LPMQ.Match_Template(visualize=False)
+        (result_nun_beg_LPMQ, box_nun_beg_LPMQ, value_nun_beg_LPMQ) = nun_beg_LPMQ.Match_Template(visualize=False)
+
+        #__mim_sukun_LPMQ
+        template_loc_mim_stand_LPMQ = "/home/mhbrt/Desktop/Wind/Multiscale/marker/mim_stand_LPMQ.png"
+        template_loc_mim_mid_LPMQ   = "/home/mhbrt/Desktop/Wind/Multiscale/marker/mim_mid_LPMQ.png"
+        template_loc_mim_end_LPMQ   = "/home/mhbrt/Desktop/Wind/Multiscale/marker/mim_end_LPMQ.png"
+        template_loc_mim_beg_LPMQ   = "/home/mhbrt/Desktop/Wind/Multiscale/marker/mim_beg_LPMQ.png"
+        thresh_mim_stand_LPMQ = 0.7
+        thresh_mim_mid_LPMQ   = 0.7
+        thresh_mim_end_LPMQ   = 0.7
+        thresh_mim_beg_LPMQ   = 0.7
+
+        mim_stand_LPMQ = Marker(template_loc=template_loc_mim_stand_LPMQ, image_loc=imagePath, template_thresh = thresh_mim_stand_LPMQ, nms_thresh = nms_thresh )
+        mim_mid_LPMQ   = Marker(template_loc=template_loc_mim_mid_LPMQ, image_loc=imagePath, template_thresh = thresh_mim_mid_LPMQ, nms_thresh = nms_thresh )
+        mim_end_LPMQ   = Marker(template_loc=template_loc_mim_end_LPMQ, image_loc=imagePath, template_thresh = thresh_mim_end_LPMQ, nms_thresh = nms_thresh )
+        mim_beg_LPMQ   = Marker(template_loc=template_loc_mim_beg_LPMQ, image_loc=imagePath, template_thresh = thresh_mim_beg_LPMQ, nms_thresh = nms_thresh )
+
+        (result_mim_stand_LPMQ, box_mim_stand_LPMQ, value_mim_stand_LPMQ) = mim_stand_LPMQ.Match_Template(visualize=False)
+        (result_mim_mid_LPMQ, box_mim_mid_LPMQ, value_mim_mid_LPMQ) = mim_mid_LPMQ.Match_Template(visualize=False)
+        (result_mim_end_LPMQ, box_mim_end_LPMQ, value_mim_end_LPMQ) = mim_end_LPMQ.Match_Template(visualize=False)
+        (result_mim_beg_LPMQ, box_mim_beg_LPMQ, value_mim_beg_LPMQ) = mim_beg_LPMQ.Match_Template(visualize=False)
+
+        if value_tanwin_1 != 0:
+            cv2.imshow("tanwin_1", result_tanwin_1)
+        if value_tanwin != 0:
+            cv2.imshow("tanwin", result_tanwin)
+        if value_nun_stand_LPMQ != 0:
+            cv2.imshow("nun stand LPMQ", result_nun_stand_LPMQ)
+        if value_nun_mid_LPMQ != 0:
+            cv2.imshow("nun mid LPMQ", result_nun_mid_LPMQ)
+        if value_nun_end_LPMQ != 0:
+            cv2.imshow("nun end LPMQ", result_nun_end_LPMQ)
+        if value_nun_beg_LPMQ != 0:
+            cv2.imshow("nun beg LPMQ", result_nun_beg_LPMQ)
+        if value_mim_stand_LPMQ != 0:
+            cv2.imshow("mim stand LPMQ", result_mim_stand_LPMQ)
+        if value_mim_mid_LPMQ != 0:
+            cv2.imshow("mim mid LPMQ", result_mim_mid_LPMQ)
+        if value_mim_end_LPMQ != 0:
+            cv2.imshow("mim end LPMQ", result_mim_end_LPMQ)
+        if value_mim_beg_LPMQ != 0:
+            cv2.imshow("mim beg LPMQ", result_mim_beg_LPMQ)
+        
+        # cv2.imshow("tanwin_LPMQ",result_tanwin) 
+        # cv2.imshow("tanwin_1_LPMQ",result_tanwin_1)
+        cv2.imshow("Original", nun_stand_LPMQ.GetOriginalImage())
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
         # if max_value != []:
         #     print(max(max_value))
         ##continue next file if not detected
         # if max_value == []:
         #     continue
         # print(max_value)
-        cv2.waitKey(0)
+        
 
     cv2.destroyAllWindows() 
 
