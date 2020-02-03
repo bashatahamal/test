@@ -102,7 +102,7 @@ class Marker:
         #template = cv2.adaptiveThreshold(template,255,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY,11,2)
         ##Adaptive threshold value is the weighted sum of neighbourhood values where weights are a gaussian window
         template = cv2.adaptiveThreshold(template,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,cv2.THRESH_BINARY,11,2)
-        cv2.imshow("Template", template)
+        #cv2.imshow("Template", template)
         (tH,tW) = template.shape[:2]
 
         #__get image
@@ -145,7 +145,7 @@ class Marker:
                 temp = [startX, startY, endX, endY]
                 boundingBoxes = np.append(boundingBoxes, [temp], axis=0)
                 max_value_list = np.append(max_value_list, [maxVal], axis=0)
-                print("Max val = {} location {}".format(maxVal, temp))
+                #print("Max val = {} location {}".format(maxVal, temp))
                 
 
         #__if detected on this scale size
@@ -166,18 +166,36 @@ class Marker:
 def main():
     for imagePath in glob.glob(args["images"] + "/*.png"):
         
-        template_loc_LPMQ = "/home/mhbrt/Desktop/Wind/Multiscale/temp5.png"
-        nun_sukun_LPMQ = Marker(template_loc=template_loc_LPMQ, image_loc=imagePath, template_thresh = 0.7, nms_thresh = 0.3 )
-        (result, bounding_box, max_value) = nun_sukun_LPMQ.Match_Template(visualize=False)
-        cv2.imshow("Match Result", result)
+        template_loc = "/home/mhbrt/Desktop/Wind/Multiscale/marker/tanwin_LPMQ.png"
+        tanwin_LPMQ = Marker(template_loc=template_loc, image_loc=imagePath, template_thresh = 0.7, nms_thresh = 0.3 )
+        (result, bounding_box, max_value) = tanwin_LPMQ.Match_Template(visualize=False)
+        cv2.imshow("Tanwin", result)
+        template_loc = "/home/mhbrt/Desktop/Wind/Multiscale/marker/tanwin_1_LPMQ.png"
+        tanwin_1_LPMQ = Marker(template_loc=template_loc, image_loc=imagePath, template_thresh = 0.7, nms_thresh = 0.3 )
+        (result1, bounding_box, max_value) = tanwin_1_LPMQ.Match_Template(visualize=False)
+        cv2.imshow("Tanwin_1", result1)
+        template_loc = "/home/mhbrt/Desktop/Wind/Multiscale/marker/nun_stand_LPMQ.png"
+        nun_stand_LPMQ = Marker(template_loc=template_loc, image_loc=imagePath, template_thresh = 0.7, nms_thresh = 0.3 )
+        (result12, bounding_box, max_value) = nun_stand_LPMQ.Match_Template(visualize=False)
+        cv2.imshow("Nun Sukun Stand", result12)
+        template_loc = "/home/mhbrt/Desktop/Wind/Multiscale/marker/nun_mid_LPMQ.png"
+        nun_mid_LPMQ = Marker(template_loc=template_loc, image_loc=imagePath, template_thresh = 0.7, nms_thresh = 0.3 )
+        (result13, bounding_box, max_value) = nun_mid_LPMQ.Match_Template(visualize=False)
+        cv2.imshow("Nun Sukun Mid", result13)
+        template_loc = "/home/mhbrt/Desktop/Wind/Multiscale/marker/mim_end_LPMQ.png"
+        mim_end_LPMQ = Marker(template_loc=template_loc, image_loc=imagePath, template_thresh = 0.7, nms_thresh = 0.3 )
+        (result4, bounding_box, max_value) = mim_end_LPMQ.Match_Template(visualize=False)
+        cv2.imshow("Mim Sukun End", result4)
+        
+        
         # if max_value != []:
-        #     print(max_value)
+        #     print(max(max_value))
         ##continue next file if not detected
         # if max_value == []:
         #     continue
         # print(max_value)
         cv2.waitKey(0)
 
-    cv2.destroyAllWindows()
+    cv2.destroyAllWindows() 
 
 if __name__ == '__main__':main()
