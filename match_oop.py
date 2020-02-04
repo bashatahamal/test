@@ -12,7 +12,6 @@ ap.add_argument("-v", "--visualize", help="Flag indicating wether or not to visu
 args = vars(ap.parse_args())
 
 class Marker:
-    # an_image = 0
     def __init__ (self, **kwargs):
         self._Data=kwargs
     
@@ -237,43 +236,43 @@ def main():
         found=False
         if value_tanwin_1 != 0:
             for (startX, startY, endX, endY) in box_tanwin_1:
-                cv2.rectangle(image, (startX, startY), (endX, endY), (0, 255, 0), 2)
+                cv2.rectangle(image, (startX, startY), (endX, endY), (255, 0, 255), 2)
             found=True
         if value_tanwin != 0:
             for (startX, startY, endX, endY) in box_tanwin:
-                cv2.rectangle(image, (startX, startY), (endX, endY), (255, 0, 0), 2)
+                cv2.rectangle(image, (startX, startY), (endX, endY), (255, 0, 127), 2)
             found=True
         if value_nun_stand_LPMQ != 0:
             for (startX, startY, endX, endY) in box_nun_stand_LPMQ:
-                cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 255), 2)
+                cv2.rectangle(image, (startX, startY), (endX, endY), (102, 102, 255), 2)
             found=True
         if value_nun_mid_LPMQ != 0:
             for (startX, startY, endX, endY) in box_nun_mid_LPMQ:
-                cv2.rectangle(image, (startX, startY), (endX, endY), (255, 127, 0), 2)
+                cv2.rectangle(image, (startX, startY), (endX, endY), (51, 51, 255), 2)
             found=True
         if value_nun_end_LPMQ != 0:
             for (startX, startY, endX, endY) in box_nun_end_LPMQ:
-                cv2.rectangle(image, (startX, startY), (endX, endY), (0, 255, 255), 2)
+                cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 255), 2)
             found=True
         if value_nun_beg_LPMQ != 0:
             for (startX, startY, endX, endY) in box_nun_beg_LPMQ:
-                cv2.rectangle(image, (startX, startY), (endX, endY), (255, 0, 255), 2)
+                cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 102), 2)
             found=True
         if value_mim_stand_LPMQ != 0:
             for (startX, startY, endX, endY) in box_mim_stand_LPMQ:
-                cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 0), 2)
+                cv2.rectangle(image, (startX, startY), (endX, endY), (102, 255, 255), 2)
             found=True
         if value_mim_mid_LPMQ != 0:
             for (startX, startY, endX, endY) in box_mim_mid_LPMQ:
-                cv2.rectangle(image, (startX, startY), (endX, endY), (0, 127, 0), 2)
+                cv2.rectangle(image, (startX, startY), (endX, endY), (0, 153, 0), 2)
             found=True
         if value_mim_end_LPMQ != 0:
             for (startX, startY, endX, endY) in box_mim_end_LPMQ:
-                cv2.rectangle(image, (startX, startY), (endX, endY), (127, 0, 0), 2)
+                cv2.rectangle(image, (startX, startY), (endX, endY), (0, 255, 255), 2)
             found=True
         if value_mim_beg_LPMQ != 0:
             for (startX, startY, endX, endY) in box_mim_beg_LPMQ:
-                cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 127), 2)
+                cv2.rectangle(image, (startX, startY), (endX, endY), (0, 204, 204), 2)
             found=True
         
         # cv2.imshow("tanwin_LPMQ",result_tanwin) 
