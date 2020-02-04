@@ -159,8 +159,8 @@ class Marker:
             pick = self.non_max_suppression_slow(boundingBoxes, self.GetNMS_Threshold())
             print(len(pick))
             print(pick)
-            for (startX, startY, endX, endY) in pick:
-                cv2.rectangle(image, (startX, startY), (endX, endY), (0, 255, 0), 2)
+            # for (startX, startY, endX, endY) in pick:
+            #     cv2.rectangle(image, (startX, startY), (endX, endY), (0, 255, 0), 2)
 
         # return image, boundingBoxes, max_value_list
         if len(max_value_list) > 1:
@@ -170,7 +170,7 @@ class Marker:
         if max_value_list == []:
             pick = 0
             max_local_value = 0
-        return image, pick, max_local_value
+        return pick, max_local_value
             
 
 
@@ -189,8 +189,8 @@ def main():
         tanwin_LPMQ   = Marker(template_loc=template_loc_tanwin, image_loc=imagePath, template_thresh = thresh_tanwin, nms_thresh = nms_thresh )
         tanwin_1_LPMQ = Marker(template_loc=template_loc_tanwin_1, image_loc=imagePath, template_thresh = thresh_tanwin_1, nms_thresh = nms_thresh )
 
-        (result_tanwin, box_tanwin, value_tanwin) = tanwin_LPMQ.Match_Template(visualize=False)
-        (result_tanwin_1, box_tanwin_1, value_tanwin_1) = tanwin_1_LPMQ.Match_Template(visualize=False)
+        (box_tanwin, value_tanwin) = tanwin_LPMQ.Match_Template(visualize=False)
+        (box_tanwin_1, value_tanwin_1) = tanwin_1_LPMQ.Match_Template(visualize=False)
 
         #__nun_sukun_LPMQ
         template_loc_nun_stand_LPMQ = "/home/mhbrt/Desktop/Wind/Multiscale/marker/nun_stand_LPMQ.png"
@@ -207,10 +207,10 @@ def main():
         nun_end_LPMQ   = Marker(template_loc=template_loc_nun_end_LPMQ, image_loc=imagePath, template_thresh = thresh_nun_end_LPMQ, nms_thresh = nms_thresh )
         nun_beg_LPMQ   = Marker(template_loc=template_loc_nun_beg_LPMQ, image_loc=imagePath, template_thresh = thresh_nun_beg_LPMQ, nms_thresh = nms_thresh )
 
-        (result_nun_stand_LPMQ, box_nun_stand_LPMQ, value_nun_stand_LPMQ) = nun_stand_LPMQ.Match_Template(visualize=False)
-        (result_nun_mid_LPMQ, box_nun_mid_LPMQ, value_nun_mid_LPMQ) = nun_mid_LPMQ.Match_Template(visualize=False)
-        (result_nun_end_LPMQ, box_nun_end_LPMQ, value_nun_end_LPMQ) = nun_end_LPMQ.Match_Template(visualize=False)
-        (result_nun_beg_LPMQ, box_nun_beg_LPMQ, value_nun_beg_LPMQ) = nun_beg_LPMQ.Match_Template(visualize=False)
+        (box_nun_stand_LPMQ, value_nun_stand_LPMQ) = nun_stand_LPMQ.Match_Template(visualize=False)
+        (box_nun_mid_LPMQ, value_nun_mid_LPMQ) = nun_mid_LPMQ.Match_Template(visualize=False)
+        (box_nun_end_LPMQ, value_nun_end_LPMQ) = nun_end_LPMQ.Match_Template(visualize=False)
+        (box_nun_beg_LPMQ, value_nun_beg_LPMQ) = nun_beg_LPMQ.Match_Template(visualize=False)
 
         #__mim_sukun_LPMQ
         template_loc_mim_stand_LPMQ = "/home/mhbrt/Desktop/Wind/Multiscale/marker/mim_stand_LPMQ.png"
@@ -227,35 +227,62 @@ def main():
         mim_end_LPMQ   = Marker(template_loc=template_loc_mim_end_LPMQ, image_loc=imagePath, template_thresh = thresh_mim_end_LPMQ, nms_thresh = nms_thresh )
         mim_beg_LPMQ   = Marker(template_loc=template_loc_mim_beg_LPMQ, image_loc=imagePath, template_thresh = thresh_mim_beg_LPMQ, nms_thresh = nms_thresh )
 
-        (result_mim_stand_LPMQ, box_mim_stand_LPMQ, value_mim_stand_LPMQ) = mim_stand_LPMQ.Match_Template(visualize=False)
-        (result_mim_mid_LPMQ, box_mim_mid_LPMQ, value_mim_mid_LPMQ) = mim_mid_LPMQ.Match_Template(visualize=False)
-        (result_mim_end_LPMQ, box_mim_end_LPMQ, value_mim_end_LPMQ) = mim_end_LPMQ.Match_Template(visualize=False)
-        (result_mim_beg_LPMQ, box_mim_beg_LPMQ, value_mim_beg_LPMQ) = mim_beg_LPMQ.Match_Template(visualize=False)
+        (box_mim_stand_LPMQ, value_mim_stand_LPMQ) = mim_stand_LPMQ.Match_Template(visualize=False)
+        (box_mim_mid_LPMQ, value_mim_mid_LPMQ) = mim_mid_LPMQ.Match_Template(visualize=False)
+        (box_mim_end_LPMQ, value_mim_end_LPMQ) = mim_end_LPMQ.Match_Template(visualize=False)
+        (box_mim_beg_LPMQ, value_mim_beg_LPMQ) = mim_beg_LPMQ.Match_Template(visualize=False)
 
+       #__display cummulative anotation detected
+        image=tanwin_LPMQ.GetOriginalImage()
+        found=False
         if value_tanwin_1 != 0:
-            cv2.imshow("tanwin_1", result_tanwin_1)
+            for (startX, startY, endX, endY) in box_tanwin_1:
+                cv2.rectangle(image, (startX, startY), (endX, endY), (0, 255, 0), 2)
+            found=True
         if value_tanwin != 0:
-            cv2.imshow("tanwin", result_tanwin)
+            for (startX, startY, endX, endY) in box_tanwin:
+                cv2.rectangle(image, (startX, startY), (endX, endY), (255, 0, 0), 2)
+            found=True
         if value_nun_stand_LPMQ != 0:
-            cv2.imshow("nun stand LPMQ", result_nun_stand_LPMQ)
+            for (startX, startY, endX, endY) in box_nun_stand_LPMQ:
+                cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 255), 2)
+            found=True
         if value_nun_mid_LPMQ != 0:
-            cv2.imshow("nun mid LPMQ", result_nun_mid_LPMQ)
+            for (startX, startY, endX, endY) in box_nun_mid_LPMQ:
+                cv2.rectangle(image, (startX, startY), (endX, endY), (255, 127, 0), 2)
+            found=True
         if value_nun_end_LPMQ != 0:
-            cv2.imshow("nun end LPMQ", result_nun_end_LPMQ)
+            for (startX, startY, endX, endY) in box_nun_end_LPMQ:
+                cv2.rectangle(image, (startX, startY), (endX, endY), (0, 255, 255), 2)
+            found=True
         if value_nun_beg_LPMQ != 0:
-            cv2.imshow("nun beg LPMQ", result_nun_beg_LPMQ)
+            for (startX, startY, endX, endY) in box_nun_beg_LPMQ:
+                cv2.rectangle(image, (startX, startY), (endX, endY), (255, 0, 255), 2)
+            found=True
         if value_mim_stand_LPMQ != 0:
-            cv2.imshow("mim stand LPMQ", result_mim_stand_LPMQ)
+            for (startX, startY, endX, endY) in box_mim_stand_LPMQ:
+                cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 0), 2)
+            found=True
         if value_mim_mid_LPMQ != 0:
-            cv2.imshow("mim mid LPMQ", result_mim_mid_LPMQ)
+            for (startX, startY, endX, endY) in box_mim_mid_LPMQ:
+                cv2.rectangle(image, (startX, startY), (endX, endY), (0, 127, 0), 2)
+            found=True
         if value_mim_end_LPMQ != 0:
-            cv2.imshow("mim end LPMQ", result_mim_end_LPMQ)
+            for (startX, startY, endX, endY) in box_mim_end_LPMQ:
+                cv2.rectangle(image, (startX, startY), (endX, endY), (127, 0, 0), 2)
+            found=True
         if value_mim_beg_LPMQ != 0:
-            cv2.imshow("mim beg LPMQ", result_mim_beg_LPMQ)
+            for (startX, startY, endX, endY) in box_mim_beg_LPMQ:
+                cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 127), 2)
+            found=True
         
         # cv2.imshow("tanwin_LPMQ",result_tanwin) 
         # cv2.imshow("tanwin_1_LPMQ",result_tanwin_1)
-        cv2.imshow("Original", nun_stand_LPMQ.GetOriginalImage())
+        if found == True:
+            cv2.imshow("Cummulative", image)
+        else:
+            cv2.imshow("Original", image)  
+
         cv2.waitKey(0)
         cv2.destroyAllWindows()
         # if max_value != []:
