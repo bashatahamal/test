@@ -160,7 +160,7 @@ class Marker:
         if len(boundingBoxes) > 1:
             boundingBoxes = np.delete(boundingBoxes, 0, axis=0)
             pick = self.non_max_suppression_slow(boundingBoxes, self.GetNMS_Threshold())
-            print("{} {}".format(len(pick), self.GetTemplate_Location()))
+            # print("{} {}".format(len(pick), self.GetTemplate_Location()))
             # print(pick)
             # for (startX, startY, endX, endY) in pick:
             #     cv2.rectangle(image, (startX, startY), (endX, endY), (0, 255, 0), 2)
@@ -177,7 +177,7 @@ class Marker:
         return pick, max_local_value
             
 
-class Marker_Font(Marker):
+class Font_Wrapper(Marker):
     def __init__ (self, nms_thresh=0.3, visualize= False, **kwargs):
         self._Data = kwargs
         self.nms_thresh = nms_thresh
@@ -189,6 +189,8 @@ class Marker_Font(Marker):
         return self._Data["loc_list"]
     def GetImage_Location(self):
         return self._Data["image_loc"]
+    def GetBox_tanwin(self):
+        return self.box_tanwin
     # def GetOriginalImage(self):
     #     return self._Data["image"]
     # def GetOrig_Image(self):
@@ -203,103 +205,140 @@ class Marker_Font(Marker):
         image = cv2.cvtColor(original_image, cv2.COLOR_BGR2GRAY)
         template_thresh = self.GetMarker_Thresh()
         template_loc = self.GetMarker_Location()
+        tanwin = 0
+        nun    = 0
+        mim    = 0
+        for key in template_thresh.keys():
+            x = key.split('_') 
+            if x[0] == 'tanwin':
+                tanwin+=1
+            if x[0] == 'nun':
+                nun+=1
+            if x[0] == 'mim':
+                mim+=1
+        print('Tanwin {} nun {} mim {}'.format(tanwin, nun, mim))
         # image = self.GetOriginalImage()
         # image_orig=self.GetOrig_Image()
-        super().__init__(image = image, template_thresh  = template_thresh['tanwin'],
-                        template_loc = template_loc[0], nms_thresh = self.nms_thresh)   
-        (box_tanwin, value_tanwin)=super().Match_Template(self.visualize)
+        pocketData={}
+        for x in range(len(template_thresh)):
+            # print(len(template_thresh))
+            # print(list(template_thresh.values())[x])
+            super().__init__(image = image, template_thresh = list(template_thresh.values())[x], 
+                             template_loc = template_loc[x], nms_thresh = self.nms_thresh)
+            (pocketData[x],pocketData[x+len(template_thresh)]) = super().Match_Template(visualize=self.visualize)
+            # print(type(pocketData[x]))
 
-        super().__init__(image = image, template_thresh  = template_thresh['tanwin_1'],
-                        template_loc = template_loc[1], nms_thresh = self.nms_thresh)   
-        (box_tanwin_1, value_tanwin_1)=super().Match_Template(self.visualize)
+        if view == True:
+            rectangle_image = original_image
+            found = False
+            for x in range(len(template_thresh)):
+                if type(pocketData[x]) == type(np.array([])) :
+                    for (startX, startY, endX, endY) in pocketData[x]:
+                        cv2.rectangle(rectangle_image, (startX, startY), (endX, endY), (255, 0, 127), 2)
+                found = True        
+            if found == True:
+                cv2.imshow("Detected Image", rectangle_image)
+            else:
+                cv2.imshow("Original Image", rectangle_image)  
 
-        #__nun_sukun
-        super().__init__(image = image, template_thresh  = template_thresh['nun_stand'],
-                        template_loc = template_loc[2], nms_thresh = self.nms_thresh)   
-        (box_nun_stand, value_nun_stand)=super().Match_Template(self.visualize)
+            cv2.waitKey(0)
+            
 
-        super().__init__(image = image, template_thresh  = template_thresh['nun_beg'],
-                        template_loc = template_loc[3], nms_thresh = self.nms_thresh)   
-        (box_nun_beg, value_nun_beg)=super().Match_Template(self.visualize)
+        # super().__init__(image = image, template_thresh  = template_thresh['tanwin_0'],
+        #                 template_loc = template_loc[0], nms_thresh = self.nms_thresh)   
+        # (self.box_tanwin, value_tanwin)=super().Match_Template(self.visualize)
 
-        super().__init__(image = image, template_thresh  = template_thresh['nun_mid'],
-                        template_loc = template_loc[4], nms_thresh = self.nms_thresh)   
-        (box_nun_mid, value_nun_mid)=super().Match_Template(self.visualize)
+        # super().__init__(image = image, template_thresh  = template_thresh['tanwin_1'],
+        #                 template_loc = template_loc[1], nms_thresh = self.nms_thresh)   
+        # (box_tanwin_1, value_tanwin_1)=super().Match_Template(self.visualize)
 
-        super().__init__(image = image, template_thresh  = template_thresh['nun_end'],
-                        template_loc = template_loc[5], nms_thresh = self.nms_thresh)   
-        (box_nun_end, value_nun_end)=super().Match_Template(self.visualize)
+        # #__nun_sukun
+        # super().__init__(image = image, template_thresh  = template_thresh['nun_stand'],
+        #                 template_loc = template_loc[2], nms_thresh = self.nms_thresh)   
+        # (box_nun_stand, value_nun_stand)=super().Match_Template(self.visualize)
 
-        #__mim_sukun
-        super().__init__(image = image, template_thresh  = template_thresh['mim_stand'],
-                        template_loc = template_loc[6], nms_thresh = self.nms_thresh)   
-        (box_mim_stand, value_mim_stand)=super().Match_Template(self.visualize)
+        # super().__init__(image = image, template_thresh  = template_thresh['nun_beg'],
+        #                 template_loc = template_loc[3], nms_thresh = self.nms_thresh)   
+        # (box_nun_beg, value_nun_beg)=super().Match_Template(self.visualize)
 
-        super().__init__(image = image, template_thresh  = template_thresh['mim_beg'],
-                        template_loc = template_loc[7], nms_thresh = self.nms_thresh)   
-        (box_mim_beg, value_mim_beg)=super().Match_Template(self.visualize)
+        # super().__init__(image = image, template_thresh  = template_thresh['nun_mid'],
+        #                 template_loc = template_loc[4], nms_thresh = self.nms_thresh)   
+        # (box_nun_mid, value_nun_mid)=super().Match_Template(self.visualize)
 
-        super().__init__(image = image, template_thresh  = template_thresh['mim_mid'],
-                        template_loc = template_loc[8], nms_thresh = self.nms_thresh)   
-        (box_mim_mid, value_mim_mid)=super().Match_Template(self.visualize)
+        # super().__init__(image = image, template_thresh  = template_thresh['nun_end'],
+        #                 template_loc = template_loc[5], nms_thresh = self.nms_thresh)   
+        # (box_nun_end, value_nun_end)=super().Match_Template(self.visualize)
 
-        super().__init__(image = image, template_thresh  = template_thresh['mim_end'],
-                        template_loc = template_loc[9], nms_thresh = self.nms_thresh)   
-        (box_mim_end, value_mim_end)=super().Match_Template(self.visualize)
+        # #__mim_sukun
+        # super().__init__(image = image, template_thresh  = template_thresh['mim_stand'],
+        #                 template_loc = template_loc[6], nms_thresh = self.nms_thresh)   
+        # (box_mim_stand, value_mim_stand)=super().Match_Template(self.visualize)
+
+        # super().__init__(image = image, template_thresh  = template_thresh['mim_beg'],
+        #                 template_loc = template_loc[7], nms_thresh = self.nms_thresh)   
+        # (box_mim_beg, value_mim_beg)=super().Match_Template(self.visualize)
+
+        # super().__init__(image = image, template_thresh  = template_thresh['mim_mid'],
+        #                 template_loc = template_loc[8], nms_thresh = self.nms_thresh)   
+        # (box_mim_mid, value_mim_mid)=super().Match_Template(self.visualize)
+
+        # super().__init__(image = image, template_thresh  = template_thresh['mim_end'],
+        #                 template_loc = template_loc[9], nms_thresh = self.nms_thresh)   
+        # (box_mim_end, value_mim_end)=super().Match_Template(self.visualize)
 
 
        #__display cummulative anotation detected
-        if view == True:
-            image = original_image
-            # print('write rectangle')
-            found=False
-            if value_tanwin != 0:
-                for (startX, startY, endX, endY) in box_tanwin:
-                    cv2.rectangle(image, (startX, startY), (endX, endY), (255, 0, 127), 2)
-                found=True
-            if value_tanwin_1 != 0:
-                for (startX, startY, endX, endY) in box_tanwin_1:
-                    cv2.rectangle(image, (startX, startY), (endX, endY), (255, 0, 0), 2)
-                found=True
-            if value_nun_stand != 0:
-                for (startX, startY, endX, endY) in box_nun_stand:
-                    cv2.rectangle(image, (startX, startY), (endX, endY), (102, 102, 255), 2)
-                found=True
-            if value_nun_mid != 0:
-                for (startX, startY, endX, endY) in box_nun_mid:
-                    cv2.rectangle(image, (startX, startY), (endX, endY), (51, 51, 255), 2)
-                found=True
-            if value_nun_end != 0:
-                for (startX, startY, endX, endY) in box_nun_end:
-                    cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 255), 2)
-                found=True
-            if value_nun_beg != 0:
-                for (startX, startY, endX, endY) in box_nun_beg:
-                    cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 102), 2)
-                found=True
-            if value_mim_stand != 0:
-                for (startX, startY, endX, endY) in box_mim_stand:
-                    cv2.rectangle(image, (startX, startY), (endX, endY), (102, 255, 255), 2)
-                found=True
-            if value_mim_mid != 0:
-                for (startX, startY, endX, endY) in box_mim_mid:
-                    cv2.rectangle(image, (startX, startY), (endX, endY), (0, 153, 0), 2)
-                found=True
-            if value_mim_end != 0:
-                for (startX, startY, endX, endY) in box_mim_end:
-                    cv2.rectangle(image, (startX, startY), (endX, endY), (0, 255, 255), 2)
-                found=True
-            if value_mim_beg != 0:
-                for (startX, startY, endX, endY) in box_mim_beg:
-                    cv2.rectangle(image, (startX, startY), (endX, endY), (0, 204, 204), 2)
-                found=True
+        # if view == True:
+        #     image = original_image
+        #     # print('write rectangle')
+        #     found=False
+        #     if value_tanwin != 0:
+        #         for (startX, startY, endX, endY) in box_tanwin:
+        #             cv2.rectangle(image, (startX, startY), (endX, endY), (255, 0, 127), 2)
+        #         found=True
+        #     if value_tanwin_1 != 0:
+        #         for (startX, startY, endX, endY) in box_tanwin_1:
+        #             cv2.rectangle(image, (startX, startY), (endX, endY), (255, 0, 0), 2)
+        #         found=True
+        #     if value_nun_stand != 0:
+        #         for (startX, startY, endX, endY) in box_nun_stand:
+        #             cv2.rectangle(image, (startX, startY), (endX, endY), (102, 102, 255), 2)
+        #         found=True
+        #     if value_nun_mid != 0:
+        #         for (startX, startY, endX, endY) in box_nun_mid:
+        #             cv2.rectangle(image, (startX, startY), (endX, endY), (51, 51, 255), 2)
+        #         found=True
+        #     if value_nun_end != 0:
+        #         for (startX, startY, endX, endY) in box_nun_end:
+        #             cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 255), 2)
+        #         found=True
+        #     if value_nun_beg != 0:
+        #         for (startX, startY, endX, endY) in box_nun_beg:
+        #             cv2.rectangle(image, (startX, startY), (endX, endY), (0, 0, 102), 2)
+        #         found=True
+        #     if value_mim_stand != 0:
+        #         for (startX, startY, endX, endY) in box_mim_stand:
+        #             cv2.rectangle(image, (startX, startY), (endX, endY), (102, 255, 255), 2)
+        #         found=True
+        #     if value_mim_mid != 0:
+        #         for (startX, startY, endX, endY) in box_mim_mid:
+        #             cv2.rectangle(image, (startX, startY), (endX, endY), (0, 153, 0), 2)
+        #         found=True
+        #     if value_mim_end != 0:
+        #         for (startX, startY, endX, endY) in box_mim_end:
+        #             cv2.rectangle(image, (startX, startY), (endX, endY), (0, 255, 255), 2)
+        #         found=True
+        #     if value_mim_beg != 0:
+        #         for (startX, startY, endX, endY) in box_mim_beg:
+        #             cv2.rectangle(image, (startX, startY), (endX, endY), (0, 204, 204), 2)
+        #         found=True
             
-            if found == True:
-                cv2.imshow("Detected Image", image)
-            else:
-                cv2.imshow("Original Image", image)  
+        #     if found == True:
+        #         cv2.imshow("Detected Image", image)
+        #     else:
+        #         cv2.imshow("Original Image", image)  
 
-            cv2.waitKey(0)
+        #     cv2.waitKey(0)
 
 
 
@@ -307,14 +346,15 @@ def main():
     for imagePath in sorted(glob.glob(args["images"] + "/*.png")):
         #__LPMQ_Font
         loc_list = sorted(glob.glob('./marker/LPMQ/*.png'))
-        LPMQ = Marker_Font( thresh_list={'tanwin'  :0.7, 'tanwin_1':0.7,
-                                        'nun_stand':0.7, 'nun_beg' :0.7,
-                                        'nun_mid'  :0.7, 'nun_end' :0.7,
-                                        'mim_stand':0.7, 'mim_beg' :0.7,
-                                        'mim_mid'  :0.7, 'mim_end' :0.7},
+        LPMQ = Font_Wrapper( thresh_list={'tanwin_0' :0.7, 'tanwin_1':0.7,
+                                          'nun_stand':0.7, 'nun_beg' :0.7,
+                                          'nun_mid'  :0.7, 'nun_end' :0.7,
+                                          'mim_stand':0.7, 'mim_beg' :0.7,
+                                          'mim_mid'  :0.7, 'mim_end' :0.7},
                             loc_list=loc_list, image_loc= imagePath,
                             visualize=False, nms_thresh=0.3)
         LPMQ.run(view=True)
+        # print(LPMQ.GetMarker_Thresh())
 
     
     #     #___tanwin_LPMQ
