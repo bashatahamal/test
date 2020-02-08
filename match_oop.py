@@ -23,7 +23,7 @@ class Marker:
         return self._Data["template_thresh"]
     def GetNMS_Threshold(self):
         return self._Data["nms_thresh"]
-    def GetOriginalImage(self):
+    def GetImage(self):
         return self._Data["image"]
 
 
@@ -115,7 +115,7 @@ class Marker:
         # self.image=image
         # gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         # cv2.imshow('gray',gray)
-        image = self.GetOriginalImage()
+        image = self.GetImage()
         # boundingBoxes = np.ones((1,4), dtype=int)
         boundingBoxes = []
         max_value_list = []
@@ -186,6 +186,9 @@ class Font_Wrapper(Marker):
         self._Data = kwargs
         self.nms_thresh = nms_thresh
         self.visualize = visualize
+        self.image_location = self._Data["image_loc"]
+        self.marker_location = self._Data["loc_list"]
+        self.marker_thresh = self._Data["thresh_list"]
         # super().__init__()
         tanwin = 0
         nun    = 0
@@ -235,24 +238,25 @@ class Font_Wrapper(Marker):
         # print(self.pick_colour)
 
     def GetMarker_Thresh(self):
-        return self._Data["thresh_list"]
+        return self.marker_thresh
     def GetMarker_Location(self):
-        return self._Data["loc_list"]
+        return self.marker_location
     def GetImage_Location(self):
-        return self._Data["image_loc"]
-    def GetBox_tanwin(self):
-        return self.box_tanwin
-    # def GetOriginalImage(self):
-    #     return self._Data["image"]
-    # def GetOrig_Image(self):
-    #     return self._Data["orig_image"]
+        return self.image_location
+    def GetOriginalImage(self):
+        original_image = cv2.imread(self.GetImage_Location())
+        return original_image
+
 
     def run(self, view=False):
          #__tanwin
         # print(self.GetMarker_Thresh())
         # print('run() Marker Font')
-        original_image = cv2.imread(self.GetImage_Location())
-        image = cv2.cvtColor(original_image, cv2.COLOR_BGR2GRAY)
+        # ori_image = cv2.imread(self.GetImage_Location())
+        # print(self.GetOriginalImage())
+        # self.original_image = cv2.imread(self.GetImage_Location())
+        image = cv2.cvtColor(self.GetOriginalImage(), cv2.COLOR_BGR2GRAY)
+        # cv2.imshow('test', image)
         template_thresh = self.GetMarker_Thresh()
         template_loc = self.GetMarker_Location()
        
@@ -274,7 +278,7 @@ class Font_Wrapper(Marker):
             pocket[box]  = pocketData[x]
 
         if view == True:
-            rectangle_image = original_image
+            rectangle_image = self.GetOriginalImage()
             found = False
             for x in range(len(template_thresh)):
                 if type(pocketData[x]) == type(np.array([])) :
@@ -300,56 +304,54 @@ def main():
         print('________________Next File_________________')
         #__LPMQ_Font
         print("LPMQ")
-        loc_list = sorted(glob.glob('./marker/LPMQ/*.png'))
+        loc_list_LPMQ = sorted(glob.glob('./marker/LPMQ/*.png'))
         LPMQ = Font_Wrapper( thresh_list={'tanwin_1'    : 0.7, 'tanwin_2'    : 0.7,
                                           'nun_stand'   : 0.7, 'nun_beg'     : 0.7,
                                           'nun_mid'     : 0.7, 'nun_end'     : 0.7,
                                           'mim_stand'   : 0.7, 'mim_beg'     : 0.7,
                                           'mim_mid'     : 0.7, 'mim_end_1'   : 0.7,
                                           'mim_end_2'   : 0.7 },
-                            loc_list=loc_list, image_loc= imagePath,
+                            loc_list=loc_list_LPMQ, image_loc= imagePath,
                             visualize=False, nms_thresh=0.3)
-        pocket_LPMQ = LPMQ.run(view=True)
-
-
         #__AlQalam_Font
         print("AlQalam")
-        loc_list = sorted(glob.glob('./marker/AlQalam/*.png'))
+        loc_list_AlQalam = sorted(glob.glob('./marker/AlQalam/*.png'))
         AlQalam = Font_Wrapper( thresh_list={'tanwin_1' : 0.7, 'tanwin_2'   : 0.7,
                                           'nun_stand'   : 0.7, 'nun_beg'    : 0.7,
                                           'nun_mid'     : 0.7, 'nun_end'    : 0.7,
                                           'mim_stand'   : 0.7, 'mim_beg'    : 0.7,
                                           'mim_mid'     : 0.7, 'mim_end'    : 0.7 },
-                                loc_list = loc_list, image_loc = imagePath,
+                                loc_list = loc_list_AlQalam, image_loc = imagePath,
                                 visualize=False, nms_thresh=0.3)
-        pocket_AlQalam = AlQalam.run(view=True)
-
-
         #__meQuran_Font
         print("meQuran")
-        loc_list = sorted(glob.glob('./marker/meQuran/*.png'))
+        loc_list_meQuran = sorted(glob.glob('./marker/meQuran/*.png'))
         meQuran = Font_Wrapper( thresh_list={'tanwin_1' : 0.7, 'tanwin_2'   : 0.7,
                                           'nun_stand'   : 0.7, 'nun_beg_1'  : 0.7,
                                           'nun_beg_2'   : 0.7, 'nun_mid'    : 0.7,
                                           'nun_end'     : 0.7, 'mim_stand'  : 0.7, 
                                           'mim_beg'     : 0.7, 'mim_mid'    : 0.7, 
                                           'mim_end_1'   : 0.7, 'mim_end_2'  : 0.7 },
-                                loc_list=loc_list, image_loc= imagePath,
+                                loc_list=loc_list_meQuran, image_loc= imagePath,
                                 visualize=False, nms_thresh=0.3)
-        pocket_meQuran = meQuran.run(view=True)
-        
-
         #__PDMS_Font
         print("PDMS")
-        loc_list = sorted(glob.glob('./marker/PDMS/*.png'))
+        loc_list_PDMS = sorted(glob.glob('./marker/PDMS/*.png'))
         PDMS = Font_Wrapper( thresh_list={'tanwin_1'    : 0.7, 'tanwin_2'   : 0.7,
                                           'nun_stand'   : 0.7, 'nun_beg'    : 0.7,
                                           'nun_mid'     : 0.7, 'nun_end'    : 0.7,
                                           'mim_stand'   : 0.7, 'mim_beg'    : 0.7,
                                           'mim_mid'     : 0.7, 'mim_end'    : 0.7 },
-                            loc_list=loc_list, image_loc= imagePath,
+                            loc_list=loc_list_PDMS, image_loc= imagePath,
                             visualize=False, nms_thresh=0.3)
+
+        pocket_LPMQ = LPMQ.run(view=True)
+        pocket_AlQalam = AlQalam.run(view=True)
+        pocket_meQuran = meQuran.run(view=True)
         pocket_PDMS = PDMS.run(view=True)
+        # pocket_LPMQ = LPMQ.run(view=True)
+        # cv2.imshow('main loop', LPMQ.GetOriginalImage())
+
         
         # print(pocketData)
 
