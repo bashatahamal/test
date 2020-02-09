@@ -2,5 +2,7 @@
     "python.pythonPath": "/usr/bin/python3",
     "python.analysis.cacheFolderPath": ".",
     "python.terminal.activateEnvironment": true,
-    "python.terminal.activateEnvInCurrentTerminal": true
+    "python.terminal.activateEnvInCurrentTerminal": true,
+    "python.dataScience.sendSelectionToInteractiveWindow": true,
+    "python.analysis.memory.keepLibraryLocalVariables": true
 }

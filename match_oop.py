@@ -91,7 +91,7 @@ class Marker:
         # return only the bounding boxes that were picked
         return boxes[pick]
  
-    def Match_Template(self, visualize=False):
+    def Match_Template(self, visualize=False, numstep=100):
         #__get template
         # print('.')
         template = cv2.imread(self.GetTemplate_Location())
@@ -119,8 +119,9 @@ class Marker:
         # boundingBoxes = np.ones((1,4), dtype=int)
         boundingBoxes = []
         max_value_list = []
+        print(numstep)
         #__loop over scaled image (start stop numstep) from the back
-        for scale in np.linspace(0.2, 2.0, 100)[::-1]:
+        for scale in np.linspace(0.2, 2.0, numstep)[::-1]:
             resized = imutils.resize(image, width= int(image.shape[1] * scale))
             r = image.shape[1] / float(resized.shape[1])
             #__if resized image smaller than template, then break the loop
@@ -143,6 +144,8 @@ class Marker:
             if visualize == True:
                 #clone = np.dstack([edged, edged, edged])
                 clone = np.dstack([resized, resized, resized])
+                print(clone)
+                cv2.imshow('stack', clone)
                 cv2.rectangle(clone, (maxLoc[0], maxLoc[1]), (maxLoc[0] + tW, maxLoc[1] + tH), (0,0,255), 2)
                 cv2.imshow("Visualizing", clone)
                 cv2.waitKey(0)
@@ -186,9 +189,20 @@ class Font_Wrapper(Marker):
         self._Data = kwargs
         self.nms_thresh = nms_thresh
         self.visualize = visualize
+
         self.image_location = self._Data["image_loc"]
         self.marker_location = self._Data["loc_list"]
         self.marker_thresh = self._Data["thresh_list"]
+
+        for data in self._Data:
+            if data == 'numstep':
+                self.numstep = self._Data["numstep"]
+            else :
+                self.numstep = 0
+            # self.key = self._Data[data]
+            # print(type(self.data))
+        # print(self.key)
+
         self.pocket = {}
         # super().__init__()
         colour_tanwin=[(255,0,255), (0,0,255), (128,0,128), (0,0,128)]
@@ -286,7 +300,7 @@ class Font_Wrapper(Marker):
                 found = True        
         if found == True:
             print('<<<<<<<< View Result >>>>>>>>')
-            cv2.imshow("Detected Image", rectangle_image)
+            cv2.imshow("Detected Image__" + self.GetMarker_Location()[0].split('/')[2], rectangle_image)
         else:
             cv2.imshow("Original Image", rectangle_image)  
             print('not found')
@@ -294,25 +308,23 @@ class Font_Wrapper(Marker):
         cv2.destroyAllWindows()
 
 
-    def run(self, view=False):
+    def run(self, view=False, numstep=100):
          #__tanwin
         # print(self.GetMarker_Thresh())
         print('run() Marker Font')
-        # ori_image = cv2.imread(self.GetImage_Location())
-        # print(self.GetOriginalImage())
-        # self.original_image = cv2.imread(self.GetImage_Location())
+
         gray = cv2.cvtColor(self.GetOriginalImage(), cv2.COLOR_BGR2GRAY)
-        # cv2.imshow('test', image)
-       
-        # image = self.GetOriginalImage()
-        # image_orig=self.GetOrig_Image()
+        if self.numstep == 0:
+            numstep = numstep
+        else:
+            numstep = self.numstep
         pocketData={}
         for x in range(len(self.GetMarker_Thresh())):
             # print(len(template_thresh))
             # print(list(template_thresh.values())[x])
             super().__init__(image = gray, template_thresh = list(self.GetMarker_Thresh().values())[x], 
                              template_loc = self.GetMarker_Location()[x], nms_thresh = self.nms_thresh)
-            (pocketData[x],pocketData[x+len(self.GetMarker_Thresh())]) = super().Match_Template(visualize=self.visualize)
+            (pocketData[x],pocketData[x+len(self.GetMarker_Thresh())]) = super().Match_Template(visualize=self.visualize, numstep=numstep)
             # print(type(pocketData[x]))
 
         for x in range(len(self.GetMarker_Thresh())):
@@ -359,7 +371,7 @@ def main():
                                           'mim_beg'     : 0.7, 'mim_mid'     : 0.7, 
                                           'mim_end_1'   : 0.7, 'mim_end_2'   : 0.7 },
                             loc_list=loc_list_LPMQ, image_loc= imagePath,
-                            visualize=False, nms_thresh=0.3)
+                            visualize=False, nms_thresh=0.3, numstep = 40)
         #__AlQalam_Font
         # print("AlQalam")
         loc_list_AlQalam = sorted(glob.glob('./marker/AlQalam/*.png'))
@@ -394,18 +406,25 @@ def main():
 
         # __Font_Processing
         Processing_Font_Object = [LPMQ, AlQalam, meQuran, PDMS]
+        numstep = 20
 
         max_font_value = 0
+        font_type = 0
         for font_object in Processing_Font_Object:
-            font_object.run()
+            font_object.run(numstep=numstep)
             for value in font_object.GetPocketData().values():
+                # print(value)
                 if type(value) == float:
                     if value > max_font_value:
                         max_font_value = value
                         font_type = font_object
-                        
-        print(font_type.GetMarker_Location()[0])                    
-        font_type.Display_Marker_Result()
+                        # print(font_type)
+
+        # print(font_type.GetMarker_Location()[0].split('/')[2])                    
+        if type(font_type) == type(LPMQ):
+            font_type.Display_Marker_Result()
+        else :
+            print('Not a valuable result found check the numstep!')
 
 
         # AlQalam.run()
@@ -428,4 +447,5 @@ def main():
 
     cv2.destroyAllWindows() 
 
-if __name__ == '__main__':main()
+# if __name__ == '__main__':main()
+exec(main())
