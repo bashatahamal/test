@@ -191,22 +191,9 @@ class Font_Wrapper(Marker):
         self.marker_thresh = self._Data["thresh_list"]
         self.pocket = {}
         # super().__init__()
-        tanwin = 0
-        nun    = 0
-        mim    = 0
-        for key in self.GetMarker_Thresh().keys():
-            x = key.split('_') 
-            if x[0] == 'tanwin':
-                tanwin+=1
-            if x[0] == 'nun':
-                nun+=1
-            if x[0] == 'mim':
-                mim+=1
-        # print('Tanwin {} nun {} mim {}'.format(tanwin, nun, mim))
         colour_tanwin=[(255,0,255), (0,0,255), (128,0,128), (0,0,128)]
         colour_nun   =[(255,0,0), (128,0,0), (255,99,71), (220,20,60), (139,0,0)]
         colour_mim   =[(154,205,50), (107,142,35), (85,107,47), (0,128,0), (34,139,34)]
-
         t = 0
         m = 0
         n = 0
@@ -233,37 +220,48 @@ class Font_Wrapper(Marker):
                 else:
                     m+=1
         # print(self.temp_colour)
-
-        self.pick_colour  =[]
-        reserved_tanwin = tanwin 
-        reserved_nun    = nun 
-        reserved_mim    = mim  
-        for x in range(len(self.GetMarker_Thresh())):
-            if reserved_tanwin <= len(colour_tanwin):
-                if tanwin > 0:
-                    self.pick_colour.append(colour_tanwin[tanwin-1])
-                    tanwin-=1
-                    # print(tanwin)
-            else :
-                if tanwin > 0:
-                    self.pick_colour.append(colour_tanwin[0])
-                    tanwin-=1
-            if reserved_nun <= len(colour_nun):
-                if tanwin <= 0 and nun > 0:
-                    self.pick_colour.append(colour_nun[nun-1])
-                    nun-=1
-            else:
-                if tanwin <= 0 and nun > 0:
-                    self.pick_colour.append(colour_nun[0])
-                    nun-=1
-            if reserved_mim <= len(colour_mim):
-                if nun <= 0 and mim > 0:
-                    self.pick_colour.append(colour_mim[mim-1])
-                    mim-=1
-            else:
-                if nun <= 0 and mim > 0:
-                    self.pick_colour.append(colour_mim[0])
-                    mim-=1
+        # tanwin = 0
+        # nun    = 0
+        # mim    = 0
+        # for key in self.GetMarker_Thresh().keys():
+        #     x = key.split('_') 
+        #     if x[0] == 'tanwin':
+        #         tanwin+=1
+        #     if x[0] == 'nun':
+        #         nun+=1
+        #     if x[0] == 'mim':
+        #         mim+=1
+        # print('Tanwin {} nun {} mim {}'.format(tanwin, nun, mim))
+        # self.pick_colour  =[]
+        # reserved_tanwin = tanwin 
+        # reserved_nun    = nun 
+        # reserved_mim    = mim  
+        # for x in range(len(self.GetMarker_Thresh())):
+        #     if reserved_tanwin <= len(colour_tanwin):
+        #         if tanwin > 0:
+        #             self.pick_colour.append(colour_tanwin[tanwin-1])
+        #             tanwin-=1
+        #             # print(tanwin)
+        #     else :
+        #         if tanwin > 0:
+        #             self.pick_colour.append(colour_tanwin[0])
+        #             tanwin-=1
+        #     if reserved_nun <= len(colour_nun):
+        #         if tanwin <= 0 and nun > 0:
+        #             self.pick_colour.append(colour_nun[nun-1])
+        #             nun-=1
+        #     else:
+        #         if tanwin <= 0 and nun > 0:
+        #             self.pick_colour.append(colour_nun[0])
+        #             nun-=1
+        #     if reserved_mim <= len(colour_mim):
+        #         if nun <= 0 and mim > 0:
+        #             self.pick_colour.append(colour_mim[mim-1])
+        #             mim-=1
+        #     else:
+        #         if nun <= 0 and mim > 0:
+        #             self.pick_colour.append(colour_mim[0])
+        #             mim-=1
         # print(self.pick_colour)
 
     def GetMarker_Thresh(self):
@@ -303,7 +301,7 @@ class Font_Wrapper(Marker):
         # ori_image = cv2.imread(self.GetImage_Location())
         # print(self.GetOriginalImage())
         # self.original_image = cv2.imread(self.GetImage_Location())
-        image = cv2.cvtColor(self.GetOriginalImage(), cv2.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(self.GetOriginalImage(), cv2.COLOR_BGR2GRAY)
         # cv2.imshow('test', image)
        
         # image = self.GetOriginalImage()
@@ -312,7 +310,7 @@ class Font_Wrapper(Marker):
         for x in range(len(self.GetMarker_Thresh())):
             # print(len(template_thresh))
             # print(list(template_thresh.values())[x])
-            super().__init__(image = image, template_thresh = list(self.GetMarker_Thresh().values())[x], 
+            super().__init__(image = gray, template_thresh = list(self.GetMarker_Thresh().values())[x], 
                              template_loc = self.GetMarker_Location()[x], nms_thresh = self.nms_thresh)
             (pocketData[x],pocketData[x+len(self.GetMarker_Thresh())]) = super().Match_Template(visualize=self.visualize)
             # print(type(pocketData[x]))
@@ -324,23 +322,24 @@ class Font_Wrapper(Marker):
             self.GetPocketData()['box_'+ temp]  = pocketData[x]
 
         if view == True:
-            rectangle_image = self.GetOriginalImage()
-            found = False
-            for x in range(len(self.GetMarker_Thresh())):
-                if type(pocketData[x]) == type(np.array([])) :
-                    for (startX, startY, endX, endY) in pocketData[x]:
-                        cv2.rectangle(rectangle_image, (startX, startY), (endX, endY), self.pick_colour[x], 2)
-                    # print(self.pick_colour[x])
-                    found = True        
-            if found == True:
-                print('<<<<<<<< View Result >>>>>>>>')
-                cv2.imshow("Detected Image", rectangle_image)
-            else:
-                cv2.imshow("Original Image", rectangle_image)  
-                print('not found')
+            self.Display_Marker_Result()
+            # rectangle_image = self.GetOriginalImage()
+            # found = False
+            # for x in range(len(self.GetMarker_Thresh())):
+            #     if type(pocketData[x]) == type(np.array([])) :
+            #         for (startX, startY, endX, endY) in pocketData[x]:
+            #             cv2.rectangle(rectangle_image, (startX, startY), (endX, endY), self.pick_colour[x], 2)
+            #         # print(self.pick_colour[x])
+            #         found = True        
+            # if found == True:
+            #     print('<<<<<<<< View Result >>>>>>>>')
+            #     cv2.imshow("Detected Image", rectangle_image)
+            # else:
+            #     cv2.imshow("Original Image", rectangle_image)  
+            #     print('not found')
 
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
+            # cv2.waitKey(0)
+            # cv2.destroyAllWindows()
     
         # return pocket
 
@@ -393,7 +392,22 @@ def main():
                             loc_list=loc_list_PDMS, image_loc= imagePath,
                             visualize=False, nms_thresh=0.3)
 
-        LPMQ.run()
+        # __Font_Processing
+        Processing_Font_Object = [LPMQ, AlQalam, meQuran, PDMS]
+
+        max_font_value = 0
+        for font_object in Processing_Font_Object:
+            font_object.run()
+            for value in font_object.GetPocketData().values():
+                if type(value) == float:
+                    if value > max_font_value:
+                        max_font_value = value
+                        font_type = font_object
+                        
+        print(font_type.GetMarker_Location()[0])                    
+        font_type.Display_Marker_Result()
+
+
         # AlQalam.run()
         # for key in LPMQ.GetMarker_Thresh().keys():
         #     print(key)
