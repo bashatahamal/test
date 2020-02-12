@@ -1,4 +1,5 @@
 # import argparse
+import matplotlib.pyplot as plt
 import numpy as np
 import imutils
 import glob
@@ -160,9 +161,9 @@ class Marker:
             #                                 cv2.THRESH_BINARY, 11, 2)
             # Adaptive threshold value is the weighted sum of neighbourhood
             # values where weights are a gaussian window
-            resized = cv2.adaptiveThreshold(resized, 255,
-                                            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                            cv2.THRESH_BINARY, 11, 2)
+            # resized = cv2.adaptiveThreshold(resized, 255,
+            #                                 cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+            #                                 cv2.THRESH_BINARY, 11, 2)
             result = cv2.matchTemplate(resized, template, cv2.TM_CCOEFF_NORMED)
             (_, maxVal, _, maxLoc) = cv2.minMaxLoc(result)
             if visualize:
@@ -219,6 +220,7 @@ class FontWrapper(Marker):
         self.image_location = self._Data["image_loc"]
         self.marker_location = self._Data["loc_list"]
         self.marker_thresh = self._Data["thresh_list"]
+        self.image = self._Data["image"]
 
         for data in self._Data:
             if data == 'numstep':
@@ -329,6 +331,9 @@ class FontWrapper(Marker):
     def get_object_result(self):
         return self.pocket
 
+    def get_image(self):
+        return self.image
+
     def get_object_name(self):
         return self.get_marker_location()[0].split('/')[2]
 
@@ -359,7 +364,7 @@ class FontWrapper(Marker):
         # print(self.get_marker_thresh())
         print('run() Marker Font')
 
-        gray = cv2.cvtColor(self.get_original_image(), cv2.COLOR_BGR2GRAY)
+        # gray = cv2.cvtColor(self.get_original_image(), cv2.COLOR_BGR2GRAY)
         if self.numstep == 0:
             numstep = numstep
         else:
@@ -369,7 +374,7 @@ class FontWrapper(Marker):
         for x in range(len(self.get_marker_thresh())):
             # print(len(template_thresh))
             # print(list(template_thresh.values())[x])
-            super().__init__(image=gray,
+            super().__init__(image=self.get_image,
                              template_thresh=list(
                                  self.get_marker_thresh().values())[x],
                              template_loc=self.get_marker_location()[x],
@@ -392,81 +397,133 @@ class FontWrapper(Marker):
         # return pocket
 
 
+def font(imagePath, image):
+    # LPMQ_Font
+    # print("LPMQ")
+    loc_list_LPMQ = sorted(glob.glob('./marker/LPMQ/*.png'))
+    font_LPMQ = FontWrapper(thresh_list={'tanwin_1': 0.7, 'tanwin_2': 0.7,
+                                         'nun_stand': 0.7, 'nun_beg_1': 0.7,
+                                         'nun_beg_2': 0.7, 'nun_mid': 0.7,
+                                         'nun_end': 0.7, 'mim_stand': 0.7,
+                                         'mim_beg': 0.7, 'mim_mid': 0.7,
+                                         'mim_end_1': 0.7, 'mim_end_2': 0.7},
+                            loc_list=loc_list_LPMQ, image_loc=imagePath,
+                            image=image, visualize=False, nms_thresh=0.3,
+                            numstep=30)
+    # AlQalam_Font
+    # print("AlQalam")
+    loc_list_AlQalam = sorted(glob.glob('./marker/AlQalam/*.png'))
+    font_AlQalam = FontWrapper(thresh_list={'tanwin_1': 0.7, 'tanwin_2': 0.7,
+                                            'nun_stand': 0.7, 'nun_beg': 0.7,
+                                            'nun_mid': 0.7, 'nun_end': 0.7,
+                                            'mim_stand': 0.7, 'mim_beg': 0.7,
+                                            'mim_mid': 0.7, 'mim_end': 0.7},
+                               loc_list=loc_list_AlQalam, image_loc=imagePath,
+                               image=image, visualize=False, nms_thresh=0.3)
+    # meQuran_Font
+    # print("meQuran")
+    loc_list_meQuran = sorted(glob.glob('./marker/meQuran/*.png'))
+    font_meQuran = FontWrapper(thresh_list={'tanwin_1': 0.7, 'tanwin_2': 0.7,
+                                            'nun_stand': 0.7, 'nun_beg_1': 0.7,
+                                            'nun_beg_2': 0.7, 'nun_mid': 0.7,
+                                            'nun_end': 0.7, 'mim_stand': 0.7,
+                                            'mim_beg': 0.7, 'mim_mid': 0.7,
+                                            'mim_end_1': 0.7, 'mim_end_2': 0.7},
+                               loc_list=loc_list_meQuran, image_loc=imagePath,
+                               image=image, visualize=False, nms_thresh=0.3)
+    # PDMS_Font
+    # print("PDMS")
+    loc_list_PDMS = sorted(glob.glob('./marker/PDMS/*.png'))
+    font_PDMS = FontWrapper(thresh_list={'tanwin_1': 0.7, 'tanwin_2': 0.7,
+                                         'nun_stand': 0.7, 'nun_beg': 0.7,
+                                         'nun_mid': 0.7, 'nun_end': 0.7,
+                                         'mim_stand': 0.7, 'mim_beg': 0.7,
+                                         'mim_mid': 0.7, 'mim_end': 0.7},
+                            loc_list=loc_list_PDMS, image_loc=imagePath,
+                            image=image, visualize=False, nms_thresh=0.3)
 
-def main():
+    list_object_font = [font_LPMQ, font_AlQalam, font_meQuran, font_PDMS]
+
+    return list_object_font
+
+
+def vertical_projection(image):
+    image[image < 127] = 1
+    image[image >= 127] = 0
+    projection = np.sum(image, axis=0)
+
+    return projection
+
+
+def horizontal_projection(image):
+    image[image < 127] = 1
+    image[image >= 127] = 0
+    projection = np.sum(image, axis=1)
+
+    return projection
+
+# def main():
     # for imagePath in sorted(glob.glob(args["images"] + "/*.png")):
 
-    for imagePath in sorted(glob.glob("test" + "/*.png")):
-        print('________________Next File_________________')
-        # LPMQ_Font
-        # print("LPMQ")
-        loc_list_LPMQ = sorted(glob.glob('./marker/LPMQ/*.png'))
-        LPMQ = FontWrapper(thresh_list={'tanwin_1': 0.7, 'tanwin_2': 0.7,
-                                        'nun_stand': 0.7, 'nun_beg_1': 0.7,
-                                        'nun_beg_2': 0.7, 'nun_mid': 0.7,
-                                        'nun_end': 0.7, 'mim_stand': 0.7,
-                                        'mim_beg': 0.7, 'mim_mid': 0.7,
-                                        'mim_end_1': 0.7, 'mim_end_2': 0.7},
-                           loc_list=loc_list_LPMQ, image_loc=imagePath,
-                           visualize=False, nms_thresh=0.3, numstep=30)
-        # AlQalam_Font
-        # print("AlQalam")
-        loc_list_AlQalam = sorted(glob.glob('./marker/AlQalam/*.png'))
-        AlQalam = FontWrapper(thresh_list={'tanwin_1': 0.7, 'tanwin_2': 0.7,
-                                           'nun_stand': 0.7, 'nun_beg': 0.7,
-                                           'nun_mid': 0.7, 'nun_end': 0.7,
-                                           'mim_stand': 0.7, 'mim_beg': 0.7,
-                                           'mim_mid': 0.7, 'mim_end': 0.7},
-                              loc_list=loc_list_AlQalam, image_loc=imagePath,
-                              visualize=False, nms_thresh=0.3)
-        # meQuran_Font
-        # print("meQuran")
-        loc_list_meQuran = sorted(glob.glob('./marker/meQuran/*.png'))
-        meQuran = FontWrapper(thresh_list={'tanwin_1': 0.7, 'tanwin_2': 0.7,
-                                           'nun_stand': 0.7, 'nun_beg_1': 0.7,
-                                           'nun_beg_2': 0.7, 'nun_mid': 0.7,
-                                           'nun_end': 0.7, 'mim_stand': 0.7,
-                                           'mim_beg': 0.7, 'mim_mid': 0.7,
-                                           'mim_end_1': 0.7, 'mim_end_2': 0.7},
-                              loc_list=loc_list_meQuran, image_loc=imagePath,
-                              visualize=False, nms_thresh=0.3)
-        # PDMS_Font
-        # print("PDMS")
-        loc_list_PDMS = sorted(glob.glob('./marker/PDMS/*.png'))
-        PDMS = FontWrapper(thresh_list={'tanwin_1': 0.7, 'tanwin_2': 0.7,
-                                        'nun_stand': 0.7, 'nun_beg': 0.7,
-                                        'nun_mid': 0.7, 'nun_end': 0.7,
-                                        'mim_stand': 0.7, 'mim_beg': 0.7,
-                                        'mim_mid': 0.7, 'mim_end': 0.7},
-                           loc_list=loc_list_PDMS, image_loc=imagePath,
-                           visualize=False, nms_thresh=0.3)
+for imagePath in sorted(glob.glob("temp" + "/*.png")):
+    print('________________Next File_________________')
+    original_image = cv2.imread(imagePath)
+    image = cv2.cvtColor(original_image, cv2.COLOR_BGR2GRAY)
+    # Otsu threshold
+    # ret_img, image1 = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY
+    #                                + cv2.THRESH_OTSU)
+    # Simple threshold
+    # ret_img, image2 = cv2.threshold(image, 127, 255, cv2.THRESH_BINARY)
+    # Adaptive threshold value is the mean of neighbourhood area
+    # image = cv2.adaptiveThreshold(image, 255, cv2.ADAPTIVE_THRESH_MEAN_C,
+    #                               cv2.THRESH_BINARY, 11, 2)
+    # Adaptive threshold value is the weighted sum of neighbourhood
+    # values where weights are a gaussian window
+    image = cv2.adaptiveThreshold(image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                  cv2.THRESH_BINARY, 11, 2)
+    # cv2.imshow('otsu', image1)
+    # cv2.imshow('simple', image2)
+    # cv2.imshow('adapt mean', image3)
+    # cv2.imshow('adapt gaussian', image4)
+    # cv2.waitKey(0)
+    
+    
+    # Font_Processing
+    font_list = font(imagePath=imagePath, image = image)
 
-        # Font_Processing
-        # processing_object = [LPMQ, AlQalam, meQuran, PDMS]
-        processing_object = [LPMQ]
-        numstep = 20
+    max_font_value = 0
+    font_type = 0
+    numstep = 20
+    for font_object in font_list:
+        font_object.run(numstep=numstep)
+        for value in font_object.get_object_result().values():
+            # print(value)
+            if type(value) == float:
+                if value > max_font_value:
+                    max_font_value = value
+                    font_type = font_object
 
-        max_font_value = 0
-        font_type = 0
-        for font_object in processing_object:
-            font_object.run(numstep=numstep)
-            for value in font_object.get_object_result().values():
-                # print(value)
-                if type(value) == float:
-                    if value > max_font_value:
-                        max_font_value = value
-                        font_type = font_object
-                        # print(font_type)
-
-        # print(font_type.get_object_name)
-        if isinstance(font_type, type(LPMQ)):
-            font_type.display_marker_result()
-        else:
-            print('Not a valuable result found check the numstep!')
-
-    cv2.destroyAllWindows()
+    if isinstance(font_type, type(font_list[0])):
+        font_type.display_marker_result()
+    else:
+        print('Not a valuable result found check the numstep!')
 
 
-if __name__ == '__main__':
-    main()
+    # pixel_value = font_LPMQ.get_original_image()
+    # pixel_gray = cv2.cvtColor(pixel_value, cv2.COLOR_BGR2GRAY)
+    # v_projection = vertical_projection(pixel_gray.copy())
+    # h_projection = horizontal_projection(pixel_gray.copy())
+    # plt.subplot(212), plt.imshow(pixel_gray)
+    # plt.subplot(221), plt.plot(np.arange(0, len(v_projection), 1), v_projection)
+    # plt.subplot(222), plt.plot(np.arange(0, len(h_projection), 1), h_projection)
+    # # plt.xlim([0,256])
+    # plt.show()
+
+
+
+cv2.destroyAllWindows()
+
+
+# if __name__ == '__main__':
+#     main()
 # exec(main())

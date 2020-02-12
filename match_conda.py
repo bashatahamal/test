@@ -3,6 +3,7 @@ import numpy as np
 import imutils
 import glob
 import cv2
+import matplotlib.pyplot as plt
 
 # Argument parser
 # ap = argparse.ArgumentParser()
@@ -395,13 +396,18 @@ class FontWrapper(Marker):
 # def main():
 # for imagePath in sorted(glob.glob(args["images"] + "/*.png")):
 
-def get_horizontal_projection(image):
+def vertical_projection(image):
+    image[image < 127] = 1
+    image[image >= 127] = 0
+    projection = np.sum(image, axis=0)
+
+    return projection
+def horizontal_projection(image):
     image[image < 127] = 1
     image[image >= 127] = 0
     projection = np.sum(image, axis=1)
 
     return projection
-
 
 for imagePath in sorted(glob.glob("temp" + "/*.png")):
     print('________________Next File_________________')
@@ -467,7 +473,13 @@ for imagePath in sorted(glob.glob("temp" + "/*.png")):
 
     pixel_value = LPMQ.get_original_image()
     pixel_gray = cv2.cvtColor(pixel_value, cv2.COLOR_BGR2GRAY)
-    projection = get_horizontal_projection(pixel_gray.copy())
+    v_projection = vertical_projection(pixel_gray.copy())
+    h_projection = horizontal_projection(pixel_gray.copy())
+    plt.subplot(212), plt.imshow(pixel_gray)
+    plt.subplot(221), plt.plot(np.arange(0, len(v_projection), 1), v_projection)
+    plt.subplot(222), plt.plot(np.arange(0, len(h_projection), 1), h_projection)
+    # plt.xlim([0,256])
+    plt.show()
     # print(font_type.get_object_name)
     if isinstance(font_type, type(LPMQ)):
         font_type.display_marker_result()
