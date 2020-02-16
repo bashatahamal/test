@@ -447,243 +447,314 @@ def font(imagePath, image):
     return list_object_font
 
 
-def vertical_projection(image):
-    image[image < 127] = 1
-    image[image >= 127] = 0
-    projection = np.sum(image, axis=0)
-
-    return projection
-
-
-def horizontal_projection(image):
-    image[image < 127] = 1
-    image[image >= 127] = 0
-    projection = np.sum(image, axis=1)
-
-    return projection
-
-# def main():
-    # for imagePath in sorted(glob.glob(args["images"] + "/*.png")):
-
-for imagePath in sorted(glob.glob("temp" + "/*.png")):
-    print('________________Next File_________________')
-    original_image = cv2.imread(imagePath)
-    gray = cv2.cvtColor(original_image, cv2.COLOR_BGR2GRAY)
-    template = cv2.Canny(gray, 50, 200)
-    # Otsu threshold
-    # ret_img, image1 = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY
-    #                                + cv2.THRESH_OTSU)
-    # Simple threshold
-    # ret_img, image2 = cv2.threshold(image, 127, 255, cv2.THRESH_BINARY)
-    # Adaptive threshold value is the mean of neighbourhood area
-    # image = cv2.adaptiveThreshold(image, 255, cv2.ADAPTIVE_THRESH_MEAN_C,
-    #                               cv2.THRESH_BINARY, 11, 2)
-    # Adaptive threshold value is the weighted sum of neighbourhood
-    # values where weights are a gaussian window
-    image = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                  cv2.THRESH_BINARY, 11, 2)
-    # cv2.imshow('otsu', image1)
-    # cv2.imshow('simple', image2)
-    # cv2.imshow('adapt mean', image3)
-    # cv2.imshow('adapt gaussian', image4)
-    # cv2.waitKey(0)
+class ImageProcessing():
+    def __init__(self, **kwargs):
+        self._Data = kwargs
+        self.original_image = self._Data['original_image']
+        # self.image = self._Data['image']
     
-    # Font_Processing
-    font_list = font(imagePath=imagePath, image=gray)
 
-    # max_font_value = 0
-    # font_type = 0
-    # numstep = 20
-    # for font_object in font_list:
-    #     font_object.run(numstep=numstep)
-    #     for value in font_object.get_object_result().values():
-    #         # print(value)
-    #         if type(value) == float:
-    #             if value > max_font_value:
-    #                 max_font_value = value
-    #                 font_type = font_object
+    def vertical_projection(image):
+        image[image < 127] = 1
+        image[image >= 127] = 0
+        projection = np.sum(image, axis=0)
 
-    # if isinstance(font_type, type(font_list[0])):
-    #     font_type.display_marker_result()
-    # else:
-    #     print('Not a valuable result found check the numstep!')
+        return self.v_projection
 
 
-    pixel_gray = image
-    # pixel_gray = cv2.cvtColor(pixel_value, cv2.COLOR_BGR2GRAY)
-    v_projection = vertical_projection(pixel_gray.copy())
-    h_projection = horizontal_projection(pixel_gray.copy())
-    # plt.subplot(212), plt.imshow(pixel_gray)
-    # plt.subplot(221), plt.plot(np.arange(0, len(v_projection), 1), v_projection)
-    # plt.subplot(222), plt.plot(np.arange(0, len(h_projection), 1), h_projection)
-    # # plt.xlim([0,256])
-    # # plt.show()
-    # cv2.waitKey(0)
+    def horizontal_projection(image):
+        image[image < 127] = 1
+        image[image >= 127] = 0
+        projection = np.sum(image, axis=1)
 
-    diff = [0]
-    for x in range(len(h_projection)):
-        if x > 0:
-            temp_diff = abs(int(h_projection[x]) - int(h_projection[x-1]))
-            diff.append(temp_diff)
+        return self.h_projection
 
-    base_start = 0
-    base_end = 0
-    temp = 0
-    for x in range(len(diff)):
-        if diff[x] > temp:
-            temp = diff[x]
-            base_end = x
+    def detect_horizontal_line(self):
+         # Detect line horizontal
+        h_projection = self.h_projection
+        v_projection = self.v_projection
+        start_point = self.start_point
+        up_flag = 0
+        down_flag = 0
+        pixel_limit = 4
+        start_to_end = 0
+        end_to_start = 0
+        start_point = []
+        for x in range(len(h_projection)):
+            if h_projection[x] == 0 and up_flag == 1:
+                start_point.append(x)
+                down_flag = 1
+                up_flag = 0
 
-    temp = 0 
-    for x in range(len(diff)):
-        if x == base_end:
-            continue
-        if diff[x] > temp:
-            temp = diff[x]
-            base_start = x
-
-    cv2.line(original_image, (0, base_start), (len(v_projection),
-             base_start), (0, 255, 0), 2)
-    cv2.line(original_image, (0, base_end), (len(v_projection),
-             base_end), (0, 255, 0), 2)
-
-    up_flag = 0
-    down_flag = 0
-    pixel_limit = 4
-    start_to_end = 0
-    end_to_start = 0
-    start_point = []
-    for x in range(len(h_projection)):
-        if h_projection[x]==0 and up_flag==1: #and start_to_end>pixel_limit:
-            start_point.append(x)
-            down_flag = 1
-                # if len(start_point)!=len(end_point):
-                #     del(start_point[len(start_point)
-                #     -(len(start_point)-len(end_point))])
-                # count=0
-            # print('end')
-            up_flag = 0
-
-        if up_flag==1:
-            start_to_end += 1
-        else:
-            start_to_end = 0
-        
-        if down_flag==1:
-            end_to_start += 1
-            # print(end_to_start)
-        else:
-            end_to_start = 0
-             
-        if h_projection[x]>0 and up_flag==0:
-            # if count>=pixel_limit
-            start_point.append(x)
-            if down_flag==1 and end_to_start<pixel_limit:
-                del(start_point[len(start_point)-1])
-                del(start_point[len(start_point)-1])
-                # print('delete')
-            # print(count)
-            up_flag = 1
-            down_flag = 0
-        # count+=1
-
-    up_flag = 0
-    down_flag = 0
-    pixel_limit_v = 4
-    start_to_end_v = 0
-    end_to_start_v = 0
-    start_point_v = []
-    for x in range(len(v_projection)):
-        if v_projection[x]>0 and up_flag==0:
-            start_point_v.append(x)
-            up_flag = 1
-            down_flag =0
-
-        if v_projection[x]==0 and up_flag==1:
-            start_point_v.append(x)
-            down_flag = 1
-            up_flag = 0
-
-        if up_flag==1:
-            start_to_end_v += 1
-        else:
-            start_to_end_v = 0
-
-        if down_flag==1:
-            end_to_start_v += 1
-        else:
-            end_to_start_v = 0
+            if up_flag == 1:
+                start_to_end += 1
+            else:
+                start_to_end = 0
             
-    # Even is begining of line and Odd is end of line
-    for x in range(len(start_point)):
-        # cv2.line(original_image, (0, start_point[x]), (len(v_projection),
-        #          start_point[x]), (0, 0, 255), 2)
-        # print(x)
-        if x%2==0:     # Start_point
-            cv2.line(original_image, (0, start_point[x]), (len(v_projection),
-                     start_point[x]), (0, 0, 255), 2)
+            if down_flag == 1:
+                end_to_start += 1
+                # print(end_to_start)
+            else:
+                end_to_start = 0
+                
+            if h_projection[x] > 0 and up_flag == 0:
+                # if count>=pixel_limit
+                start_point.append(x)
+                if down_flag == 1 and end_to_start < pixel_limit:
+                    del(start_point[len(start_point)-1])
+                    del(start_point[len(start_point)-1])
+                    # print('delete')
+                # print(count)
+                up_flag = 1
+                down_flag = 0
+
+        # Even is begining of line and Odd is end of line
+        for x in range(len(start_point)):
+            # cv2.line(original_image, (0, start_point[x]), (len(v_projection),
+            #          start_point[x]), (0, 0, 255), 2)
             # print(x)
-        else:         # End_point
-            cv2.line(original_image, (0, start_point[x]), (len(v_projection),
-                     start_point[x]), (255, 0, 0), 2)
-            # print(x)
-            # print('end')
-
-    for x in range(len(start_point_v)):
-        if x%2==0:
-            cv2.line(original_image, (start_point_v[x], 0), (start_point_v[x],
-                     len(h_projection)), (0,0,255), 2)
-        else:
-            cv2.line(original_image, (start_point_v[x], 0), (start_point_v[x],
-                     len(h_projection)), (255,0,0), 2)
-
-    cv2.imshow('line', original_image)
-    cv2.waitKey(0)
-
-    print(start_point)
-    bag_of_h_crop = {}
-    for x in range(len(start_point)):
-        if x+2 > len(start_point):
-            print('x')
-            continue
-        if x%2==0:
-            bag_of_h_crop[x]=original_image[start_point[x]:start_point[x+1], :]
-    # print(bag_of_h_crop)
-    for image in bag_of_h_crop:
-        cv2.imshow('bag_h', bag_of_h_crop[image])
+            if x % 2 == 0:     # Start_point
+                cv2.line(self.original_image, (0, start_point[x]), 
+                         (len(v_projection), start_point[x]), (0, 0, 255), 2)
+                # print(x)
+            else:         # End_point
+                cv2.line(self.original_image, (0, start_point[x]),
+                         (len(v_projection), start_point[x]), (255, 0, 0), 2)
+        cv2.imshow('line', self.original_image)
         cv2.waitKey(0)
-        # cv2.destroyAllWindows()
-
-    bag_of_v_crop = {}
-    count=0
-    for image in bag_of_h_crop:
-        # print(image)
-        #y = int(image/2)
-        for x in range(len(start_point_v)):
-            #print('inside loop')
-            print(image)
-            count+=1
-            if x%2==0:
-                x1 = start_point[image]
-                x2 = start_point[image+1]
-                y1 = start_point_v[x]
-                y2 = start_point_v[x+1]
-                bag_of_v_crop[count]=original_image[x1:x2, y1:y2]
-            # print(x1,'_', x2,'_', y1,'_', y2)
+                # print(x)
+                # print('end')
 
 
-    for image in bag_of_v_crop:
-        cv2.imshow('Crop Result', bag_of_v_crop[image])
-        cv2.waitKey(0)
-        # cv2.destroyAllWindows()
+
+def main():
+    # for imagePath in sorted(glob.glob(args["images"] + "/*.png")):
+    for imagePath in sorted(glob.glob("temp" + "/*.png")):
+        print('________________Next File_________________')
+        original_image = cv2.imread(imagePath)
+        gray = cv2.cvtColor(original_image, cv2.COLOR_BGR2GRAY)
+        template = cv2.Canny(gray, 50, 200)
+        # Otsu threshold
+        # ret_img, image1 = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY
+        #                                + cv2.THRESH_OTSU)
+        # Simple threshold
+        # ret_img, image2 = cv2.threshold(image, 127, 255, cv2.THRESH_BINARY)
+        # Adaptive threshold value is the mean of neighbourhood area
+        # image = cv2.adaptiveThreshold(image, 255, cv2.ADAPTIVE_THRESH_MEAN_C,
+        #                               cv2.THRESH_BINARY, 11, 2)
+        # Adaptive threshold value is the weighted sum of neighbourhood
+        # values where weights are a gaussian window
+        image = cv2.adaptiveThreshold(gray, 255, 
+                                      cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+                                      cv2.THRESH_BINARY, 11, 2)
+        # cv2.imshow('otsu', image1)
+        # cv2.imshow('simple', image2)
+        # cv2.imshow('adapt mean', image3)
+        # cv2.imshow('adapt gaussian', image4)
+        # cv2.waitKey(0)
+        
+        # Font_Processing
+        font_list = font(imagePath=imagePath, image=gray)
+
+        # max_font_value = 0
+        # font_type = 0
+        # numstep = 20
+        # for font_object in font_list:
+        #     font_object.run(numstep=numstep)
+        #     for value in font_object.get_object_result().values():
+        #         # print(value)
+        #         if type(value) == float:
+        #             if value > max_font_value:
+        #                 max_font_value = value
+        #                 font_type = font_object
+
+        # if isinstance(font_type, type(font_list[0])):
+        #     font_type.display_marker_result()
+        # else:
+        #     print('Not a valuable result found check the numstep!')
 
 
-cv2.destroyAllWindows()
+        pixel_gray = image
+        # pixel_gray = cv2.cvtColor(pixel_value, cv2.COLOR_BGR2GRAY)
+        # v_projection = vertical_projection(pixel_gray.copy())
+        # h_projection = horizontal_projection(pixel_gray.copy())
+        # plt.subplot(212), plt.imshow(pixel_gray)
+        # plt.subplot(221), plt.plot(np.arange(0, len(v_projection), 1), v_projection)
+        # plt.subplot(222), plt.plot(np.arange(0, len(h_projection), 1), h_projection)
+        # # plt.xlim([0,256])
+        # # plt.show()
+        # cv2.waitKey(0)
+        input_image = ImageProcessing('original_image'=image)
+        input_image.vertical_projection(image)
+        input_image.horizontal_projection(image)
+        input_image.detect_horizontal_line()
+
+
+
+
+    #     # Detect line horizontal
+    #     up_flag = 0
+    #     down_flag = 0
+    #     pixel_limit = 4
+    #     start_to_end = 0
+    #     end_to_start = 0
+    #     start_point = []
+    #     for x in range(len(h_projection)):
+    #         if h_projection[x] == 0 and up_flag == 1:
+    #             start_point.append(x)
+    #             down_flag = 1
+    #             up_flag = 0
+
+    #         if up_flag == 1:
+    #             start_to_end += 1
+    #         else:
+    #             start_to_end = 0
+            
+    #         if down_flag == 1:
+    #             end_to_start += 1
+    #             # print(end_to_start)
+    #         else:
+    #             end_to_start = 0
+                
+    #         if h_projection[x] > 0 and up_flag == 0:
+    #             # if count>=pixel_limit
+    #             start_point.append(x)
+    #             if down_flag == 1 and end_to_start < pixel_limit:
+    #                 del(start_point[len(start_point)-1])
+    #                 del(start_point[len(start_point)-1])
+    #                 # print('delete')
+    #             # print(count)
+    #             up_flag = 1
+    #             down_flag = 0
+
+    #     # Even is begining of line and Odd is end of line
+    #     for x in range(len(start_point)):
+    #         # cv2.line(original_image, (0, start_point[x]), (len(v_projection),
+    #         #          start_point[x]), (0, 0, 255), 2)
+    #         # print(x)
+    #         if x % 2 == 0:     # Start_point
+    #             cv2.line(original_image, (0, start_point[x]), 
+    #                      (len(v_projection), start_point[x]), (0, 0, 255), 2)
+    #             # print(x)
+    #         else:         # End_point
+    #             cv2.line(original_image, (0, start_point[x]),
+    #                      (len(v_projection), start_point[x]), (255, 0, 0), 2)
+    #             # print(x)
+    #             # print('end')
+
+    #     diff = [0]
+    #     for x in range(len(h_projection)):
+    #         if x > 0:
+    #             temp_diff = abs(int(h_projection[x]) - int(h_projection[x-1]))
+    #             diff.append(temp_diff)
+
+    #     base_start = 0
+    #     base_end = 0
+    #     temp = 0
+    #     for x in range(len(diff)):
+    #         if diff[x] > temp:
+    #             temp = diff[x]
+    #             base_end = x
+
+    #     temp = 0 
+    #     for x in range(len(diff)):
+    #         if x == base_end:
+    #             continue
+    #         if diff[x] > temp:
+    #             temp = diff[x]
+    #             base_start = x
+
+    #     cv2.line(original_image, (0, base_start), (len(v_projection),
+    #              base_start), (0, 255, 0), 2)
+    #     cv2.line(original_image, (0, base_end), (len(v_projection),
+    #              base_end), (0, 255, 0), 2)
+
+    
+    #     # Detect line vertical
+    #     up_flag = 0
+    #     down_flag = 0
+    #     pixel_limit_v = 4
+    #     start_to_end_v = 0
+    #     end_to_start_v = 0
+    #     start_point_v = []
+    #     for x in range(len(v_projection)):
+    #         if v_projection[x] > 0 and up_flag == 0:
+    #             start_point_v.append(x)
+    #             up_flag = 1
+    #             down_flag = 0
+
+    #         if v_projection[x] == 0 and up_flag == 1:
+    #             start_point_v.append(x)
+    #             down_flag = 1
+    #             up_flag = 0
+
+    #         if up_flag == 1:
+    #             start_to_end_v += 1
+    #         else:
+    #             start_to_end_v = 0
+
+    #         if down_flag == 1:
+    #             end_to_start_v += 1
+    #         else:
+    #             end_to_start_v = 0
+                
+        
+    #     # Even is begining of line and Odd is end of line
+    #     for x in range(len(start_point_v)):
+    #         if x % 2 == 0:
+    #             cv2.line(original_image, (start_point_v[x], 0),
+    #                      (start_point_v[x], len(h_projection)), (0, 0, 255), 2)
+    #         else:
+    #             cv2.line(original_image, (start_point_v[x], 0), 
+    #                      (start_point_v[x], len(h_projection)), (255, 0, 0), 2)
+
+    #     cv2.imshow('line', original_image)
+    #     cv2.waitKey(0)
+
+    #     print(start_point)
+    #     bag_of_h_crop = {}
+    #     for x in range(len(start_point)):
+    #         if x + 2 > len(start_point):
+    #             print('x')
+    #             continue
+    #         if x % 2 == 0:
+    #             bag_of_h_crop[x] = original_image[
+    #                                start_point[x]:start_point[x+1], :]
+    #     # print(bag_of_h_crop)
+    #     for image in bag_of_h_crop:
+    #         cv2.imshow('bag_h', bag_of_h_crop[image])
+    #         cv2.waitKey(0)
+    #         # cv2.destroyAllWindows()
+
+    #     bag_of_v_crop = {}
+    #     count = 0
+    #     for image in bag_of_h_crop:
+    #         # print(image)
+    #         #y = int(image/2)
+    #         for x in range(len(start_point_v)):
+    #             #print('inside loop')
+    #             print(image)
+    #             count += 1
+    #             if x % 2 == 0:
+    #                 x1 = start_point[image]
+    #                 x2 = start_point[image+1]
+    #                 y1 = start_point_v[x]
+    #                 y2 = start_point_v[x+1]
+    #                 bag_of_v_crop[count] = original_image[x1:x2, y1:y2]
+    #             # print(x1,'_', x2,'_', y1,'_', y2)
+
+    #     for image in bag_of_v_crop:
+    #         cv2.imshow('Crop Result', bag_of_v_crop[image])
+    #         cv2.waitKey(0)
+    #         # cv2.destroyAllWindows()
+
+    cv2.destroyAllWindows()
 
 # cv2.imshow('crop', view)
 # cv2.waitKey(0)
 # cv2.destroyAllWindows()
 
-# if __name__ == '__main__':
-#     main()
+
+if __name__ == '__main__':
+    main()
 # exec(main())
