@@ -488,9 +488,8 @@ for imagePath in sorted(glob.glob("temp" + "/*.png")):
     # cv2.imshow('adapt gaussian', image4)
     # cv2.waitKey(0)
     
-    
     # Font_Processing
-    font_list = font(imagePath=imagePath, image = gray)
+    font_list = font(imagePath=imagePath, image=gray)
 
     # max_font_value = 0
     # font_type = 0
@@ -510,7 +509,7 @@ for imagePath in sorted(glob.glob("temp" + "/*.png")):
     #     print('Not a valuable result found check the numstep!')
 
 
-    pixel_gray = gray
+    pixel_gray = image
     # pixel_gray = cv2.cvtColor(pixel_value, cv2.COLOR_BGR2GRAY)
     v_projection = vertical_projection(pixel_gray.copy())
     h_projection = horizontal_projection(pixel_gray.copy())
@@ -520,6 +519,33 @@ for imagePath in sorted(glob.glob("temp" + "/*.png")):
     # # plt.xlim([0,256])
     # # plt.show()
     # cv2.waitKey(0)
+
+    diff = [0]
+    for x in range(len(h_projection)):
+        if x > 0:
+            temp_diff = abs(int(h_projection[x]) - int(h_projection[x-1]))
+            diff.append(temp_diff)
+
+    base_start = 0
+    base_end = 0
+    temp = 0
+    for x in range(len(diff)):
+        if diff[x] > temp:
+            temp = diff[x]
+            base_end = x
+
+    temp = 0 
+    for x in range(len(diff)):
+        if x == base_end:
+            continue
+        if diff[x] > temp:
+            temp = diff[x]
+            base_start = x
+
+    cv2.line(original_image, (0, base_start), (len(v_projection),
+             base_start), (0, 255, 0), 2)
+    cv2.line(original_image, (0, base_end), (len(v_projection),
+             base_end), (0, 255, 0), 2)
 
     up_flag = 0
     down_flag = 0
@@ -561,36 +587,34 @@ for imagePath in sorted(glob.glob("temp" + "/*.png")):
             down_flag = 0
         # count+=1
 
-    up_flag_v = 0
-    down_flag_v = 0
+    up_flag = 0
+    down_flag = 0
     pixel_limit_v = 4
     start_to_end_v = 0
     end_to_start_v = 0
     start_point_v = []
     for x in range(len(v_projection)):
-        if v_projection[x]>0 and up_flag_v==0:
+        if v_projection[x]>0 and up_flag==0:
             start_point_v.append(x)
-            up_flag_v = 1
-            down_flag_v =0
+            up_flag = 1
+            down_flag =0
 
-        if v_projection[x]==0 and up_flag_v==1:
+        if v_projection[x]==0 and up_flag==1:
             start_point_v.append(x)
-            down_flag_v = 1
-            up_flag_v = 0
+            down_flag = 1
+            up_flag = 0
 
-        if up_flag_v==1:
+        if up_flag==1:
             start_to_end_v += 1
         else:
             start_to_end_v = 0
 
-        if down_flag_v==1:
+        if down_flag==1:
             end_to_start_v += 1
         else:
             end_to_start_v = 0
-        
-
-
-
+            
+    # Even is begining of line and Odd is end of line
     for x in range(len(start_point)):
         # cv2.line(original_image, (0, start_point[x]), (len(v_projection),
         #          start_point[x]), (0, 0, 255), 2)
@@ -616,8 +640,12 @@ for imagePath in sorted(glob.glob("temp" + "/*.png")):
     cv2.imshow('line', original_image)
     cv2.waitKey(0)
 
+    print(start_point)
     bag_of_h_crop = {}
     for x in range(len(start_point)):
+        if x+2 > len(start_point):
+            print('x')
+            continue
         if x%2==0:
             bag_of_h_crop[x]=original_image[start_point[x]:start_point[x+1], :]
     # print(bag_of_h_crop)
@@ -641,7 +669,7 @@ for imagePath in sorted(glob.glob("temp" + "/*.png")):
                 y1 = start_point_v[x]
                 y2 = start_point_v[x+1]
                 bag_of_v_crop[count]=original_image[x1:x2, y1:y2]
-            print(x1,'_', x2,'_', y1,'_', y2)
+            # print(x1,'_', x2,'_', y1,'_', y2)
 
 
     for image in bag_of_v_crop:

@@ -1,9 +1,9 @@
 # import argparse
+import matplotlib.pyplot as plt
 import numpy as np
 import imutils
 import glob
 import cv2
-import matplotlib.pyplot as plt
 
 # Argument parser
 # ap = argparse.ArgumentParser()
@@ -220,6 +220,7 @@ class FontWrapper(Marker):
         self.image_location = self._Data["image_loc"]
         self.marker_location = self._Data["loc_list"]
         self.marker_thresh = self._Data["thresh_list"]
+        self.image = self._Data["image"]
 
         for data in self._Data:
             if data == 'numstep':
@@ -330,6 +331,9 @@ class FontWrapper(Marker):
     def get_object_result(self):
         return self.pocket
 
+    def get_image(self):
+        return self.image
+
     def get_object_name(self):
         return self.get_marker_location()[0].split('/')[2]
 
@@ -360,7 +364,7 @@ class FontWrapper(Marker):
         # print(self.get_marker_thresh())
         print('run() Marker Font')
 
-        gray = cv2.cvtColor(self.get_original_image(), cv2.COLOR_BGR2GRAY)
+        # gray = cv2.cvtColor(self.get_original_image(), cv2.COLOR_BGR2GRAY)
         if self.numstep == 0:
             numstep = numstep
         else:
@@ -370,7 +374,7 @@ class FontWrapper(Marker):
         for x in range(len(self.get_marker_thresh())):
             # print(len(template_thresh))
             # print(list(template_thresh.values())[x])
-            super().__init__(image=gray,
+            super().__init__(image=self.get_image,
                              template_thresh=list(
                                  self.get_marker_thresh().values())[x],
                              template_loc=self.get_marker_location()[x],
@@ -393,8 +397,55 @@ class FontWrapper(Marker):
         # return pocket
 
 
-# def main():
-# for imagePath in sorted(glob.glob(args["images"] + "/*.png")):
+def font(imagePath, image):
+    # LPMQ_Font
+    # print("LPMQ")
+    loc_list_LPMQ = sorted(glob.glob('./marker/LPMQ/*.png'))
+    font_LPMQ = FontWrapper(thresh_list={'tanwin_1': 0.7, 'tanwin_2': 0.7,
+                                         'nun_stand': 0.7, 'nun_beg_1': 0.7,
+                                         'nun_beg_2': 0.7, 'nun_mid': 0.7,
+                                         'nun_end': 0.7, 'mim_stand': 0.7,
+                                         'mim_beg': 0.7, 'mim_mid': 0.7,
+                                         'mim_end_1': 0.7, 'mim_end_2': 0.7},
+                            loc_list=loc_list_LPMQ, image_loc=imagePath,
+                            image=image, visualize=False, nms_thresh=0.3,
+                            numstep=30)
+    # AlQalam_Font
+    # print("AlQalam")
+    loc_list_AlQalam = sorted(glob.glob('./marker/AlQalam/*.png'))
+    font_AlQalam = FontWrapper(thresh_list={'tanwin_1': 0.7, 'tanwin_2': 0.7,
+                                            'nun_stand': 0.7, 'nun_beg': 0.7,
+                                            'nun_mid': 0.7, 'nun_end': 0.7,
+                                            'mim_stand': 0.7, 'mim_beg': 0.7,
+                                            'mim_mid': 0.7, 'mim_end': 0.7},
+                               loc_list=loc_list_AlQalam, image_loc=imagePath,
+                               image=image, visualize=False, nms_thresh=0.3)
+    # meQuran_Font
+    # print("meQuran")
+    loc_list_meQuran = sorted(glob.glob('./marker/meQuran/*.png'))
+    font_meQuran = FontWrapper(thresh_list={'tanwin_1': 0.7, 'tanwin_2': 0.7,
+                                            'nun_stand': 0.7, 'nun_beg_1': 0.7,
+                                            'nun_beg_2': 0.7, 'nun_mid': 0.7,
+                                            'nun_end': 0.7, 'mim_stand': 0.7,
+                                            'mim_beg': 0.7, 'mim_mid': 0.7,
+                                            'mim_end_1': 0.7, 'mim_end_2': 0.7},
+                               loc_list=loc_list_meQuran, image_loc=imagePath,
+                               image=image, visualize=False, nms_thresh=0.3)
+    # PDMS_Font
+    # print("PDMS")
+    loc_list_PDMS = sorted(glob.glob('./marker/PDMS/*.png'))
+    font_PDMS = FontWrapper(thresh_list={'tanwin_1': 0.7, 'tanwin_2': 0.7,
+                                         'nun_stand': 0.7, 'nun_beg': 0.7,
+                                         'nun_mid': 0.7, 'nun_end': 0.7,
+                                         'mim_stand': 0.7, 'mim_beg': 0.7,
+                                         'mim_mid': 0.7, 'mim_end': 0.7},
+                            loc_list=loc_list_PDMS, image_loc=imagePath,
+                            image=image, visualize=False, nms_thresh=0.3)
+
+    list_object_font = [font_LPMQ, font_AlQalam, font_meQuran, font_PDMS]
+
+    return list_object_font
+
 
 def vertical_projection(image):
     image[image < 127] = 1
@@ -402,6 +453,8 @@ def vertical_projection(image):
     projection = np.sum(image, axis=0)
 
     return projection
+
+
 def horizontal_projection(image):
     image[image < 127] = 1
     image[image >= 127] = 0
@@ -409,85 +462,227 @@ def horizontal_projection(image):
 
     return projection
 
+# def main():
+    # for imagePath in sorted(glob.glob(args["images"] + "/*.png")):
+
 for imagePath in sorted(glob.glob("temp" + "/*.png")):
     print('________________Next File_________________')
-    # LPMQ_Font
-    # print("LPMQ")
-    loc_list_LPMQ = sorted(glob.glob('./marker/LPMQ/*.png'))
-    LPMQ = FontWrapper(thresh_list={'tanwin_1': 0.7, 'tanwin_2': 0.7,
-                                    'nun_stand': 0.7, 'nun_beg_1': 0.7,
-                                    'nun_beg_2': 0.7, 'nun_mid': 0.7,
-                                    'nun_end': 0.7, 'mim_stand': 0.7,
-                                    'mim_beg': 0.7, 'mim_mid': 0.7,
-                                    'mim_end_1': 0.7, 'mim_end_2': 0.7},
-                        loc_list=loc_list_LPMQ, image_loc=imagePath,
-                        visualize=False, nms_thresh=0.3, numstep=30)
-    # AlQalam_Font
-    # print("AlQalam")
-    loc_list_AlQalam = sorted(glob.glob('./marker/AlQalam/*.png'))
-    AlQalam = FontWrapper(thresh_list={'tanwin_1': 0.7, 'tanwin_2': 0.7,
-                                        'nun_stand': 0.7, 'nun_beg': 0.7,
-                                        'nun_mid': 0.7, 'nun_end': 0.7,
-                                        'mim_stand': 0.7, 'mim_beg': 0.7,
-                                        'mim_mid': 0.7, 'mim_end': 0.7},
-                            loc_list=loc_list_AlQalam, image_loc=imagePath,
-                            visualize=False, nms_thresh=0.3)
-    # meQuran_Font
-    # print("meQuran")
-    loc_list_meQuran = sorted(glob.glob('./marker/meQuran/*.png'))
-    meQuran = FontWrapper(thresh_list={'tanwin_1': 0.7, 'tanwin_2': 0.7,
-                                        'nun_stand': 0.7, 'nun_beg_1': 0.7,
-                                        'nun_beg_2': 0.7, 'nun_mid': 0.7,
-                                        'nun_end': 0.7, 'mim_stand': 0.7,
-                                        'mim_beg': 0.7, 'mim_mid': 0.7,
-                                        'mim_end_1': 0.7, 'mim_end_2': 0.7},
-                            loc_list=loc_list_meQuran, image_loc=imagePath,
-                            visualize=False, nms_thresh=0.3)
-    # PDMS_Font
-    # print("PDMS")
-    loc_list_PDMS = sorted(glob.glob('./marker/PDMS/*.png'))
-    PDMS = FontWrapper(thresh_list={'tanwin_1': 0.7, 'tanwin_2': 0.7,
-                                    'nun_stand': 0.7, 'nun_beg': 0.7,
-                                    'nun_mid': 0.7, 'nun_end': 0.7,
-                                    'mim_stand': 0.7, 'mim_beg': 0.7,
-                                    'mim_mid': 0.7, 'mim_end': 0.7},
-                        loc_list=loc_list_PDMS, image_loc=imagePath,
-                        visualize=False, nms_thresh=0.3)
-
+    original_image = cv2.imread(imagePath)
+    gray = cv2.cvtColor(original_image, cv2.COLOR_BGR2GRAY)
+    template = cv2.Canny(gray, 50, 200)
+    # Otsu threshold
+    # ret_img, image1 = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY
+    #                                + cv2.THRESH_OTSU)
+    # Simple threshold
+    # ret_img, image2 = cv2.threshold(image, 127, 255, cv2.THRESH_BINARY)
+    # Adaptive threshold value is the mean of neighbourhood area
+    # image = cv2.adaptiveThreshold(image, 255, cv2.ADAPTIVE_THRESH_MEAN_C,
+    #                               cv2.THRESH_BINARY, 11, 2)
+    # Adaptive threshold value is the weighted sum of neighbourhood
+    # values where weights are a gaussian window
+    image = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                  cv2.THRESH_BINARY, 11, 2)
+    # cv2.imshow('otsu', image1)
+    # cv2.imshow('simple', image2)
+    # cv2.imshow('adapt mean', image3)
+    # cv2.imshow('adapt gaussian', image4)
+    # cv2.waitKey(0)
+    
     # Font_Processing
-    # processing_object = [LPMQ, AlQalam, meQuran, PDMS]
-    processing_object = [LPMQ]
-    numstep = 20
+    font_list = font(imagePath=imagePath, image=gray)
 
-    max_font_value = 0
-    font_type = 0
-    for font_object in processing_object:
-        font_object.run(numstep=numstep)
-        for value in font_object.get_object_result().values():
-            # print(value)
-            if type(value) == float:
-                if value > max_font_value:
-                    max_font_value = value
-                    font_type = font_object
-                    # print(font_type)
+    # max_font_value = 0
+    # font_type = 0
+    # numstep = 20
+    # for font_object in font_list:
+    #     font_object.run(numstep=numstep)
+    #     for value in font_object.get_object_result().values():
+    #         # print(value)
+    #         if type(value) == float:
+    #             if value > max_font_value:
+    #                 max_font_value = value
+    #                 font_type = font_object
 
-    pixel_value = LPMQ.get_original_image()
-    pixel_gray = cv2.cvtColor(pixel_value, cv2.COLOR_BGR2GRAY)
+    # if isinstance(font_type, type(font_list[0])):
+    #     font_type.display_marker_result()
+    # else:
+    #     print('Not a valuable result found check the numstep!')
+
+
+    pixel_gray = image
+    # pixel_gray = cv2.cvtColor(pixel_value, cv2.COLOR_BGR2GRAY)
     v_projection = vertical_projection(pixel_gray.copy())
     h_projection = horizontal_projection(pixel_gray.copy())
-    plt.subplot(212), plt.imshow(pixel_gray)
-    plt.subplot(221), plt.plot(np.arange(0, len(v_projection), 1), v_projection)
-    plt.subplot(222), plt.plot(np.arange(0, len(h_projection), 1), h_projection)
-    # plt.xlim([0,256])
-    plt.show()
-    # print(font_type.get_object_name)
-    if isinstance(font_type, type(LPMQ)):
-        font_type.display_marker_result()
-    else:
-        print('Not a valuable result found check the numstep!')
+    # plt.subplot(212), plt.imshow(pixel_gray)
+    # plt.subplot(221), plt.plot(np.arange(0, len(v_projection), 1), v_projection)
+    # plt.subplot(222), plt.plot(np.arange(0, len(h_projection), 1), h_projection)
+    # # plt.xlim([0,256])
+    # # plt.show()
+    # cv2.waitKey(0)
+
+    diff = [0]
+    for x in range(len(h_projection)):
+        if x > 0:
+            temp_diff = abs(int(h_projection[x]) - int(h_projection[x-1]))
+            diff.append(temp_diff)
+
+    base_start = 0
+    base_end = 0
+    temp = 0
+    for x in range(len(diff)):
+        if diff[x] > temp:
+            temp = diff[x]
+            base_end = x
+
+    temp = 0 
+    for x in range(len(diff)):
+        if x == base_end:
+            continue
+        if diff[x] > temp:
+            temp = diff[x]
+            base_start = x
+
+    cv2.line(original_image, (0, base_start), (len(v_projection),
+             base_start), (0, 255, 0), 2)
+    cv2.line(original_image, (0, base_end), (len(v_projection),
+             base_end), (0, 255, 0), 2)
+
+    up_flag = 0
+    down_flag = 0
+    pixel_limit = 4
+    start_to_end = 0
+    end_to_start = 0
+    start_point = []
+    for x in range(len(h_projection)):
+        if h_projection[x]==0 and up_flag==1: #and start_to_end>pixel_limit:
+            start_point.append(x)
+            down_flag = 1
+                # if len(start_point)!=len(end_point):
+                #     del(start_point[len(start_point)
+                #     -(len(start_point)-len(end_point))])
+                # count=0
+            # print('end')
+            up_flag = 0
+
+        if up_flag==1:
+            start_to_end += 1
+        else:
+            start_to_end = 0
+        
+        if down_flag==1:
+            end_to_start += 1
+            # print(end_to_start)
+        else:
+            end_to_start = 0
+             
+        if h_projection[x]>0 and up_flag==0:
+            # if count>=pixel_limit
+            start_point.append(x)
+            if down_flag==1 and end_to_start<pixel_limit:
+                del(start_point[len(start_point)-1])
+                del(start_point[len(start_point)-1])
+                # print('delete')
+            # print(count)
+            up_flag = 1
+            down_flag = 0
+        # count+=1
+
+    up_flag = 0
+    down_flag = 0
+    pixel_limit_v = 4
+    start_to_end_v = 0
+    end_to_start_v = 0
+    start_point_v = []
+    for x in range(len(v_projection)):
+        if v_projection[x]>0 and up_flag==0:
+            start_point_v.append(x)
+            up_flag = 1
+            down_flag =0
+
+        if v_projection[x]==0 and up_flag==1:
+            start_point_v.append(x)
+            down_flag = 1
+            up_flag = 0
+
+        if up_flag==1:
+            start_to_end_v += 1
+        else:
+            start_to_end_v = 0
+
+        if down_flag==1:
+            end_to_start_v += 1
+        else:
+            end_to_start_v = 0
+            
+    # Even is begining of line and Odd is end of line
+    for x in range(len(start_point)):
+        # cv2.line(original_image, (0, start_point[x]), (len(v_projection),
+        #          start_point[x]), (0, 0, 255), 2)
+        # print(x)
+        if x%2==0:     # Start_point
+            cv2.line(original_image, (0, start_point[x]), (len(v_projection),
+                     start_point[x]), (0, 0, 255), 2)
+            # print(x)
+        else:         # End_point
+            cv2.line(original_image, (0, start_point[x]), (len(v_projection),
+                     start_point[x]), (255, 0, 0), 2)
+            # print(x)
+            # print('end')
+
+    for x in range(len(start_point_v)):
+        if x%2==0:
+            cv2.line(original_image, (start_point_v[x], 0), (start_point_v[x],
+                     len(h_projection)), (0,0,255), 2)
+        else:
+            cv2.line(original_image, (start_point_v[x], 0), (start_point_v[x],
+                     len(h_projection)), (255,0,0), 2)
+
+    cv2.imshow('line', original_image)
+    cv2.waitKey(0)
+
+    print(start_point)
+    bag_of_h_crop = {}
+    for x in range(len(start_point)):
+        if x+2 > len(start_point):
+            print('x')
+            continue
+        if x%2==0:
+            bag_of_h_crop[x]=original_image[start_point[x]:start_point[x+1], :]
+    # print(bag_of_h_crop)
+    for image in bag_of_h_crop:
+        cv2.imshow('bag_h', bag_of_h_crop[image])
+        cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+
+    bag_of_v_crop = {}
+    count=0
+    for image in bag_of_h_crop:
+        # print(image)
+        #y = int(image/2)
+        for x in range(len(start_point_v)):
+            #print('inside loop')
+            print(image)
+            count+=1
+            if x%2==0:
+                x1 = start_point[image]
+                x2 = start_point[image+1]
+                y1 = start_point_v[x]
+                y2 = start_point_v[x+1]
+                bag_of_v_crop[count]=original_image[x1:x2, y1:y2]
+            # print(x1,'_', x2,'_', y1,'_', y2)
+
+
+    for image in bag_of_v_crop:
+        cv2.imshow('Crop Result', bag_of_v_crop[image])
+        cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+
 
 cv2.destroyAllWindows()
 
+# cv2.imshow('crop', view)
+# cv2.waitKey(0)
+# cv2.destroyAllWindows()
 
 # if __name__ == '__main__':
 #     main()
