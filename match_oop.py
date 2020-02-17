@@ -756,7 +756,7 @@ def main():
                                                 height=int(h * scale))
             else:
                 scale = 1
-            # print('Scalling image to ' + str(scale))
+            print('Scalling image to ' + str(scale))
             gray = cv2.cvtColor(temp_image_ori, cv2.COLOR_BGR2GRAY)
 
             temp_image = cv2.adaptiveThreshold(gray, 255,
