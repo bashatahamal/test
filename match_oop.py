@@ -337,8 +337,9 @@ class FontWrapper(Marker):
     def get_object_name(self):
         return self.get_marker_location()[0].split('/')[2]
 
-    def display_marker_result(self):
-        rectangle_image = self.get_original_image()
+    def display_marker_result(self, input_image):
+        # rectangle_image = self.get_original_image()
+        rectangle_image = input_image
         found = False
         for key in self.get_marker_thresh().keys():
             if isinstance(self.get_object_result()['box_' + key],
@@ -402,10 +403,10 @@ def font(imagePath, image):
     # print("LPMQ")
     loc_list_LPMQ = sorted(glob.glob('./marker/LPMQ/*.png'))
     font_LPMQ = FontWrapper(thresh_list={'tanwin_1': 0.7, 'tanwin_2': 0.7,
-                                         'nun_stand': 0.7, 'nun_beg_1': 0.7,
+                                         'nun_stand': 0.53, 'nun_beg_1': 0.7,
                                          'nun_beg_2': 0.7, 'nun_mid': 0.7,
                                          'nun_end': 0.7, 'mim_stand': 0.7,
-                                         'mim_beg': 0.7, 'mim_mid': 0.7,
+                                         'mim_beg': 0.8, 'mim_mid': 0.7,
                                          'mim_end_1': 0.7, 'mim_end_2': 0.7},
                             loc_list=loc_list_LPMQ, image_loc=imagePath,
                             image=image, visualize=False, nms_thresh=0.3,
@@ -449,34 +450,45 @@ def font(imagePath, image):
 
 class ImageProcessing():
     def __init__(self, **kwargs):
+        # print('init')
         self._Data = kwargs
         self.original_image = self._Data['original_image']
-        # self.image = self._Data['image']
-    
+        self.height, self.width, _ = self.original_image.shape
+        # Instance variable list
+        # self.v_projection = 0
+        # self.h_projection = 0
+        # self.start_point_h = []
+        # self.start_point_v = []
+        # self.base_start = 0
+        # self.base_end = 0
+        # self.bag_of_h_crop
+        # self.bag_of_v_crop
 
-    def vertical_projection(image):
+    def vertical_projection(self, image_v):
+        image = image_v.copy()
+        cv2.imshow('doing v_projection', image)
+        # print(len(image))
         image[image < 127] = 1
         image[image >= 127] = 0
-        projection = np.sum(image, axis=0)
+        self.v_projection = np.sum(image, axis=0)
 
         return self.v_projection
 
-
-    def horizontal_projection(image):
+    def horizontal_projection(self, image_h):
+        image = image_h.copy()
+        # cv2.imshow('h', image)
         image[image < 127] = 1
         image[image >= 127] = 0
-        projection = np.sum(image, axis=1)
+        self.h_projection = np.sum(image, axis=1)
 
         return self.h_projection
 
     def detect_horizontal_line(self):
          # Detect line horizontal
         h_projection = self.h_projection
-        v_projection = self.v_projection
-        start_point = self.start_point
         up_flag = 0
         down_flag = 0
-        pixel_limit = 4
+        pixel_limit = 5
         start_to_end = 0
         end_to_start = 0
         start_point = []
@@ -507,6 +519,7 @@ class ImageProcessing():
                 # print(count)
                 up_flag = 1
                 down_flag = 0
+        self.start_point_h = start_point
 
         # Even is begining of line and Odd is end of line
         for x in range(len(start_point)):
@@ -515,15 +528,146 @@ class ImageProcessing():
             # print(x)
             if x % 2 == 0:     # Start_point
                 cv2.line(self.original_image, (0, start_point[x]), 
-                         (len(v_projection), start_point[x]), (0, 0, 255), 2)
+                         (self.width, start_point[x]), (0, 0, 255), 2)
                 # print(x)
             else:         # End_point
                 cv2.line(self.original_image, (0, start_point[x]),
-                         (len(v_projection), start_point[x]), (255, 0, 0), 2)
-        cv2.imshow('line', self.original_image)
+                         (self.width, start_point[x]), (255, 0, 0), 2)
+        # cv2.imshow('line', self.original_image)
+        # cv2.waitKey(0)
+
+    def base_line(self):
+        h_projection = self.h_projection
+        v_projection = self.v_projection
+        original_image = self.original_image
+        # print(h_projection)
+        diff = [0]
+        for x in range(len(h_projection)):
+            if x > 0:
+                temp_diff = abs(int(h_projection[x]) - int(h_projection[x-1]))
+                diff.append(temp_diff)
+
+        # base_start = self.base_start
+        # base_end = self.base_end
+        temp = 0
+        for x in range(len(diff)):
+            if diff[x] > temp:
+                temp = diff[x]
+                base_end = x
+
+        temp = 0 
+        for x in range(len(diff)):
+            if x == base_end:
+                continue
+            if diff[x] > temp:
+                temp = diff[x]
+                base_start = x
+        self.base_start = base_start
+        self.base_end = base_end
+        cv2.line(original_image, (0, base_start), (len(v_projection),
+                 base_start), (0, 255, 0), 2)
+        cv2.line(original_image, (0, base_end), (len(v_projection),
+                 base_end), (0, 255, 0), 2)
+
+    def detect_vertical_line(self, v_projection, image):
+        # Detect line vertical
+        # v_projection = self.v_projection
+        # print(v_projection)
+        original_image = image
+        up_flag = 0
+        down_flag = 0
+        pixel_limit_v = 4
+        start_to_end_v = 0
+        end_to_start_v = 0
+        start_point_v = []
+        for x in range(len(v_projection)):
+            if v_projection[x] > 0 and up_flag == 0:
+                start_point_v.append(x)
+                up_flag = 1
+                down_flag = 0
+
+            if v_projection[x] == 0 and up_flag == 1:
+                start_point_v.append(x)
+                down_flag = 1
+                up_flag = 0
+
+            if up_flag == 1:
+                start_to_end_v += 1
+            else:
+                start_to_end_v = 0
+
+            if down_flag == 1:
+                end_to_start_v += 1
+            else:
+                end_to_start_v = 0
+        self.start_point_v = start_point_v
+        print(start_point_v)
+        # Even is begining of line and Odd is end of line
+        for x in range(len(start_point_v)):
+            if x % 2 == 0:
+                cv2.line(original_image, (start_point_v[x], 0),
+                         (start_point_v[x], self.height), (0, 0, 255), 2)
+            else:
+                cv2.line(original_image, (start_point_v[x], 0), 
+                         (start_point_v[x], self.height), (255, 0, 0), 2)
+
+        cv2.imshow('line', original_image)
         cv2.waitKey(0)
-                # print(x)
-                # print('end')
+        # print(start_point_v)
+
+    def crop_image(self,input_image, h_point=False, v_point=False):
+        if h_point:
+            start_point = h_point
+            # if input_image!=False:
+            original_image = input_image
+            cv2.imshow('crop', original_image)
+            cv2.waitKey(0)
+            # else:
+            #     original_image = self.original_image
+            # print(start_point)
+            bag_of_h_crop = {}
+            for x in range(len(start_point)):
+                if x + 2 > len(start_point):
+                    # print('x')
+                    continue
+                if x % 2 == 0:
+                    bag_of_h_crop[x] = original_image[
+                                        start_point[x]:start_point[x+1], :]
+            # print(bag_of_h_crop)
+            for image in bag_of_h_crop:
+                cv2.imshow('bag_h'+str(image), bag_of_h_crop[image])
+                cv2.waitKey(0)
+                # cv2.destroyAllWindows()
+            self.bag_of_h_crop = bag_of_h_crop
+
+        if v_point:
+            start_point_v = v_point
+            # if input_image!=False:
+            original_image = input_image
+            # else:
+            #     original_image = self.original_image
+            bag_of_v_crop = {}
+            count = 0
+            for image in bag_of_h_crop:
+                # print(image)
+                #y = int(image/2)
+                for x in range(len(start_point_v)):
+                    #print('inside loop')
+                    # print(image)
+                    count += 1
+                    if x % 2 == 0:
+                        x1 = start_point[image]
+                        x2 = start_point[image+1]
+                        y1 = start_point_v[x]
+                        y2 = start_point_v[x+1]
+                        bag_of_v_crop[count] = original_image[x1:x2, y1:y2]
+                    # print(x1,'_', x2,'_', y1,'_', y2)
+
+            for image in bag_of_v_crop:
+                cv2.imshow('Crop Result', bag_of_v_crop[image])
+                cv2.waitKey(0)
+                # cv2.destroyAllWindows()
+            self.bag_of_v_crop = bag_of_v_crop
 
 
 
@@ -547,14 +691,19 @@ def main():
         image = cv2.adaptiveThreshold(gray, 255, 
                                       cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
                                       cv2.THRESH_BINARY, 11, 2)
+        orig = cv2.imread('/home/mhbrt/Desktop/Wind/Multiscale/temp/1_tanwin.png')
+        gr = cv2.cvtColor(orig, cv2.COLOR_BGR2GRAY)
+        ima = cv2.adaptiveThreshold(gr, 255, 
+                                      cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+                                      cv2.THRESH_BINARY, 11, 2)
         # cv2.imshow('otsu', image1)
         # cv2.imshow('simple', image2)
         # cv2.imshow('adapt mean', image3)
         # cv2.imshow('adapt gaussian', image4)
         # cv2.waitKey(0)
         
-        # Font_Processing
-        font_list = font(imagePath=imagePath, image=gray)
+        # # Font_Processing
+        # font_list = font(imagePath=imagePath, image=gray)
 
         # max_font_value = 0
         # font_type = 0
@@ -574,7 +723,7 @@ def main():
         #     print('Not a valuable result found check the numstep!')
 
 
-        pixel_gray = image
+        # pixel_gray = image
         # pixel_gray = cv2.cvtColor(pixel_value, cv2.COLOR_BGR2GRAY)
         # v_projection = vertical_projection(pixel_gray.copy())
         # h_projection = horizontal_projection(pixel_gray.copy())
@@ -584,13 +733,50 @@ def main():
         # # plt.xlim([0,256])
         # # plt.show()
         # cv2.waitKey(0)
-        input_image = ImageProcessing('original_image'=image)
-        input_image.vertical_projection(image)
+        # cv2.imshow('h_before', image)
+
+        input_image = ImageProcessing(original_image=original_image.copy())
         input_image.horizontal_projection(image)
         input_image.detect_horizontal_line()
+        cv2.imshow('from main', input_image.original_image)
+        input_image.crop_image(h_point=input_image.start_point_h,
+                               input_image=original_image.copy())
 
+        for image in input_image.bag_of_h_crop:
+            temp_image_ori = input_image.bag_of_h_crop[image]
+            gray = cv2.cvtColor(temp_image_ori, cv2.COLOR_BGR2GRAY)
+            temp_image = cv2.adaptiveThreshold(gray, 255, 
+                                               cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+                                               cv2.THRESH_BINARY, 11, 2)
+            # v_projection = input_image.vertical_projection(temp_image)
+            # input_image.detect_vertical_line(v_projection, temp_image_ori)
+            # print(len(input_image.v_projection))
+            # Font_Processing
+            font_list = font(imagePath=imagePath, image=gray)
+            max_font_value = 0
+            font_type = 0
+            numstep = 20
+            for font_object in font_list:
+                font_object.run(numstep=numstep)
+                for value in font_object.get_object_result().values():
+                    # print(value)
+                    if type(value) == float:
+                        if value > max_font_value:
+                            max_font_value = value
+                            font_type = font_object
 
+            if isinstance(font_type, type(font_list[0])):
+                font_type.display_marker_result(temp_image_ori)
+            else:
+                print('Not a valuable result found check the numstep!')
+                cv2.waitKey(0)
 
+        
+        
+        # input_image.base_line()
+        # input_image.detect_vertical_line()
+        
+        # cv2.imshow('from main', input_image.original_image)
 
     #     # Detect line horizontal
     #     up_flag = 0
@@ -747,12 +933,12 @@ def main():
     #         cv2.imshow('Crop Result', bag_of_v_crop[image])
     #         cv2.waitKey(0)
     #         # cv2.destroyAllWindows()
-
+        # cv2.waitKey(0)
     cv2.destroyAllWindows()
 
 # cv2.imshow('crop', view)
 # cv2.waitKey(0)
-# cv2.destroyAllWindows()
+cv2.destroyAllWindows()
 
 
 if __name__ == '__main__':
