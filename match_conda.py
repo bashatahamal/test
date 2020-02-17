@@ -491,22 +491,22 @@ for imagePath in sorted(glob.glob("temp" + "/*.png")):
     # Font_Processing
     font_list = font(imagePath=imagePath, image=gray)
 
-    # max_font_value = 0
-    # font_type = 0
-    # numstep = 20
-    # for font_object in font_list:
-    #     font_object.run(numstep=numstep)
-    #     for value in font_object.get_object_result().values():
-    #         # print(value)
-    #         if type(value) == float:
-    #             if value > max_font_value:
-    #                 max_font_value = value
-    #                 font_type = font_object
+    max_font_value = 0
+    font_type = 0
+    numstep = 20
+    for font_object in font_list:
+        font_object.run(numstep=numstep)
+        for value in font_object.get_object_result().values():
+            # print(value)
+            if type(value) == float:
+                if value > max_font_value:
+                    max_font_value = value
+                    font_type = font_object
 
-    # if isinstance(font_type, type(font_list[0])):
-    #     font_type.display_marker_result()
-    # else:
-    #     print('Not a valuable result found check the numstep!')
+    if isinstance(font_type, type(font_list[0])):
+        font_type.display_marker_result()
+    else:
+        print('Not a valuable result found check the numstep!')
 
 
     pixel_gray = image
