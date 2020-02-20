@@ -357,6 +357,7 @@ class FontWrapper(Marker):
         else:
             cv2.imshow("Original Image", rectangle_image)
             print('not found')
+        print('>')
         cv2.waitKey(0)
         # cv2.destroyAllWindows()
 
@@ -466,7 +467,7 @@ class ImageProcessing():
 
     def vertical_projection(self, image_v):
         image = image_v.copy()
-        cv2.imshow('doing v_projection', image)
+        # cv2.imshow('doing v_projection', image)
         # print(len(image))
         image[image < 127] = 1
         image[image >= 127] = 0
@@ -554,7 +555,7 @@ class ImageProcessing():
                 temp = diff[x]
                 self.base_end = x
 
-        temp = 0 
+        temp = 0
         for x in range(len(diff)):
             if x == self.base_end:
                 continue
@@ -575,9 +576,8 @@ class ImageProcessing():
         original_image = image
         up_flag = 0
         down_flag = 0
-        pixel_limit_v = 4
+        pixel_limit_v = 8
         start_to_end_v = 0
-        end_to_start_v = 0
         start_point_v = []
         for x in range(len(v_projection)):
             if v_projection[x] > 0 and up_flag == 0:
@@ -585,32 +585,34 @@ class ImageProcessing():
                 up_flag = 1
                 down_flag = 0
 
+            if v_projection[x] > 0 and down_flag == 0:
+                start_to_end_v += 1
+
             if v_projection[x] == 0 and up_flag == 1:
                 start_point_v.append(x)
-                down_flag = 1
-                up_flag = 0
-
-            if up_flag == 1:
-                start_to_end_v += 1
-            else:
+                # print(start_to_end_v)
+                if start_to_end_v < pixel_limit_v:
+                    del(start_point_v[len(start_point_v) - 1])
+                    del(start_point_v[len(start_point_v) - 1])
+                    # print(start_to_end_v)
+                    print('delete')
                 start_to_end_v = 0
+                up_flag = 0
+                down_flag = 1
 
-            if down_flag == 1:
-                end_to_start_v += 1
-            else:
-                end_to_start_v = 0
         self.start_point_v = start_point_v
-        print(start_point_v)
+        # print(start_point_v)
         # Even is begining of line and Odd is end of line
         for x in range(len(start_point_v)):
             if x % 2 == 0:
                 cv2.line(original_image, (start_point_v[x], 0),
-                         (start_point_v[x], self.height), (0, 0, 255), 2)
+                         (start_point_v[x], self.height), (0, 0, 0), 2)
             else:
-                cv2.line(original_image, (start_point_v[x], 0), 
-                         (start_point_v[x], self.height), (255, 0, 0), 2)
+                cv2.line(original_image, (start_point_v[x], 0),
+                         (start_point_v[x], self.height), (0, 0, 0), 2)
 
         cv2.imshow('line', original_image)
+        print('>')
         cv2.waitKey(0)
         # print(start_point_v)
 
@@ -620,6 +622,7 @@ class ImageProcessing():
             # if input_image!=False:
             original_image = input_image
             # cv2.imshow('crop', original_image)
+            print('>')
             cv2.waitKey(0)
             # else:
             #     original_image = self.original_image
@@ -635,8 +638,9 @@ class ImageProcessing():
             # print(bag_of_h_crop)
             for image in bag_of_h_crop:
                 cv2.imshow('bag_h'+str(image), bag_of_h_crop[image])
+                print('>')
                 cv2.waitKey(0)
-                # cv2.destroyAllWindows()
+                cv2.destroyWindow('bag_h'+str(image))
             self.bag_of_h_crop = bag_of_h_crop
 
         if v_point:
@@ -664,6 +668,7 @@ class ImageProcessing():
 
             for image in bag_of_v_crop:
                 cv2.imshow('Crop Result', bag_of_v_crop[image])
+                print('>')
                 cv2.waitKey(0)
                 # cv2.destroyAllWindows()
             self.bag_of_v_crop = bag_of_v_crop
@@ -687,8 +692,8 @@ def main():
         #                               cv2.THRESH_BINARY, 11, 2)
         # Adaptive threshold value is the weighted sum of neighbourhood
         # values where weights are a gaussian window
-        image = cv2.adaptiveThreshold(gray, 255, 
-                                      cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+        image = cv2.adaptiveThreshold(gray, 255,
+                                      cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                       cv2.THRESH_BINARY, 11, 2)
 
         # cv2.imshow('otsu', image1)
@@ -696,7 +701,7 @@ def main():
         # cv2.imshow('adapt mean', image3)
         # cv2.imshow('adapt gaussian', image4)
         # cv2.waitKey(0)
-        
+
         # # Font_Processing
         # font_list = font(imagePath=imagePath, image=gray)
 
@@ -717,7 +722,6 @@ def main():
         # else:
         #     print('Not a valuable result found check the numstep!')
 
-
         # pixel_gray = image
         # pixel_gray = cv2.cvtColor(pixel_value, cv2.COLOR_BGR2GRAY)
         # v_projection = vertical_projection(pixel_gray.copy())
@@ -731,7 +735,7 @@ def main():
         # cv2.imshow('h_before', image)
 
         input_image = ImageProcessing(original_image=original_image.copy())
-        input_image.horizontal_projection(image.copy())  # adaptive binary image
+        input_image.horizontal_projection(image.copy())  # adaptive binaryimage
         input_image.detect_horizontal_line()  # got self.start_point_h
         cv2.imshow('from main', input_image.original_image)
         input_image.crop_image(h_point=input_image.start_point_h,
@@ -749,25 +753,35 @@ def main():
         for image in input_image.bag_of_h_crop:
             # Get original cropped one line binary image
             temp_image_ori = input_image.bag_of_h_crop[image]
-            h, _,_ = temp_image_ori.shape
-            if h >  1.3 * max(marker_height_list):
-                scale = 1.3 * max(marker_height_list) / h
+            h, _, _ = temp_image_ori.shape
+            # Scaled image by height ratio
+            scaled_one_line_img_size = 1.3 * max(marker_height_list)
+            if h > scaled_one_line_img_size:
+                scale = scaled_one_line_img_size / h
                 temp_image_ori = imutils.resize(temp_image_ori,
                                                 height=int(h * scale))
             else:
                 scale = 1
-            print('Scalling image to ' + str(scale))
-            gray = cv2.cvtColor(temp_image_ori, cv2.COLOR_BGR2GRAY)
+            if scale != 1:
+                print('Scalling image to ' + str(scale))
 
+            gray = cv2.cvtColor(temp_image_ori, cv2.COLOR_BGR2GRAY)
             temp_image = cv2.adaptiveThreshold(gray, 255,
                                                cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                                cv2.THRESH_BINARY, 11, 2)
             # Calculate base line processing from self.h_projection
             input_image.horizontal_projection(temp_image.copy())
             input_image.base_line(one_line_image=temp_image_ori)
+            oneline_baseline = []
+            oneline_baseline.append(input_image.base_start)
+            oneline_baseline.append(input_image.base_end)
             cv2.imshow('Base start =' + str(input_image.base_start)
-                        + ' end =' + str(input_image.base_end),
-                        input_image.one_line_image)
+                       + ' end =' + str(input_image.base_end),
+                       input_image.one_line_image)
+            print('>')
+            cv2.waitKey(0)
+            cv2.destroyWindow('Base start =' + str(input_image.base_start)
+                              + ' end =' + str(input_image.base_end))
 
             # Font_Processing
             font_list = font(imagePath=imagePath, image=gray)
@@ -785,10 +799,164 @@ def main():
                             font_type = font_object
 
             if isinstance(font_type, type(font_list[0])):
+                object_result = font_type.get_object_result()
+                # font_type.display_marker_result(input_image=temp_image_ori)
+            else:
+                object_result = False
+                print('Not a valuable result found check the numstep!')
+                # cv2.waitKey(0)
+
+            # for key in font_type.get_marker_thresh().keys():
+            v_projection = input_image.vertical_projection(temp_image)
+            input_image.detect_vertical_line(v_projection, temp_image.copy())
+            # print(input_image.start_point_v)
+            # Crop next word marker wether it's inside or beside 
+            crop_words = {}
+            if object_result:
+                for data in object_result:
+                    if isinstance(object_result[data], type(np.array([]))):
+                        temp_x = object_result[data]
+                        part = data.split('_')
+                        name = []
+                        for x in range(len(part)):
+                            if x == 0:
+                                continue
+                            if x == len(part) - 1:
+                                name.append(part[x])
+                            else:
+                                name.append(part[x] + '_')
+                        name = ''.join(name)
+                        # crop_words['ordinat_' + name]=temp_x
+                        for arr in range(len(temp_x)):
+                            x = (temp_x)[arr][0]
+                            print('ordinat ' + data + '={}'.format(x))
+                            marker_width = (temp_x[arr][2]) - x
+                            space_limit = 2 * marker_width
+                            v_point = input_image.start_point_v
+                            # print(v_point)
+                            print('marker {}'.format(space_limit))
+                            for v in range(len(v_point)):
+                                # print(v)
+                                if v % 2 > 0:
+                                    # print(v)
+                                    if x < v_point[v]:
+                                        space = (x - v_point[v-1])
+                                        print('space {}'.format(space))
+                                        # Marker position in v_point
+                                        if space >= space_limit:
+                                            # crop_words[data + '_' + str(arr)]
+                                            #     = (v_point[v-1], v_point[v])
+                                            print('add inside' + data)
+                                            crop_words['final_inside_' + name
+                                                       + '_' + str(arr)] \
+                                                = (v_point[v-1], v_point[v])
+                                            crop_words['ordinat_' + name
+                                                       + '_' + str(arr)] \
+                                                = temp_x[arr]
+                                            break
+                                        elif v > 1:
+                                            crop_words['next_' + name
+                                                       + '_' + str(arr)] \
+                                                = (v_point[v-3], v_point[v-2])
+                                            print('add next ' + data)
+                                            crop_words['word_' + name
+                                                       + '_' + str(arr)] \
+                                                = (v_point[v-1], v_point[v])
+                                            crop_words['ordinat_' + name
+                                                       + '_' + str(arr)] \
+                                                = temp_x[arr]
+                                            break
+                                        else:
+                                            break
+            print(crop_words)
+            print(v_point)
+            if object_result:
+                # object_result = font_type.get_object_result()
                 font_type.display_marker_result(input_image=temp_image_ori)
             else:
                 print('Not a valuable result found check the numstep!')
+                print('>')
                 cv2.waitKey(0)
+
+            # Check v_projection words
+            # If there is a hanging marker
+            crop_words_final = crop_words.copy()
+            for key in crop_words:
+                name = key.split('_')
+                print('key {}'.format(key))
+                if name[0] == 'next':
+                    next_ = crop_words[key]
+                    join = []
+                    for x in range(len(name)):
+                        if x == 0:
+                            continue
+                        if x == len(name) - 1:
+                            join.append(name[x])
+                            # print(name[x])
+                        else:
+                            join.append(name[x] + '_')
+                            # print(name[x])
+                    join = ''.join(join)
+                    # print('join {}'.format(join))
+                    print('nrxt {}'.format(next_))
+                if name[0] == 'word':
+                    word_ = crop_words[key]
+                    next_image = temp_image.copy()[:, next_[0]:next_[1]]
+                    next_v_proj = input_image.vertical_projection(next_image)
+                    # plt.subplot(121), plt.imshow(next_image)
+                    # plt.subplot(122), plt.plot(np.arange(0, len(next_v_proj), 1), next_v_proj)
+                    # plt.show()
+                    word_image = temp_image.copy()[:, word_[0]:word_[1]]
+                    word_v_proj = input_image.vertical_projection(word_image)
+                    # plt.subplot(121), plt.imshow(word_image)
+                    # plt.subplot(122), plt.plot(np.arange(0, len(word_v_proj), 1), word_v_proj)
+                    # plt.show()
+                    next_h_proj = input_image.horizontal_projection(next_image)
+                    input_image.base_line(next_image.copy())
+                    # cv2.imshow('Base start =' + str(input_image.base_start)
+                    #            + ' end =' + str(input_image.base_end),
+                    #            input_image.one_line_image)
+                    # print('>')
+                    cv2.waitKey(0)
+                    word_h_proj = input_image.horizontal_projection(word_image)
+                    input_image.base_line(word_image.copy())
+                    # cv2.imshow('Base start =' + str(input_image.base_start)
+                    #            + ' end =' + str(input_image.base_end),
+                    #            input_image.one_line_image)
+                    # print('>')
+                    # cv2.waitKey(0)
+                    # print(input_image.base_start)
+                    # print(input_image.base_end)
+                    # print(len(next_h_proj))
+                    # print(next_h_proj)
+                    # Get crop word index
+                    for x in range(len(v_point)):
+                        if x % 2 == 0:
+                            if v_point[x] == next_[0]:
+                                w_index = x
+                                break
+
+                    print(w_index)
+                    base_check = next_h_proj[oneline_baseline[0]:
+                                             oneline_baseline[1]]
+                    if np.all(base_check == 0):
+                        if w_index >= 2:
+                            crop_words_final['final_beside_' + join]\
+                                    = (v_point[w_index - 2],
+                                       v_point[w_index - 1])
+                            print('final beside origin')
+                    else:
+                        crop_words_final['final_beside_' + join]\
+                                = (v_point[w_index], v_point[w_index + 1])
+                        print('final beside')
+
+            print(crop_words_final)
+                    # cv2.waitKey(0)
+                    # word_ = input_image.detect_vertical_line(
+                    #         input_image.vertical_projection(word_image),
+                    #         word_image)
+
+
 
 
 
@@ -815,13 +983,13 @@ def main():
     #             start_to_end += 1
     #         else:
     #             start_to_end = 0
-            
+
     #         if down_flag == 1:
     #             end_to_start += 1
     #             # print(end_to_start)
     #         else:
     #             end_to_start = 0
-                
+
     #         if h_projection[x] > 0 and up_flag == 0:
     #             # if count>=pixel_limit
     #             start_point.append(x)
@@ -903,8 +1071,8 @@ def main():
     #             end_to_start_v += 1
     #         else:
     #             end_to_start_v = 0
-                
-        
+
+
     #     # Even is begining of line and Odd is end of line
     #     for x in range(len(start_point_v)):
     #         if x % 2 == 0:
@@ -954,7 +1122,7 @@ def main():
     #         cv2.waitKey(0)
     #         # cv2.destroyAllWindows()
         # cv2.waitKey(0)
-        cv2.destroyAllWindows()
+    cv2.destroyAllWindows()
 
 # cv2.imshow('crop', view)
 # cv2.waitKey(0)
