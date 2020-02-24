@@ -359,7 +359,7 @@ class FontWrapper(Marker):
             print('not found')
         print('>')
         cv2.waitKey(0)
-        # cv2.destroyAllWindows()
+        # cv2.destroyWindow("Detected Image_" + self.get_object_name())
 
     def run(self, view=False, numstep=100):
         # Tanwin
@@ -573,7 +573,7 @@ class ImageProcessing():
         # Detect line vertical
         # v_projection = self.v_projection
         # print(v_projection)
-        original_image = image
+        original_image = image.copy()
         up_flag = 0
         down_flag = 0
         pixel_limit_v = 8
@@ -673,6 +673,356 @@ class ImageProcessing():
                 # cv2.destroyAllWindows()
             self.bag_of_v_crop = bag_of_v_crop
 
+    def eight_conectivity(self, image, visualize=True):
+        height, width = image.shape
+        # print('eight conectivity')
+        cv2.imshow('eight', image)
+        cv2.waitKey(0)
+        # print(image)
+        print('height= {}, width= {}'. format(height, width))
+        # print(len(image))
+        self.conn_pack = {}
+        reg = 1
+        connected = True
+        count = 0
+        # self.conn_pack['region_' + str(reg)] = set()
+        region = {}
+        # for x in range(width):
+        #     for y in range(height):
+        #         if region != {}:
+        #             for x in region:
+        #                 if (x,y) == x:
+        #                     continue 
+        #         x_y = []
+        #         flag = False
+        #         while(True):
+        #             if x_y != []:
+        #                 for c in range(count):
+        #                     x_loop = c
+        #                     y_l = x_y[0][0]
+        #                     x_l = x_y[0][1]
+        #                     print('y= {}'.format(y))
+        #                     cv2.waitKey(0)
+
+        #                     # Left
+        #                     if x_l - 1 > 0:
+        #                         if y_l + 1 < height:
+        #                             if image[y_l + 1, x_l - 1] == 0:
+        #                                 x_y.append((y_l + 1, x_l - 1))
+
+        #                     if image[y_l, x_l - 1] == 0:
+        #                         x_y.append((y_l, x_l - 1))
+        #                     if y_l - 1 > 0:
+        #                         if image[y_l - 1, x_l - 1] == 0:
+        #                             x_y.append((y_l - 1, x_l - 1))
+        #                     # Middle
+        #                     if y_l + 1 < height:
+        #                         if image[y_l + 1, x_l] == 0:
+        #                             x_y.append((y_l + 1, x_l))
+        #                 # print('m2')
+        #                 if y - 1 > 0:
+        #                     if image[y - 1, x] == 0:
+        #                         x_y.append((y - 1, x))
+        #                         count += 1
+        #                         # print('m3')
+        #                 # Right
+        #                 if x + 1 < width:
+        #                     if y + 1 < height:
+        #                         if image[y + 1, x + 1] == 0:
+        #                             x_y.append((y + 1, x + 1))
+        #                             count += 1
+        #                             # print('r1')
+        #                     if image[y, x + 1] == 0:
+        #                         x_y.append((y, x + 1))
+        #                         count += 1
+        #                         # print('r2')
+        #                     if y - 1 > 0:
+        #                         if image[y - 1, x + 1] == 0:
+        #                             x_y.append((y - 1, x + 1))
+        #                             count += 1
+        #                             # print('r3')
+                            
+        #                 if count == 0:
+        #                     break
+        #             if image[y, x] == 0 and flag is False:
+        #                 # Left
+        #                 if x - 1 > 0:
+        #                     if y + 1 < height:
+        #                         if image[y + 1, x - 1] == 0:
+        #                             x_y.append((y + 1, x - 1))
+        #                             count += 1
+        #                             # print('l1')
+
+        #                     if image[y, x - 1] == 0:
+        #                         x_y.append((y, x - 1))
+        #                         count += 1
+        #                         # print('l2')
+        #                     if y - 1 > 0:
+        #                         if image[y - 1, x - 1] == 0:
+        #                             x_y.append((y - 1, x - 1))
+        #                             count += 1
+        #                             # print('l3')
+        #                 # Middle
+        #                 if y + 1 < height:
+        #                     if image[y + 1, x] == 0:
+        #                         x_y.append((y + 1, x))
+        #                         count += 1
+        #                     # print('m1')
+        #                 x_y.append((y, x))
+        #                 count += 1
+        #                 # print('m2')
+        #                 if y - 1 > 0:
+        #                     if image[y - 1, x] == 0:
+        #                         x_y.append((y - 1, x))
+        #                         count += 1
+        #                         # print('m3')
+        #                 # Right
+        #                 if x + 1 < width:
+        #                     if y + 1 < height:
+        #                         if image[y + 1, x + 1] == 0:
+        #                             x_y.append((y + 1, x + 1))
+        #                             count += 1
+        #                             # print('r1')
+        #                     if image[y, x + 1] == 0:
+        #                         x_y.append((y, x + 1))
+        #                         count += 1
+        #                         # print('r2')
+        #                     if y - 1 > 0:
+        #                         if image[y - 1, x + 1] == 0:
+        #                             x_y.append((y - 1, x + 1))
+        #                             count += 1
+        #                             # print('r3')
+        #                 flag = True
+        #                 print('x_y= {}'.format(x_y))
+        #                 print('region= {}'.format(reg))
+        #                 # cv2.waitKey(0)
+        #             else:
+        #                 break
+        #         if x_y != []:
+        #             region+=1
+        #         print(region_1)
+
+
+        for x in range(width):
+            for y in range(height):
+                if image[y, x] == 0:
+                    count += 1
+                    # self.conn_pack['region_' + reg].add((x,y))
+                    x_y = []
+                    # Left
+                    if x - 1 > 0:
+                        if y + 1 < height:
+                            if image[y + 1, x - 1] == 0:
+                                x_y.append((y + 1, x - 1))
+                                # print('l1')
+                        if image[y, x - 1] == 0:
+                            x_y.append((y, x - 1))
+                            # print('l2')
+                        if y - 1 > 0:
+                            if image[y - 1, x - 1] == 0:
+                                x_y.append((y - 1, x - 1))
+                                # print('l3')
+                    # Middle
+                    if y + 1 < height:
+                        if image[y + 1, x] == 0:
+                            x_y.append((y + 1, x))
+                        # print('m1')
+                    x_y.append((y, x))
+                    # print('m2')
+                    if y - 1 > 0:
+                        if image[y - 1, x] == 0:
+                            x_y.append((y - 1, x))
+                            # print('m3')
+                    # Right
+                    if x + 1 < width:
+                        if y + 1 < height:
+                            if image[y + 1, x + 1] == 0:
+                                x_y.append((y + 1, x + 1))
+                                # print('r1')
+                        if image[y, x + 1] == 0:
+                            x_y.append((y, x + 1))
+                            # print('r2')
+                        if y - 1 > 0:
+                            if image[y - 1, x + 1] == 0:
+                                x_y.append((y - 1, x + 1))
+                                # print('r3')
+                    
+                    # print('x_y= {}'.format(x_y))
+                    # print('region= {}'.format(reg))
+
+                    if self.conn_pack == {}:
+                        self.conn_pack['region_' + str(reg)] = set()
+                        for x1_join in x_y: 
+                            self.conn_pack['region_' + str(reg)].add(x1_join)
+                        # print('inisialitation')
+                    connected =False
+                    if self.conn_pack != {}:
+                        for x_list in x_y:
+                            if connected:
+                                break
+                            for r in range(reg):
+                                r += 1
+                                if connected:
+                                    break
+                                for val in self.conn_pack['region_' + str(r)]:
+                                    # if connected:
+                                    #     break
+                                    # for val_list in val:
+                                    if x_list == val:
+                                        # print('xlist= {}, val={}'.format(x_list,val))
+                                        # cv2.waitKey(0)
+                                        for x_join in x_y: 
+                                            self.conn_pack['region_' + str(r)]\
+                                                .add(x_join)
+                                        connected = True
+                                        break
+                        if connected is False:
+                            reg += 1
+                            self.conn_pack['region_' + str(reg)] = set()
+                            for x2_join in x_y: 
+                                self.conn_pack['region_' + str(reg)].add(x2_join)
+                    #     # print('is not empty')
+                    #     # print(reg)
+                    #     for r in range(reg):
+                    #         print(r)
+                    #         for val in self.conn_pack['region_' + str(r+1)]:
+                    #             print('try conectivity')
+                    #             print(val)
+                                # for x in range(len(x_y)):
+                                #     if x_y[x] == 100:#val.any():
+                                #         self.conn_pack['region_' + str(reg+1)].append(x_y)
+                                #     else:
+                                #         new_reg = reg+1
+                                #         # print('plusing reg')
+                                #         # self.conn_pack['region_' + str(reg)] == []
+                                #         self.conn_pack['region_' + str(new_reg)] = x_y
+
+                    # reg = new_reg
+        # self.conn_pack_sort = self.conn_pack.copy()
+        same_reg =[]
+        for j in self.conn_pack:
+            for k in self.conn_pack:
+                # print(self.conn_pack)
+                # print(self.conn_pack[k])
+                # cv2.waitKey(0)
+                connected = False
+                if j == k:
+                    continue      
+                for q in self.conn_pack[j]:
+                    if connected:
+                        break
+                    for w in self.conn_pack[k]:
+                        # print('q={} ,w={}'.format(q,w))
+                        # cv2.waitKey(0)
+
+                        # Left
+                        x = q[1]
+                        y = q[0]
+                        if x - 1 > 0:
+                            if y + 1 < height:
+                                if (y + 1, x - 1) == w:
+                                    # for val in self.conn_pack_sort[k]:
+                                    #     self.conn_pack_sort[j].add(val)
+                                    # del(self.conn_pack_sort[k])
+                                    # print(j +'=' + k)
+                                    same_reg.append((j, k))
+                                    connected = True
+                                    break
+                                    # print('l1')
+                            if (y, x - 1) == w:
+                                # for val in self.conn_pack_sort[k]:
+                                #     self.conn_pack_sort[j].add(val)
+                                # del(self.conn_pack_sort[k])
+                                # print(j +'=' + k)
+                                same_reg.append((j, k))
+                                connected = True
+                                break
+                            if y - 1 > 0:
+                                if (y - 1, x - 1) == w:
+                                    # for val in self.conn_pack_sort[k]:
+                                    #     self.conn_pack_sort[j].add(val)
+                                    # del(self.conn_pack_sort[k])
+                                    # print(j +'=' + k)
+                                    same_reg.append((j, k))
+                                    connected = True
+                                    break
+                                    # print('l3')
+                        # Middle
+                        if y + 1 < height:
+                            if (y + 1, x) == w:
+                                # for val in self.conn_pack_sort[k]:
+                                #     self.conn_pack_sort[j].add(val)
+                                # del(self.conn_pack_sort[k])
+                                # print(j +'=' + k)
+                                same_reg.append((j, k))
+                                connected = True
+                                break
+                            # print('m1')
+                        if y - 1 > 0:
+                            if (y - 1, x) == w:
+                                # for val in self.conn_pack_sort[k]:
+                                #     self.conn_pack_sort[j].add(val)
+                                # del(self.conn_pack_sort[k])
+                                # print(j +'=' + k)
+                                same_reg.append((j, k))
+                                connected = True
+                                break
+
+                        # Right
+                        if x + 1 < width:
+                            if y + 1 < height:
+                                if (y + 1, x + 1) == w:
+                                    # for val in self.conn_pack_sort[k]:
+                                    #     self.conn_pack_sort[j].add(val)
+                                    # del(self.conn_pack_sort[k])
+                                    # print(j +'=' + k)
+                                    same_reg.append((j, k))
+                                    connected = True
+                                    break
+                            if (y, x + 1) == w:
+                                # for val in self.conn_pack_sort[k]:
+                                #     self.conn_pack_sort[j].add(val)
+                                # del(self.conn_pack_sort[k])
+                                # print(j +'=' + k)
+                                same_reg.append((j, k))
+                                connected = True
+                                break
+                            if y - 1 > 0:
+                                if (y - 1, x + 1) == w:
+                                    # for val in self.conn_pack_sort[k]:
+                                    #     self.conn_pack_sort[j].add(val)
+                                    # del(self.conn_pack_sort[k])
+                                    # print(j +'=' + k)
+                                    same_reg.append((j, k))
+                                    connected = True
+                                    break
+                        
+
+                        
+        # print(same_reg)
+        # cv2.waitKey(0)
+        for lr in same_reg:
+            for val in self.conn_pack[lr[1]]:
+                self.conn_pack[lr[0]].add(val)
+                
+            # print(lr[0])
+            # cv2.waitKey(0)
+        save = []
+        for reg_1 in same_reg:
+            for x in range(len(same_reg)):
+                if reg_1 == (same_reg[x][1], same_reg[x][0]):
+                    save.append(x)
+                    break
+                    
+
+        print(same_reg)
+        print(len(same_reg))
+        print(save)
+        cv2.waitKey(0)
+        # for val in self.conn_pack_sort[k]:
+        #     self.conn_pack_sort[j].add(val)
+        # del(self.conn_pack_sort[k])
+        
 
 def main():
     # for imagePath in sorted(glob.glob(args["images"] + "/*.png")):
@@ -883,7 +1233,7 @@ def main():
             crop_words_final = crop_words.copy()
             for key in crop_words:
                 name = key.split('_')
-                print('key {}'.format(key))
+                # print('key {}'.format(key))
                 if name[0] == 'next':
                     next_ = crop_words[key]
                     join = []
@@ -898,7 +1248,7 @@ def main():
                             # print(name[x])
                     join = ''.join(join)
                     # print('join {}'.format(join))
-                    print('nrxt {}'.format(next_))
+                    # print('nrxt {}'.format(next_))
                 if name[0] == 'word':
                     word_ = crop_words[key]
                     next_image = temp_image.copy()[:, next_[0]:next_[1]]
@@ -917,7 +1267,7 @@ def main():
                     #            + ' end =' + str(input_image.base_end),
                     #            input_image.one_line_image)
                     # print('>')
-                    cv2.waitKey(0)
+                    # cv2.waitKey(0)
                     word_h_proj = input_image.horizontal_projection(word_image)
                     input_image.base_line(word_image.copy())
                     # cv2.imshow('Base start =' + str(input_image.base_start)
@@ -935,8 +1285,7 @@ def main():
                             if v_point[x] == next_[0]:
                                 w_index = x
                                 break
-
-                    print(w_index)
+                    # print(w_index)
                     base_check = next_h_proj[oneline_baseline[0]:
                                              oneline_baseline[1]]
                     if np.all(base_check == 0):
@@ -948,16 +1297,73 @@ def main():
                     else:
                         crop_words_final['final_beside_' + join]\
                                 = (v_point[w_index], v_point[w_index + 1])
-                        print('final beside')
+                        # print('final beside')
 
             print(crop_words_final)
-                    # cv2.waitKey(0)
-                    # word_ = input_image.detect_vertical_line(
-                    #         input_image.vertical_projection(word_image),
-                    #         word_image)
+            for key in crop_words_final:
+                name = key.split('_')
+                if name[0] == 'final':
+                    x_value = crop_words_final[key]
+                    # print(x_value)
+                    join = []
+                    for x in range(len(name)):
+                        if x == 0:
+                            continue
+                        if x == 1:
+                            continue
+                        if x == len(name) - 1:
+                            join.append(name[x])
+                            # print(name[x])
+                        else:
+                            join.append(name[x] + '_')
+                            # print(name[x])
+                    join = ''.join(join)
 
-
-
+                    if name[1] == 'beside':
+                        final_img = temp_image.copy()[:, x_value[0]:x_value[1]]
+                        # cv2.imshow('beside', final_img)
+                        temp_img = final_img.copy()
+                        # ccc = input_image.vertical_projection(final_img)
+                        # sum1=0
+                        # for x in ccc:
+                        #     sum1 += x
+                        # print(sum1)
+                        input_image.eight_conectivity(image=final_img.copy())
+                        print('back to main')
+                        print(input_image.conn_pack)
+                        print(input_image.conn_pack['region_7'])
+                        print(len(input_image.conn_pack))
+                        cv2.waitKey(0)
+                        final_img[:] = 255
+                        cv2.imshow('white', final_img)
+                        cv2.waitKey(0)
+                        for region in input_image.conn_pack:
+                            value = list(input_image.conn_pack[region])
+                            print(value)
+                            for x in value:
+                                final_img[x] = 0
+                            cv2.imshow('region', final_img)
+                            cv2.waitKey(0)
+                        # height, width = final_img.shape
+                        # h_project = input_image.horizontal_projection(final_img)
+                        # input_image.base_line(final_img.copy())
+                        # v_project = input_image.vertical_projection(final_img)
+                        # cv2.line(temp_img, (0, oneline_baseline[0]),
+                        #          (width, oneline_baseline[0]), (0, 0, 0), 2)
+                        # cv2.line(temp_img, (0, oneline_baseline[1]),
+                        #          (width, oneline_baseline[1]), (0, 0, 0), 2)
+                        # cv2.imshow('word', input_image.one_line_image)
+                        # cv2.imshow('one line', temp_img)
+                        # cv2.waitKey(0)
+                        # v_project_1 = input_image.vertical_projection(temp_img)
+                        # plt.figure(1)
+                        # plt.subplot(211), plt.imshow(final_img)
+                        # plt.subplot(212), plt.plot(np.arange(0, len(v_project), 1),v_project)
+                        # plt.figure(2)
+                        # plt.subplot(211), plt.imshow(temp_img)
+                        # plt.subplot(212), plt.plot(np.arange(0, len(v_project_1), 1),v_project_1)
+                        # plt.show()
+                    # if name[1] == 'inside':
 
 
 
