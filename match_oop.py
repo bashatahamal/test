@@ -4,6 +4,7 @@ import numpy as np
 import imutils
 import glob
 import cv2
+import copy
 
 # Argument parser
 # ap = argparse.ArgumentParser()
@@ -674,10 +675,11 @@ class ImageProcessing():
             self.bag_of_v_crop = bag_of_v_crop
 
     def eight_conectivity(self, image, visualize=True):
+        # image = cv2.bitwise_not(image)
         height, width = image.shape
         # print('eight conectivity')
-        cv2.imshow('eight', image)
-        cv2.waitKey(0)
+        # cv2.imshow('eight', image)
+        # cv2.waitKey(0)
         # print(image)
         print('height= {}, width= {}'. format(height, width))
         # print(len(image))
@@ -898,7 +900,7 @@ class ImageProcessing():
                                 #         self.conn_pack['region_' + str(new_reg)] = x_y
 
                     # reg = new_reg
-        # self.conn_pack_sort = self.conn_pack.copy()
+        self.conn_pack_sort = copy.deepcopy(self.conn_pack)
         same_reg =[]
         for j in self.conn_pack:
             for k in self.conn_pack:
@@ -921,50 +923,66 @@ class ImageProcessing():
                         if x - 1 > 0:
                             if y + 1 < height:
                                 if (y + 1, x - 1) == w:
-                                    # for val in self.conn_pack_sort[k]:
-                                    #     self.conn_pack_sort[j].add(val)
-                                    # del(self.conn_pack_sort[k])
+                                    if k in self.conn_pack_sort \
+                                            and j in self.conn_pack_sort :
+                                        # print(k)
+                                        # cv2.waitKey(0)
+                                        for val in self.conn_pack_sort[k]:
+                                            self.conn_pack_sort[j].add(val)
+                                        del(self.conn_pack_sort[k])
                                     # print(j +'=' + k)
-                                    same_reg.append((j, k))
+                                    # same_reg.append((j, k))
                                     connected = True
                                     break
                                     # print('l1')
                             if (y, x - 1) == w:
-                                # for val in self.conn_pack_sort[k]:
-                                #     self.conn_pack_sort[j].add(val)
-                                # del(self.conn_pack_sort[k])
+                                if k in self.conn_pack_sort\
+                                        and j in self.conn_pack_sort :
+                                    for val in self.conn_pack_sort[k]:
+                                        self.conn_pack_sort[j].add(val)
+                                    del(self.conn_pack_sort[k])
                                 # print(j +'=' + k)
-                                same_reg.append((j, k))
+                                # same_reg.append((j, k))
                                 connected = True
                                 break
                             if y - 1 > 0:
                                 if (y - 1, x - 1) == w:
-                                    # for val in self.conn_pack_sort[k]:
-                                    #     self.conn_pack_sort[j].add(val)
-                                    # del(self.conn_pack_sort[k])
+                                    if k in self.conn_pack_sort\
+                                            and j in self.conn_pack_sort :
+                                        for val in self.conn_pack_sort[k]:
+                                            self.conn_pack_sort[j].add(val)
+                                        del(self.conn_pack_sort[k])
                                     # print(j +'=' + k)
-                                    same_reg.append((j, k))
+                                    # same_reg.append((j, k))
                                     connected = True
                                     break
                                     # print('l3')
                         # Middle
                         if y + 1 < height:
                             if (y + 1, x) == w:
-                                # for val in self.conn_pack_sort[k]:
-                                #     self.conn_pack_sort[j].add(val)
-                                # del(self.conn_pack_sort[k])
+                                if k in self.conn_pack_sort\
+                                        and j in self.conn_pack_sort:
+                                    # print(k)
+                                    # cv2.waitKey(0)
+                                    for val in self.conn_pack_sort[k]:
+                                        # print(j)
+                                        # cv2.waitKey(0)
+                                        self.conn_pack_sort[j].add(val)
+                                    del(self.conn_pack_sort[k])
                                 # print(j +'=' + k)
-                                same_reg.append((j, k))
+                                # same_reg.append((j, k))
                                 connected = True
                                 break
                             # print('m1')
                         if y - 1 > 0:
                             if (y - 1, x) == w:
-                                # for val in self.conn_pack_sort[k]:
-                                #     self.conn_pack_sort[j].add(val)
-                                # del(self.conn_pack_sort[k])
+                                if k in self.conn_pack_sort\
+                                        and j in self.conn_pack_sort:
+                                    for val in self.conn_pack_sort[k]:
+                                        self.conn_pack_sort[j].add(val)
+                                    del(self.conn_pack_sort[k])
                                 # print(j +'=' + k)
-                                same_reg.append((j, k))
+                                # same_reg.append((j, k))
                                 connected = True
                                 break
 
@@ -972,28 +990,34 @@ class ImageProcessing():
                         if x + 1 < width:
                             if y + 1 < height:
                                 if (y + 1, x + 1) == w:
-                                    # for val in self.conn_pack_sort[k]:
-                                    #     self.conn_pack_sort[j].add(val)
-                                    # del(self.conn_pack_sort[k])
+                                    if k in self.conn_pack_sort\
+                                            and j in self.conn_pack_sort:
+                                        for val in self.conn_pack_sort[k]:
+                                            self.conn_pack_sort[j].add(val)
+                                        del(self.conn_pack_sort[k])
                                     # print(j +'=' + k)
-                                    same_reg.append((j, k))
+                                    # same_reg.append((j, k))
                                     connected = True
                                     break
                             if (y, x + 1) == w:
-                                # for val in self.conn_pack_sort[k]:
-                                #     self.conn_pack_sort[j].add(val)
-                                # del(self.conn_pack_sort[k])
+                                if k in self.conn_pack_sort\
+                                        and j in self.conn_pack_sort:
+                                    for val in self.conn_pack_sort[k]:
+                                        self.conn_pack_sort[j].add(val)
+                                    del(self.conn_pack_sort[k])
                                 # print(j +'=' + k)
-                                same_reg.append((j, k))
+                                # same_reg.append((j, k))
                                 connected = True
                                 break
                             if y - 1 > 0:
                                 if (y - 1, x + 1) == w:
-                                    # for val in self.conn_pack_sort[k]:
-                                    #     self.conn_pack_sort[j].add(val)
-                                    # del(self.conn_pack_sort[k])
+                                    if k in self.conn_pack_sort\
+                                            and j in self.conn_pack_sort:
+                                        for val in self.conn_pack_sort[k]:
+                                            self.conn_pack_sort[j].add(val)
+                                        del(self.conn_pack_sort[k])
                                     # print(j +'=' + k)
-                                    same_reg.append((j, k))
+                                    # same_reg.append((j, k))
                                     connected = True
                                     break
                         
@@ -1001,24 +1025,24 @@ class ImageProcessing():
                         
         # print(same_reg)
         # cv2.waitKey(0)
-        for lr in same_reg:
-            for val in self.conn_pack[lr[1]]:
-                self.conn_pack[lr[0]].add(val)
+        # for lr in same_reg:
+        #     for val in self.conn_pack[lr[1]]:
+        #         self.conn_pack[lr[0]].add(val)
                 
-            # print(lr[0])
-            # cv2.waitKey(0)
-        save = []
-        for reg_1 in same_reg:
-            for x in range(len(same_reg)):
-                if reg_1 == (same_reg[x][1], same_reg[x][0]):
-                    save.append(x)
-                    break
+        #     # print(lr[0])
+        #     # cv2.waitKey(0)
+        # save = []
+        # for reg_1 in same_reg:
+        #     for x in range(len(same_reg)):
+        #         if reg_1 == (same_reg[x][1], same_reg[x][0]):
+        #             save.append(x)
+        #             break
                     
 
-        print(same_reg)
-        print(len(same_reg))
-        print(save)
-        cv2.waitKey(0)
+        # print(same_reg)
+        # print(len(same_reg))
+        # print(save)
+        # cv2.waitKey(0)
         # for val in self.conn_pack_sort[k]:
         #     self.conn_pack_sort[j].add(val)
         # del(self.conn_pack_sort[k])
@@ -1049,7 +1073,18 @@ def main():
         # cv2.imshow('otsu', image1)
         # cv2.imshow('simple', image2)
         # cv2.imshow('adapt mean', image3)
-        # cv2.imshow('adapt gaussian', image4)
+        # cv2.imshow('adapt gaussian', image)
+        # cv2.waitKey(0)
+        # image = cv2.bitwise_not(image)
+        # kernel = np.ones((1,1), np.uint8)
+        # dilation = cv2.dilate(final_img.copy(),kernel,iterations = 1)
+        # kernel = np.ones((2,2), np.uint8)
+        # image = cv2.erode(image,kernel,iterations = 1)
+        # image = cv2.morphologyEx(image, cv2.MORPH_OPEN, kernel)
+        # image = cv2.bitwise_not(image)
+        # closing = cv2.morphologyEx(final_img.copy(), cv2.MORPH_CLOSE, kernel)
+        # cv2.imshow('morph', image)
+        # print('morph')
         # cv2.waitKey(0)
 
         # # Font_Processing
@@ -1119,6 +1154,7 @@ def main():
             temp_image = cv2.adaptiveThreshold(gray, 255,
                                                cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                                cv2.THRESH_BINARY, 11, 2)
+            # temp_image = temp_image_ori
             # Calculate base line processing from self.h_projection
             input_image.horizontal_projection(temp_image.copy())
             input_image.base_line(one_line_image=temp_image_ori)
@@ -1322,24 +1358,47 @@ def main():
                     if name[1] == 'beside':
                         final_img = temp_image.copy()[:, x_value[0]:x_value[1]]
                         # cv2.imshow('beside', final_img)
-                        temp_img = final_img.copy()
+                        # temp_img = final_img.copy()
                         # ccc = input_image.vertical_projection(final_img)
                         # sum1=0
                         # for x in ccc:
                         #     sum1 += x
                         # print(sum1)
-                        input_image.eight_conectivity(image=final_img.copy())
+                        final_img = cv2.bitwise_not(final_img)
+                        cv2.imshow('inverse', final_img)
+                        kernel = np.ones((2,2), np.uint8)
+                        dilation = cv2.dilate(final_img.copy(),kernel,iterations = 1)
+                        # kernel = np.ones((2,2), np.uint8)
+                        # erosion = cv2.erode(final_img.copy(),kernel,iterations = 1)
+                        # opening = cv2.morphologyEx(final_img.copy(), cv2.MORPH_OPEN, kernel)
+                        # closing = cv2.morphologyEx(final_img.copy(), cv2.MORPH_CLOSE, kernel)
+                        final_img = cv2.bitwise_not(dilation)
+                        cv2.imshow('morph', final_img)
+                        print('morph')
+                        cv2.waitKey(0)
+                        # cv2.imshow('dilation', dilation)
+                        # print('dilation')
+                        # cv2.waitKey(0)
+                        # cv2.imshow('opening', opening)
+                        # print('opening')
+                        # cv2.waitKey(0)
+                        # cv2.imshow('closing', closing)
+                        # print('closing')
+                        # cv2.waitKey(0)
+                        input_image.eight_conectivity(image=final_img)
                         print('back to main')
-                        print(input_image.conn_pack)
-                        print(input_image.conn_pack['region_7'])
-                        print(len(input_image.conn_pack))
+                        # print(input_image.conn_pack_sort)
+                        # print(input_image.conn_pack['region_7'])
+                        print('ori={}, sort={}'.format(
+                            len(input_image.conn_pack),len(input_image.conn_pack_sort)))
+                        print('>')
                         cv2.waitKey(0)
                         final_img[:] = 255
                         cv2.imshow('white', final_img)
                         cv2.waitKey(0)
-                        for region in input_image.conn_pack:
-                            value = list(input_image.conn_pack[region])
-                            print(value)
+                        for region in input_image.conn_pack_sort:
+                            value = list(input_image.conn_pack_sort[region])
+                            # print(value)
                             for x in value:
                                 final_img[x] = 0
                             cv2.imshow('region', final_img)
