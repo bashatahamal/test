@@ -539,6 +539,7 @@ class ImageProcessing():
         # cv2.waitKey(0)
 
     def base_line(self, one_line_image):
+        # Got self.base_start, self.base_end, self.one_line_image
         h_projection = self.h_projection
         # print(h_projection)
         # original_image = one_line_image
@@ -555,7 +556,7 @@ class ImageProcessing():
             if diff[x] > temp:
                 temp = diff[x]
                 self.base_end = x
-
+        # Get the 2nd greatest to base_start
         temp = 0
         for x in range(len(diff)):
             if x == self.base_end:
@@ -563,8 +564,8 @@ class ImageProcessing():
             if diff[x] > temp:
                 temp = diff[x]
                 self.base_start = x
-        # self.base_start = base_start
-        # self.base_end = base_end
+        self.base_start += 1
+        self.base_end += 1
         cv2.line(self.one_line_image, (0, self.base_start),
                  (self.width, self.base_start), (0, 255, 0), 2)
         cv2.line(self.one_line_image, (0, self.base_end),
@@ -674,7 +675,7 @@ class ImageProcessing():
                 # cv2.destroyAllWindows()
             self.bag_of_v_crop = bag_of_v_crop
 
-    def eight_conectivity(self, image, visualize=True):
+    def eight_conectivity(self, image):
         # image = cv2.bitwise_not(image)
         height, width = image.shape
         # print('eight conectivity')
@@ -1051,11 +1052,53 @@ class ImageProcessing():
         print(temp_length)
         cv2.waitKey(0)
         temp_delete = []
+        temp_marker = []
+        # Get region body and paint it
+        temp_conn_pack = copy.deepcopy(self.conn_pack)
         for key in self.conn_pack:
             if len(self.conn_pack[key]) < 1/5 * max(temp_length):
                 temp_delete.append(key)
         for delt in temp_delete:
             del(self.conn_pack[delt])
+
+        self.image_body = image.copy()
+        self.image_body[:] = 255
+        for region in self.conn_pack:
+            value = self.conn_pack[region]
+            for x in value:
+                self.image_body[x] = 0
+            cv2.imshow('image body', self.image_body)
+            print('image_body')
+            cv2.waitKey(0)
+        # Calculate h_projection on body region to get word baseline
+        # for marker only segmentation
+        self.horizontal_projection(self.image_body)
+        self.base_line(self.image_body.copy())
+        baseline_img_body_h = abs(self.base_end - self.base_start)
+        print('oneline image from base line funtion')
+        cv2.imshow('self.oneline image', self.one_line_image)
+        print('base start={} , end={}'.format(self.base_start, self.base_end))
+        print('baseline height = {}'. format(baseline_img_body_h))
+        cv2.waitKey(0)
+        
+        # Get marker only region and paint it
+        for key in temp_conn_pack:
+            if 1/5 * max(temp_length) > len(temp_conn_pack[key])\
+                     > baseline_img_body_h:
+                temp_marker.append(key)
+        self.conn_pack_marker_only = {}
+        for mark in temp_marker:
+            self.conn_pack_marker_only[mark] = (temp_conn_pack[mark])
+
+        self.image_marker_only = image.copy()
+        self.image_marker_only[:] = 255
+        for region in self.conn_pack_marker_only:
+            value = self.conn_pack_marker_only[region]
+            for x in value:
+                self.image_marker_only[x] = 0
+            cv2.imshow('marker only', self.image_marker_only)
+            print('marker only')
+            cv2.waitKey(0)
                     #     # print('is not empty')
                     #     # print(reg)
                     #     for r in range(reg):
@@ -1082,7 +1125,7 @@ class ImageProcessing():
         #         # cv2.waitKey(0)
         #         connected = False
         #         if j == k:
-        #             continue      
+        #             continue
         #         for q in self.conn_pack[j]:
         #             if connected:
         #                 break
@@ -1495,6 +1538,7 @@ def main():
                                 w_index = x
                                 break
                     # print(w_index)
+                    # Check if horizontal p is not zero(skipping hanging marker)
                     base_check = next_h_proj[oneline_baseline[0]:
                                              oneline_baseline[1]]
                     if np.all(base_check == 0):
@@ -1538,14 +1582,14 @@ def main():
                         #     sum1 += x
                         # print(sum1)
                         final_img = cv2.bitwise_not(final_img)
-                        cv2.imshow('inverse', final_img)
+                        # cv2.imshow('inverse', final_img)
                         kernel = np.ones((2,2), np.uint8)
-                        dilation = cv2.dilate(final_img.copy(),kernel,iterations = 1)
+                        # dilation = cv2.dilate(final_img.copy(),kernel,iterations = 1)
                         # kernel = np.ones((2,2), np.uint8)
                         # erosion = cv2.erode(final_img.copy(),kernel,iterations = 1)
                         # opening = cv2.morphologyEx(final_img.copy(), cv2.MORPH_OPEN, kernel)
-                        # closing = cv2.morphologyEx(final_img.copy(), cv2.MORPH_CLOSE, kernel)
-                        final_img = cv2.bitwise_not(dilation)
+                        closing = cv2.morphologyEx(final_img.copy(), cv2.MORPH_CLOSE, kernel)
+                        final_img = cv2.bitwise_not(closing)
                         cv2.imshow('morph', final_img)
                         print('morph')
                         cv2.waitKey(0)
@@ -1558,25 +1602,29 @@ def main():
                         # cv2.imshow('closing', closing)
                         # print('closing')
                         # cv2.waitKey(0)
-                        input_image.eight_conectivity(image=final_img)
+                        # Get final word baseline 
+                        # input_image.horizontal_projection(final_img)
+                        # input_image.base_line(final_img.copy())
+                        # word_baseline_height = input_image.base_end \
+                        #                        - input_image.base_start
+                        # oneline_height = oneline_baseline[1] - oneline_baseline[0]
+                        # print(oneline_height)
+                        # cv2.waitKey(0)
+                        input_image.eight_conectivity(final_img)
                         print('back to main')
                         cv2.waitKey(0)
                         print('reg length={}'.format(len(input_image.conn_pack)))
-                        # print(input_image.conn_pack['region_7'])
-                        # print('ori={}, sort={}'.format(
-                        #     len(input_image.conn_pack),len(input_image.conn_pack_sort)))
-                        # print('>')
+                        
+                        # Doing vertical word projection
+                        # final_v_proj = input_image.vertical_projection(final_img)
+                        # # h_projection = horizontal_projection(pixel_gray.copy())
+                        # plt.subplot(211), plt.imshow(final_img)
+                        # plt.subplot(212), plt.plot(np.arange(0, len(final_v_proj), 1), final_v_proj)
+                        # # plt.subplot(222), plt.plot(np.arange(0, len(h_projection), 1), h_projection)
+                        # # plt.xlim([0,256])
+                        # plt.show()
                         # cv2.waitKey(0)
-                        final_img[:] = 255
-                        cv2.imshow('white', final_img)
-                        cv2.waitKey(0)
-                        for region in input_image.conn_pack:
-                            value = input_image.conn_pack[region]
-                            # print(value)
-                            for x in value:
-                                final_img[x] = 0
-                            cv2.imshow('region', final_img)
-                            cv2.waitKey(0)
+                            
                         # for region in input_image.region:
                         #     value = input_image.region[region]
                         #     # print(value)
