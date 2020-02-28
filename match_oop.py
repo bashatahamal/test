@@ -564,8 +564,7 @@ class ImageProcessing():
             if diff[x] > temp:
                 temp = diff[x]
                 self.base_start = x
-        self.base_start += 1
-        self.base_end += 1
+
         cv2.line(self.one_line_image, (0, self.base_start),
                  (self.width, self.base_start), (0, 255, 0), 2)
         cv2.line(self.one_line_image, (0, self.base_end),
@@ -1074,17 +1073,17 @@ class ImageProcessing():
         # for marker only segmentation
         self.horizontal_projection(self.image_body)
         self.base_line(self.image_body.copy())
-        baseline_img_body_h = abs(self.base_end - self.base_start)
+        self.baseline_img_body_h = abs(self.base_end - self.base_start)
         print('oneline image from base line funtion')
         cv2.imshow('self.oneline image', self.one_line_image)
         print('base start={} , end={}'.format(self.base_start, self.base_end))
-        print('baseline height = {}'. format(baseline_img_body_h))
+        print('baseline height = {}'. format(self.baseline_img_body_h))
         cv2.waitKey(0)
         
         # Get marker only region and paint it
         for key in temp_conn_pack:
             if 1/5 * max(temp_length) > len(temp_conn_pack[key])\
-                     > baseline_img_body_h:
+                     > self.baseline_img_body_h:
                 temp_marker.append(key)
         self.conn_pack_marker_only = {}
         for mark in temp_marker:
@@ -1574,6 +1573,7 @@ def main():
 
                     if name[1] == 'beside':
                         final_img = temp_image.copy()[:, x_value[0]:x_value[1]]
+                        w_height, w_width = final_img.shape
                         cv2.imshow('beside', final_img)
                         # temp_img = final_img.copy()
                         # ccc = input_image.vertical_projection(final_img)
@@ -1616,15 +1616,51 @@ def main():
                         print('reg length={}'.format(len(input_image.conn_pack)))
                         
                         # Doing vertical word projection
-                        # final_v_proj = input_image.vertical_projection(final_img)
-                        # # h_projection = horizontal_projection(pixel_gray.copy())
-                        # plt.subplot(211), plt.imshow(final_img)
+                        final_h_proj = input_image.horizontal_projection(
+                            input_image.image_marker_only
+                        )
+                        final_v_proj = input_image.vertical_projection(
+                            input_image.image_marker_only
+                        )
+                        input_image.detect_horizontal_line()
+                        # h_projection = horizontal_projection(pixel_gray.copy())
+
+                        plt.subplot(211), plt.imshow(input_image.image_marker_only)
+                        plt.subplot(212), plt.plot(np.arange(0, len(final_h_proj), 1), final_h_proj)
+                        # plt.subplot(211), plt.imshow(input_image.image_marker_only)
                         # plt.subplot(212), plt.plot(np.arange(0, len(final_v_proj), 1), final_v_proj)
-                        # # plt.subplot(222), plt.plot(np.arange(0, len(h_projection), 1), h_projection)
-                        # # plt.xlim([0,256])
-                        # plt.show()
-                        # cv2.waitKey(0)
-                            
+                        # plt.subplot(222), plt.plot(np.arange(0, len(h_projection), 1), h_projection)
+                        # plt.xlim([0,256])
+                        plt.show()
+                        cv2.waitKey(0)
+
+                        # Checking to compare with baseline word to get char
+                        # segmented_char = []
+                        # if w_width < 2 * input_image.baseline_img_body_h:
+                        #     segmented_char.append((0,w_width))
+                        # body_v_proj = input_image.vertical_projection(input_image\
+                        #                                               .image_body)
+                        # diff = [0]
+                        # for x in range(len(body_v_proj)):
+                        #     if x > 0:
+                        #         temp_diff = abs[int(body_v_proj[x])
+                        #                         - int(body_v_proj[x-1])]
+                        #         diff.append(temp_diff)
+                        # char_on_steep = False
+                        # for gap in range(len(diff))[::-1]:
+                        #     if diff[gap] > 2 * input_image.baseline_img_body_h:
+                        #         if body_v_proj[gap] == 0:
+                        #             segmented_char.append((gap, len(diff)))
+                        #             char_on_steep = True
+                        #             break
+                        #         if len(diff) - gap < 2 * input_image.baseline_\
+                        #                 img_body_h :
+                        #             continue
+                        #         else:
+                        #             segmented_char.append((gap, len(diff)))
+                        #             char_on_steep = True
+                        #             break
+
                         # for region in input_image.region:
                         #     value = input_image.region[region]
                         #     # print(value)
