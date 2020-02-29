@@ -601,7 +601,7 @@ class ImageProcessing():
         original_image = image.copy()
         up_flag = 0
         down_flag = 0
-        start_to_end = 0
+        start_to_end = pixel_limit_ste + 1
         end_to_start = pixel_limit_ets + 1
         start_point = []
         for x in range(len(v_projection)):
@@ -613,6 +613,7 @@ class ImageProcessing():
                 start_point.append(x)
                 # print(start_point)
                 if start_to_end < pixel_limit_ste:
+                    del(start_point[len(start_point) - 1])
                     del(start_point[len(start_point) - 1])
                     # print('delete ste')
                     down_flag = 0
