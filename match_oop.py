@@ -610,7 +610,7 @@ class ImageProcessing():
                          (start_point_v[x], self.height), (0, 0, 0), 2)
             else:
                 cv2.line(original_image, (start_point_v[x], 0),
-                         (start_point_v[x], self.height), (0, 0, 0), 2)
+                         (start_point_v[x], self.height), (100, 100, 100), 2)
 
         cv2.imshow('line', original_image)
         print('>')
