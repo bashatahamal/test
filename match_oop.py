@@ -485,58 +485,82 @@ class ImageProcessing():
 
         return self.h_projection
 
-    def detect_horizontal_line(self):
+    def detect_horizontal_line(self, image, pixel_limit_ste, pixel_limit_ets):
         # Detect line horizontal
+        if len(image.shape) == 3:
+            height, width, _ = image.shape
+            color_temp = image.copy()
+        else:
+            height, width = image.shape
         h_projection = self.h_projection
         up_flag = 0
         down_flag = 0
-        pixel_limit = 5
+        # pixel_limit = 5
         start_to_end = 0
-        end_to_start = 0
+        end_to_start = pixel_limit_ets + 1
         start_point = []
         for x in range(len(h_projection)):
-            if h_projection[x] == 0 and up_flag == 1:
-                start_point.append(x)
-                down_flag = 1
-                up_flag = 0
-
-            if up_flag == 1:
+            if h_projection[x] > 0 and up_flag == 1:
                 start_to_end += 1
-            else:
-                start_to_end = 0
 
-            if down_flag == 1:
+            if h_projection[x] == 0 and up_flag == 1:
+                # print(start_to_end)
+                start_point.append(x)
+                # print(start_point)
+                if start_to_end < pixel_limit_ste:
+                    del(start_point[len(start_point) - 1])
+                    # print('delete ste')
+                    down_flag = 0
+                    up_flag = 1
+                else:
+                    down_flag = 1
+                    up_flag = 0
+                    start_to_end = 0
+
+            if h_projection[x] == 0 and down_flag == 1:
                 end_to_start += 1
-                # print(end_to_start)
-            else:
-                end_to_start = 0
 
             if h_projection[x] > 0 and up_flag == 0:
                 # if count>=pixel_limit
+                # print('ets {}'.format(end_to_start))
                 start_point.append(x)
-                if down_flag == 1 and end_to_start < pixel_limit:
+                # print(start_point)
+                if end_to_start < pixel_limit_ets:
                     del(start_point[len(start_point)-1])
                     del(start_point[len(start_point)-1])
                     # print('delete')
                 # print(count)
                 up_flag = 1
                 down_flag = 0
-        self.start_point_h = start_point
+                end_to_start = 0
 
+        self.start_point_h = start_point
+        # print('self from function = {}'.format(start_point))
+        # print('self from function self = {}'.format(self.start_point_h))
+        # print('height {}, width {}'.format(height, width))
+        # color_temp = color_temp[0:height, 0:width]
+        # color_temp[:] = 255
+        # for x in range(len(start_point)):
+        #     if x % 2 == 0:     # Start_point
+        #         cv2.line(color_temp, (0, start_point[x]),
+        #                  (width, start_point[x]), (0, 0, 255), 2)
+        #         # print(x)
+        #     else:         # End_point
+        #         cv2.line(color_temp, (0, start_point[x]),
+        #                  (width, start_point[x]), (255, 0, 0), 2)
+        # cv2.imshow('painting test', color_temp)
+        # cv2.waitKey(0)
         # Even is begining of line and Odd is end of line
         for x in range(len(start_point)):
-            # cv2.line(original_image, (0, start_point[x]), (len(v_projection),
-            #          start_point[x]), (0, 0, 255), 2)
-            # print(x)
             if x % 2 == 0:     # Start_point
-                cv2.line(self.original_image, (0, start_point[x]),
-                         (self.width, start_point[x]), (0, 0, 255), 2)
+                cv2.line(image, (0, start_point[x]),
+                         (width, start_point[x]), (0, 0, 255), 2)
                 # print(x)
             else:         # End_point
-                cv2.line(self.original_image, (0, start_point[x]),
-                         (self.width, start_point[x]), (255, 0, 0), 2)
-        # cv2.imshow('line', self.original_image)
-        # cv2.waitKey(0)
+                cv2.line(image, (0, start_point[x]),
+                         (width, start_point[x]), (100, 100, 255), 2)
+        cv2.imshow('horizontal line', image)
+        cv2.waitKey(0)
 
     def base_line(self, one_line_image):
         # Got self.base_start, self.base_end, self.one_line_image
@@ -570,47 +594,64 @@ class ImageProcessing():
         cv2.line(self.one_line_image, (0, self.base_end),
                  (self.width, self.base_end), (0, 255, 0), 2)
 
-    def detect_vertical_line(self, v_projection, image):
+    def detect_vertical_line(self, image, pixel_limit_ste, pixel_limit_ets):
         # Detect line vertical
-        # v_projection = self.v_projection
+        v_projection = self.v_projection
         # print(v_projection)
         original_image = image.copy()
         up_flag = 0
         down_flag = 0
-        pixel_limit_v = 8
-        start_to_end_v = 0
-        start_point_v = []
+        start_to_end = 0
+        end_to_start = pixel_limit_ets + 1
+        start_point = []
         for x in range(len(v_projection)):
-            if v_projection[x] > 0 and up_flag == 0:
-                start_point_v.append(x)
-                up_flag = 1
-                down_flag = 0
-
-            if v_projection[x] > 0 and down_flag == 0:
-                start_to_end_v += 1
+            if v_projection[x] > 0 and up_flag == 1:
+                start_to_end += 1
 
             if v_projection[x] == 0 and up_flag == 1:
-                start_point_v.append(x)
-                # print(start_to_end_v)
-                if start_to_end_v < pixel_limit_v:
-                    del(start_point_v[len(start_point_v) - 1])
-                    del(start_point_v[len(start_point_v) - 1])
-                    # print(start_to_end_v)
-                    print('delete')
-                start_to_end_v = 0
-                up_flag = 0
-                down_flag = 1
+                # print(start_to_end)
+                start_point.append(x)
+                # print(start_point)
+                if start_to_end < pixel_limit_ste:
+                    del(start_point[len(start_point) - 1])
+                    # print('delete ste')
+                    down_flag = 0
+                    up_flag = 1
+                else:
+                    down_flag = 1
+                    up_flag = 0
+                    start_to_end = 0
 
-        self.start_point_v = start_point_v
-        # print(start_point_v)
+            if v_projection[x] == 0 and down_flag == 1:
+                end_to_start += 1
+
+            if v_projection[x] > 0 and up_flag == 0:
+                # if count>=pixel_limit
+                # print('ets {}'.format(end_to_start))
+                start_point.append(x)
+                # print(start_point)
+                if end_to_start < pixel_limit_ets:
+                    del(start_point[len(start_point)-1])
+                    del(start_point[len(start_point)-1])
+                    # print('delete')
+                    # up_flag = 0
+                    # down_flag = 1
+                # print(count)
+                # else:
+                up_flag = 1
+                down_flag = 0
+                end_to_start = 0
+
+        self.start_point_v = start_point
+        print(start_point)
         # Even is begining of line and Odd is end of line
-        for x in range(len(start_point_v)):
+        for x in range(len(start_point)):
             if x % 2 == 0:
-                cv2.line(original_image, (start_point_v[x], 0),
-                         (start_point_v[x], self.height), (0, 0, 0), 2)
+                cv2.line(original_image, (start_point[x], 0),
+                         (start_point[x], self.height), (0, 0, 0), 2)
             else:
-                cv2.line(original_image, (start_point_v[x], 0),
-                         (start_point_v[x], self.height), (0, 0, 0), 2)
+                cv2.line(original_image, (start_point[x], 0),
+                         (start_point[x], self.height), (100, 100, 100), 2)
 
         cv2.imshow('line', original_image)
         print('>')
@@ -1336,8 +1377,12 @@ def main():
 
         input_image = ImageProcessing(original_image=original_image.copy())
         input_image.horizontal_projection(image.copy())  # adaptive binaryimage
-        input_image.detect_horizontal_line()  # got self.start_point_h
-        cv2.imshow('from main', input_image.original_image)
+        input_image.detect_horizontal_line(
+            image=original_image.copy(),
+            pixel_limit_ste=5,  # Start to end
+            pixel_limit_ets=5   # End to start
+        )  # Got self.start_point_h
+        # cv2.imshow('from main', input_image.original_image)
         input_image.crop_image(h_point=input_image.start_point_h,
                                input_image=original_image.copy())  # crop ori
 
@@ -1408,8 +1453,12 @@ def main():
                 # cv2.waitKey(0)
 
             # for key in font_type.get_marker_thresh().keys():
-            v_projection = input_image.vertical_projection(temp_image)
-            input_image.detect_vertical_line(v_projection, temp_image.copy())
+            input_image.vertical_projection(temp_image)
+            input_image.detect_vertical_line(
+                image=temp_image.copy(),
+                pixel_limit_ste=8,  # Start to end
+                pixel_limit_ets=0   # End to start
+            )
             # print(input_image.start_point_v)
             # Crop next word marker wether it's inside or beside 
             crop_words = {}
@@ -1469,8 +1518,8 @@ def main():
                                             break
                                         else:
                                             break
-            print(crop_words)
-            print(v_point)
+            # print(crop_words)
+            # print(v_point)
             if object_result:
                 # object_result = font_type.get_object_result()
                 font_type.display_marker_result(input_image=temp_image_ori)
@@ -1588,7 +1637,9 @@ def main():
                         # kernel = np.ones((2,2), np.uint8)
                         # erosion = cv2.erode(final_img.copy(),kernel,iterations = 1)
                         # opening = cv2.morphologyEx(final_img.copy(), cv2.MORPH_OPEN, kernel)
-                        closing = cv2.morphologyEx(final_img.copy(), cv2.MORPH_CLOSE, kernel)
+                        closing = cv2.morphologyEx(
+                            final_img.copy(), cv2.MORPH_CLOSE, kernel
+                        )
                         final_img = cv2.bitwise_not(closing)
                         cv2.imshow('morph', final_img)
                         print('morph')
@@ -1607,7 +1658,7 @@ def main():
                         # input_image.base_line(final_img.copy())
                         # word_baseline_height = input_image.base_end \
                         #                        - input_image.base_start
-                        # oneline_height = oneline_baseline[1] - oneline_baseline[0]
+                        oneline_height = oneline_baseline[1] - oneline_baseline[0]
                         # print(oneline_height)
                         # cv2.waitKey(0)
                         input_image.eight_conectivity(final_img)
@@ -1615,14 +1666,23 @@ def main():
                         cv2.waitKey(0)
                         print('reg length={}'.format(len(input_image.conn_pack)))
                         
-                        # Doing vertical word projection
+                        # Doing vertical & horizontal word projection to get marker
                         final_h_proj = input_image.horizontal_projection(
                             input_image.image_marker_only
                         )
                         final_v_proj = input_image.vertical_projection(
                             input_image.image_marker_only
                         )
-                        input_image.detect_horizontal_line()
+                        if oneline_height <= 1:
+                            oneline_height_sorted = 3
+                        else:
+                            oneline_height_sorted = oneline_height
+                        input_image.detect_horizontal_line(
+                            image=input_image.image_marker_only, 
+                            pixel_limit_ste=oneline_height_sorted,
+                            pixel_limit_ets=1
+                        )
+                        print(input_image.start_point_h)
                         # h_projection = horizontal_projection(pixel_gray.copy())
 
                         plt.subplot(211), plt.imshow(input_image.image_marker_only)
