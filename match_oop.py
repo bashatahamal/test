@@ -533,7 +533,7 @@ class ImageProcessing():
                 up_flag = 1
                 down_flag = 0
                 end_to_start = 0
-        
+
         if len(start_point) % 2 != 0:
             if h_projection[len(h_projection) - 1] > 0:
                 start_point.append(len(h_projection) - 1)
@@ -900,7 +900,7 @@ class ImageProcessing():
         #                     print('break from count 1')
         #                     # cv2.waitKey(0)
         #                     break
-                        
+
         #                 count = 0
         #                 # print('x_y_c[]={}'.format(x_y_c))
         #                 # cv2.waitKey(0)
@@ -1024,7 +1024,7 @@ class ImageProcessing():
                             if image[y - 1, x + 1] == 0:
                                 x_y.append((y - 1, x + 1))
                                 # print('r3')
-                    
+
                     # print('x_y= {}'.format(x_y))
                     # print('region= {}'.format(reg))
 
@@ -1052,11 +1052,12 @@ class ImageProcessing():
                                     if x_list == val:
                                         if r not in connected_list:
                                             connected_list.append(r)
-                                        # print('xlist= {}, val={}'.format(x_list,val))
+                                        # print('xlist= {}, val={}'.format(
+                                        # x_list,val))
                                         # cv2.waitKey(0)
-                                        # for x_join in x_y: 
-                                        #     self.conn_pack['region_' + str(r)]\
-                                        #         .add(x_join)
+                                        # for x_join in x_y:
+                                        #     self.conn_pack['region_' + str(r)
+                                        #           ].add(x_join)
                                         connected = True
                                         # break
                         if connected_list != []:
@@ -1064,7 +1065,7 @@ class ImageProcessing():
                                 if x_join not in self.conn_pack[
                                         connected_list[0]]:
                                     self.conn_pack[connected_list[0]
-                                        ].append(x_join)
+                                                   ].append(x_join)
                         # print('connected list={}'.format(connected_list))
                         # cv2.waitKey(0)
                         if len(connected_list) > 1:
@@ -1079,7 +1080,9 @@ class ImageProcessing():
                                         ].append(x_join)
                             for c_list in range(len(connected_list) - 1):
                                 c_list += 1
-                                print('delete {}'.format(connected_list[c_list]))
+                                print('delete {}'.format(
+                                    connected_list[c_list]
+                                ))
                                 del(self.conn_pack[connected_list[c_list]])
                                 # print(connected_list[c_list])
 
@@ -1169,21 +1172,6 @@ class ImageProcessing():
             cv2.imshow('marker only', self.image_marker_only)
             print('marker only')
             cv2.waitKey(0)
-                    #     # print('is not empty')
-                    #     # print(reg)
-                    #     for r in range(reg):
-                    #         print(r)
-                    #         for val in self.conn_pack['region_' + str(r+1)]:
-                    #             print('try conectivity')
-                    #             print(val)
-                                # for x in range(len(x_y)):
-                                #     if x_y[x] == 100:#val.any():
-                                #         self.conn_pack['region_' + str(reg+1)].append(x_y)
-                                #     else:
-                                #         new_reg = reg+1
-                                #         # print('plusing reg')
-                                #         # self.conn_pack['region_' + str(reg)] == []
-                                #         self.conn_pack['region_' + str(new_reg)] = x_y
 
         #             # reg = new_reg
         # self.conn_pack_sort = copy.deepcopy(self.conn_pack)
@@ -1307,8 +1295,6 @@ class ImageProcessing():
         #                             connected = True
         #                             break
 
-
-
         # print(same_reg)
         # cv2.waitKey(0)
         # for lr in same_reg:
@@ -1323,7 +1309,6 @@ class ImageProcessing():
         #         if reg_1 == (same_reg[x][1], same_reg[x][0]):
         #             save.append(x)
         #             break
-
 
         # print(same_reg)
         # print(len(same_reg))
@@ -1340,7 +1325,7 @@ class ImageProcessing():
         final_img = cv2.bitwise_not(image)
         w_height, w_width = final_img.shape
         # cv2.imshow('inverse', final_img)
-        kernel = np.ones((2,2), np.uint8)
+        kernel = np.ones((2, 2), np.uint8)
         # dilation = cv2.dilate(final_img.copy(),kernel,iterations = 1)
         # kernel = np.ones((2,2), np.uint8)
         # erosion = cv2.erode(final_img.copy(),kernel,iterations = 1)
@@ -1369,7 +1354,7 @@ class ImageProcessing():
         # cv2.waitKey(0)
         # Eight conn resulting image body and marker only
         self.eight_conectivity(final_img, oneline_baseline)
-        print('back to main')
+        print('back to find_final_segmented_char function ')
         cv2.waitKey(0)
         # print('reg length={}'.format(
         # len(self.conn_pack)))
@@ -1503,7 +1488,7 @@ class ImageProcessing():
             if len(final_h_list_sorted) == 1:
                 segmented_char.append((0, w_width))
                 print('only have one marker')
-                return skip
+                return segmented_char
 
             if len(final_h_list_sorted) > 1:
                 # Get the most rightsided marker key
@@ -1686,6 +1671,7 @@ class ImageProcessing():
                     #     break
         return segmented_char
 
+
 def main():
     # for imagePath in sorted(glob.glob(args["images"] + "/*.png")):
 
@@ -1724,38 +1710,6 @@ def main():
         # cv2.imshow('morph', image)
         # print('morph')
         # cv2.waitKey(0)
-
-        # # Font_Processing
-        # font_list = font(imagePath=imagePath, image=gray)
-
-        # max_font_value = 0
-        # font_type = 0
-        # numstep = 20
-        # for font_object in font_list:
-        #     font_object.run(numstep=numstep)
-        #     for value in font_object.get_object_result().values():
-        #         # print(value)
-        #         if type(value) == float:
-        #             if value > max_font_value:
-        #                 max_font_value = value
-        #                 font_type = font_object
-
-        # if isinstance(font_type, type(font_list[0])):
-        #     font_type.display_marker_result()
-        # else:
-        #     print('Not a valuable result found check the numstep!')
-
-        # pixel_gray = image
-        # pixel_gray = cv2.cvtColor(pixel_value, cv2.COLOR_BGR2GRAY)
-        # v_projection = vertical_projection(pixel_gray.copy())
-        # h_projection = horizontal_projection(pixel_gray.copy())
-        # plt.subplot(212), plt.imshow(pixel_gray)
-        # plt.subplot(221), plt.plot(np.arange(0, len(v_projection), 1), v_projection)
-        # plt.subplot(222), plt.plot(np.arange(0, len(h_projection), 1), h_projection)
-        # # plt.xlim([0,256])
-        # # plt.show()
-        # cv2.waitKey(0)
-        # cv2.imshow('h_before', image)
 
         input_image = ImageProcessing(original_image=original_image.copy())
         input_image.horizontal_projection(image.copy())  # adaptive binaryimage
@@ -1846,7 +1800,8 @@ def main():
                 # pixel_limit_ets=0   # End to start
             )
             # print(input_image.start_point_v)
-            # Crop next word marker wether it's inside or beside 
+
+            # Crop next word marker wether it's inside or beside
             crop_words = {}
             if object_result:
                 for data in object_result:
@@ -1914,8 +1869,8 @@ def main():
                 print('>')
                 cv2.waitKey(0)
 
-            # Check v_projection words
-            # If there is a hanging marker
+            # Check v_projection words if there is a hanging marker
+            # and get crop words final and store it with 'final_beside'
             crop_words_final = crop_words.copy()
             for key in crop_words:
                 name = key.split('_')
@@ -1972,7 +1927,8 @@ def main():
                                 w_index = x
                                 break
                     # print(w_index)
-                    # Check if horizontal p is not zero(skipping hanging marker)
+                    # Check if horizontal p is not zero
+                    # (skipping hanging marker)
                     base_check = next_h_proj[oneline_baseline[0]:
                                              oneline_baseline[1]]
                     if np.all(base_check == 0):
@@ -2009,7 +1965,6 @@ def main():
 
                     # List available for final segmented char
                     segmented_char = []
-
                     if name[1] == 'beside':
                         final_img = temp_image.copy()[:, x_value[0]:x_value[1]]
                         w_height, w_width = final_img.shape
@@ -2021,10 +1976,21 @@ def main():
                         if segmented_char == 'continue':
                             print('>> from main to continue next word candidate')
                             continue
+
                     if name[1] == 'inside':
-                        print('inside')
+                        x1_ordinat = crop_words_final['ordinat_' + join][0]
+                        print('x1_ordinat = {}'.format(x1_ordinat))
                         cv2.waitKey(0)
-                        continue
+                        final_img = temp_image.copy()[:, x_value[0]:x1_ordinat]
+                        w_height, w_width = final_img.shape
+                        cv2.imshow('inside', final_img)
+                        segmented_char = input_image.find_final_segmented_char(
+                            final_img,
+                            oneline_baseline
+                        )
+                        if segmented_char == 'continue':
+                            print('>> from main to continue next word candidate')
+                            continue
 
                     print('segmented char = {}'.format(segmented_char))
                     draw_img = final_img.copy()
@@ -2044,169 +2010,6 @@ def main():
                     cv2.waitKey(0)
 
 
-
-
-        # input_image.base_line()
-        # input_image.detect_vertical_line()
-
-        # cv2.imshow('from main', input_image.original_image)
-
-    #     # Detect line horizontal
-    #     up_flag = 0
-    #     down_flag = 0
-    #     pixel_limit = 4
-    #     start_to_end = 0
-    #     end_to_start = 0
-    #     start_point = []
-    #     for x in range(len(h_projection)):
-    #         if h_projection[x] == 0 and up_flag == 1:
-    #             start_point.append(x)
-    #             down_flag = 1
-    #             up_flag = 0
-
-    #         if up_flag == 1:
-    #             start_to_end += 1
-    #         else:
-    #             start_to_end = 0
-
-    #         if down_flag == 1:
-    #             end_to_start += 1
-    #             # print(end_to_start)
-    #         else:
-    #             end_to_start = 0
-
-    #         if h_projection[x] > 0 and up_flag == 0:
-    #             # if count>=pixel_limit
-    #             start_point.append(x)
-    #             if down_flag == 1 and end_to_start < pixel_limit:
-    #                 del(start_point[len(start_point)-1])
-    #                 del(start_point[len(start_point)-1])
-    #                 # print('delete')
-    #             # print(count)
-    #             up_flag = 1
-    #             down_flag = 0
-
-    #     # Even is begining of line and Odd is end of line
-    #     for x in range(len(start_point)):
-    #         # cv2.line(original_image, (0, start_point[x]), (len(v_projection),
-    #         #          start_point[x]), (0, 0, 255), 2)
-    #         # print(x)
-    #         if x % 2 == 0:     # Start_point
-    #             cv2.line(original_image, (0, start_point[x]), 
-    #                      (len(v_projection), start_point[x]), (0, 0, 255), 2)
-    #             # print(x)
-    #         else:         # End_point
-    #             cv2.line(original_image, (0, start_point[x]),
-    #                      (len(v_projection), start_point[x]), (255, 0, 0), 2)
-    #             # print(x)
-    #             # print('end')
-
-    #     diff = [0]
-    #     for x in range(len(h_projection)):
-    #         if x > 0:
-    #             temp_diff = abs(int(h_projection[x]) - int(h_projection[x-1]))
-    #             diff.append(temp_diff)
-
-    #     base_start = 0
-    #     base_end = 0
-    #     temp = 0
-    #     for x in range(len(diff)):
-    #         if diff[x] > temp:
-    #             temp = diff[x]
-    #             base_end = x
-
-    #     temp = 0 
-    #     for x in range(len(diff)):
-    #         if x == base_end:
-    #             continue
-    #         if diff[x] > temp:
-    #             temp = diff[x]
-    #             base_start = x
-
-    #     cv2.line(original_image, (0, base_start), (len(v_projection),
-    #              base_start), (0, 255, 0), 2)
-    #     cv2.line(original_image, (0, base_end), (len(v_projection),
-    #              base_end), (0, 255, 0), 2)
-
-    
-    #     # Detect line vertical
-    #     up_flag = 0
-    #     down_flag = 0
-    #     pixel_limit_v = 4
-    #     start_to_end_v = 0
-    #     end_to_start_v = 0
-    #     start_point_v = []
-    #     for x in range(len(v_projection)):
-    #         if v_projection[x] > 0 and up_flag == 0:
-    #             start_point_v.append(x)
-    #             up_flag = 1
-    #             down_flag = 0
-
-    #         if v_projection[x] == 0 and up_flag == 1:
-    #             start_point_v.append(x)
-    #             down_flag = 1
-    #             up_flag = 0
-
-    #         if up_flag == 1:
-    #             start_to_end_v += 1
-    #         else:
-    #             start_to_end_v = 0
-
-    #         if down_flag == 1:
-    #             end_to_start_v += 1
-    #         else:
-    #             end_to_start_v = 0
-
-
-    #     # Even is begining of line and Odd is end of line
-    #     for x in range(len(start_point_v)):
-    #         if x % 2 == 0:
-    #             cv2.line(original_image, (start_point_v[x], 0),
-    #                      (start_point_v[x], len(h_projection)), (0, 0, 255), 2)
-    #         else:
-    #             cv2.line(original_image, (start_point_v[x], 0), 
-    #                      (start_point_v[x], len(h_projection)), (255, 0, 0), 2)
-
-    #     cv2.imshow('line', original_image)
-    #     cv2.waitKey(0)
-
-    #     print(start_point)
-    #     bag_of_h_crop = {}
-    #     for x in range(len(start_point)):
-    #         if x + 2 > len(start_point):
-    #             print('x')
-    #             continue
-    #         if x % 2 == 0:
-    #             bag_of_h_crop[x] = original_image[
-    #                                start_point[x]:start_point[x+1], :]
-    #     # print(bag_of_h_crop)
-    #     for image in bag_of_h_crop:
-    #         cv2.imshow('bag_h', bag_of_h_crop[image])
-    #         cv2.waitKey(0)
-    #         # cv2.destroyAllWindows()
-
-    #     bag_of_v_crop = {}
-    #     count = 0
-    #     for image in bag_of_h_crop:
-    #         # print(image)
-    #         #y = int(image/2)
-    #         for x in range(len(start_point_v)):
-    #             #print('inside loop')
-    #             print(image)
-    #             count += 1
-    #             if x % 2 == 0:
-    #                 x1 = start_point[image]
-    #                 x2 = start_point[image+1]
-    #                 y1 = start_point_v[x]
-    #                 y2 = start_point_v[x+1]
-    #                 bag_of_v_crop[count] = original_image[x1:x2, y1:y2]
-    #             # print(x1,'_', x2,'_', y1,'_', y2)
-
-    #     for image in bag_of_v_crop:
-    #         cv2.imshow('Crop Result', bag_of_v_crop[image])
-    #         cv2.waitKey(0)
-    #         # cv2.destroyAllWindows()
-        # cv2.waitKey(0)
     cv2.destroyAllWindows()
 
 # cv2.imshow('crop', view)
