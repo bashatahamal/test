@@ -1854,7 +1854,7 @@ def main():
                                 else:
                                     continue
                         print('1st {}, 2nd {}'.format(right_side, right_side_2nd))
-                                        
+
 
                         # plt.subplot(211), plt.imshow(input_image.image_marker_only)
                         # plt.subplot(212), plt.plot(np.arange(0, len(final_h_proj), 1), final_h_proj)
@@ -1875,7 +1875,7 @@ def main():
                                 temp_diff = int(body_v_proj[x + 1])\
                                             - int(body_v_proj[x])
                                 diff.append(temp_diff)
-                        
+
                         print(diff)
                         plt.subplot(211), plt.imshow(input_image.image_body)
                         plt.subplot(212), plt.plot(np.arange(0, len(body_v_proj), 1), body_v_proj)
@@ -1888,31 +1888,75 @@ def main():
                         else:
                             word_height_sorted = input_image.baseline_img_body_h
                         segmented_char = []
-                        for x in range(len(diff))[::-1]:
+
+                        count_down = False
+                        cord_x = 0
+                        temp = 0
+                        save_down = {}
+                        for gap in diff[::-1]:
+                            cord_x += 1
+                            if gap > 0:
+                                temp += gap
+                                count_down = True
+                            if (gap == 0 or gap < 0) and count_down:
+                                save_down[cord_x] = temp
+                                temp = 0
+                                count_down = False
+
+                        print('im saving= {}'.format(save_down))
+                        cv2.waitKey(0)
+
+                        # Getting the first character
+                        for save in save_down:
                             if w_width < 2 * input_image.baseline_img_body_h:
                                 segmented_char.append((0, w_width))
+                                print('equal w_width')
                                 break
-                            if diff[x] > 2 * word_height_sorted:
-                                if body_v_proj[x] == 0:
-                                    print('zero')
-                                    segmented_char.append((x, len(diff)))
-                                    char_on_steep = True
-                                    break
-                                if len(diff) - x < 2 * input_image.\
+                            right_side_val = final_h_list_sorted[right_side_2nd
+                                                                ][1][1]
+                            if len(diff) - save > right_side_val:
+                                # Steep down value is x times grater than baseline
+                                if save_down[save] > 1 * input_image.\
                                         baseline_img_body_h:
-                                    print('not that long')
-                                    continue
-                                else:
-                                    segmented_char.append((x, len(diff)))
-                                    print('normal')
-                                    char_on_steep = True
-                                    break
-                            right_side_val = final_h_list_sorted[
-                                                right_side_2nd][1][1]
-                            if x <= right_side_val:
+                                    # Char is x times greater than baseline
+                                    if save > 1 * input_image.\
+                                            baseline_img_body_h:
+                                        segmented_char.append((len(diff) - save,
+                                                               len(diff)))
+                                        print('steep down')
+                                        break
+                                    else:
+                                        continue
+                            else:
                                 print('below 2nd right side')
                                 segmented_char.append((right_side_val, len(diff)))
                                 break
+
+                        # for x in range(len(diff))[::-1]:
+                        #     if w_width < 2 * input_image.baseline_img_body_h:
+                        #         segmented_char.append((0, w_width))
+                        #         break
+                            # if diff[x] > 2 * word_height_sorted:
+                            #     if body_v_proj[x] == 0:
+                            #         print('zero')
+                            #         segmented_char.append((x, len(diff)))
+                            #         char_on_steep = True
+                            #         break
+                            #     if len(diff) - x < 2 * input_image.\
+                            #             baseline_img_body_h:
+                            #         print('not that long')
+                            #         continue
+                            #     else:
+                            #         segmented_char.append((x, len(diff)))
+                            #         print('normal')
+                            #         char_on_steep = True
+                            #         break
+                            # right_side_val = final_h_list_sorted[
+                            #                     right_side_2nd][1][1]
+                            # if x <= right_side_val:
+                            #     print('below 2nd right side')
+                            #     segmented_char.append((right_side_val, len(diff)))
+                            #     break
 
                         print('segmented char = {}'.format(segmented_char))
                         draw_img = final_img.copy()
