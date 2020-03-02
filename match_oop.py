@@ -1653,6 +1653,7 @@ def main():
                             join.append(name[x] + '_')
                             # print(name[x])
                     join = ''.join(join)
+                    print('join = {}'.format(join))
 
                     if name[1] == 'beside':
                         final_img = temp_image.copy()[:, x_value[0]:x_value[1]]
@@ -1695,22 +1696,24 @@ def main():
                         oneline_height = oneline_baseline[1] - oneline_baseline[0]
                         # print(oneline_height)
                         # cv2.waitKey(0)
+                        # Eight conn resulting image body and marker only
                         input_image.eight_conectivity(final_img, oneline_baseline)
                         print('back to main')
                         cv2.waitKey(0)
-                        # print('reg length={}'.format(len(input_image.conn_pack)))
-                        
-                        # Doing vertical & horizontal word projection to get marker
+                        # print('reg length={}'.format(
+                        # len(input_image.conn_pack)))
+
+                        # Doing vertical & horizontal word projection
+                        # to get marker only coordinat
                         final_h_proj = input_image.horizontal_projection(
                             input_image.image_marker_only
                         )
-                        
                         if oneline_height <= 1:
                             oneline_height_sorted = 3
                         else:
                             oneline_height_sorted = oneline_height
                         input_image.detect_horizontal_line(
-                            image=input_image.image_marker_only.copy(), 
+                            image=input_image.image_marker_only.copy(),
                             pixel_limit_ste=oneline_height_sorted,
                             pixel_limit_ets=1
                         )
@@ -1720,7 +1723,7 @@ def main():
                         if len_h % 2 != 0:
                             del(input_image.start_point_h[len_h - 1])
                         # print(input_image.start_point_h)
-                        
+                        # Doing v_projection on every h_projection word
                         final_h_list = {}
                         reg = 0
                         for x in range(len(input_image.start_point_h)):
@@ -1748,7 +1751,7 @@ def main():
                                              input_image.start_point_h[x+1]),\
                                             (input_image.start_point_v[l],
                                              input_image.start_point_v[l+1])
-                                        
+
                                 # final_h_list.extend(input_image.start_point_v)
                                 # print('hlist {}'.format(h_list))
                                 # print('final h {}'.format(final_h_list))
@@ -1764,6 +1767,8 @@ def main():
                             print('>>> It is not a character --> continue ')
                             cv2.waitKey(0)
                             continue
+
+                        # Check to merging overlaping marker
                         final_h_list_sorted = copy.deepcopy(final_h_list)
                         # count_x = 0
                         reg = 0
@@ -1792,7 +1797,7 @@ def main():
                                     cv2.waitKey(0)
                                     reg += 1
                                     if x < x_cmp:
-                                        final_h_list_sorted['add' + str(reg)] = \
+                                        final_h_list_sorted['add'+str(reg)] =\
                                             (final_h_list[x][0][0],
                                              final_h_list[x_cmp][0][1]),\
                                             (final_h_list[x][1][0],
@@ -1803,7 +1808,7 @@ def main():
                                         if x_cmp in final_h_list_sorted:
                                             del(final_h_list_sorted[x_cmp])
                                     else:
-                                        final_h_list_sorted['add' + str(reg)] = \
+                                        final_h_list_sorted['add'+str(reg)] =\
                                             (final_h_list[x_cmp][0][0],
                                              final_h_list[x][0][1]),\
                                             (final_h_list[x][1][0],
@@ -1865,7 +1870,7 @@ def main():
                         # plt.show()
                         # cv2.waitKey(0)
 
-                        # Checking to compare with baseline word to get char
+                        # Getting differentiation list on every word pixel
                         body_v_proj = input_image.vertical_projection(
                             input_image.image_body
                         )
@@ -1878,59 +1883,107 @@ def main():
 
                         print(diff)
                         plt.subplot(211), plt.imshow(input_image.image_body)
-                        plt.subplot(212), plt.plot(np.arange(0, len(body_v_proj), 1), body_v_proj)
+                        plt.subplot(212), plt.plot(
+                            np.arange(0, len(body_v_proj), 1), body_v_proj
+                        )
                         plt.show()
                         cv2.waitKey(0)
 
-                        char_on_steep = False
-                        if input_image.baseline_img_body_h <= 1:
-                            word_height_sorted = 3
-                        else:
-                            word_height_sorted = input_image.baseline_img_body_h
+                        # Getting 1st char by it's 2nd marker
                         segmented_char = []
-
-                        count_down = False
-                        cord_x = 0
+                        # x1_2nd_marker = final_h_list_sorted[right_side_2nd
+                        #                                     ][1][0]
+                        x2_2nd_marker = final_h_list_sorted[right_side_2nd
+                                                            ][1][1]
+                        x1_1st_marker = final_h_list_sorted[right_side][1][0]
+                        save_sistent = {}
+                        counting = False
                         temp = 0
-                        save_down = {}
-                        for gap in diff[::-1]:
-                            cord_x += 1
-                            if gap > 0:
-                                temp += gap
-                                count_down = True
-                            if (gap == 0 or gap < 0) and count_down:
-                                save_down[cord_x] = temp
-                                temp = 0
-                                count_down = False
-
-                        print('im saving= {}'.format(save_down))
-                        cv2.waitKey(0)
-
-                        # Getting the first character
-                        for save in save_down:
-                            if w_width < 2 * input_image.baseline_img_body_h:
-                                segmented_char.append((0, w_width))
-                                print('equal w_width')
-                                break
-                            right_side_val = final_h_list_sorted[right_side_2nd
-                                                                ][1][1]
-                            if len(diff) - save > right_side_val:
-                                # Steep down value is x times grater than baseline
-                                if save_down[save] > 1 * input_image.\
-                                        baseline_img_body_h:
-                                    # Char is x times greater than baseline
-                                    if save > 1 * input_image.\
-                                            baseline_img_body_h:
-                                        segmented_char.append((len(diff) - save,
-                                                               len(diff)))
-                                        print('steep down')
-                                        break
-                                    else:
-                                        continue
+                        count_dinat = 0
+                        count_sistent = 0
+                        if x1_1st_marker - x2_2nd_marker > 0:
+                            for x in range(x2_2nd_marker, x1_1st_marker + 1):
+                                count_dinat += 1
+                                if diff[x] == 0:
+                                    count_sistent += 1
+                                    counting = True
+                                if ((diff[x] > 0 or diff[x] < 0)
+                                        or x == x1_1st_marker) and counting:
+                                    save_sistent[count_dinat] = count_sistent
+                                    count_sistent = 0
+                                    counting = False
+                            print(save_sistent)
+                            cv2.waitKey(0)
+                            if save_sistent != {}:
+                                for key in save_sistent:
+                                    if save_sistent[key] > temp:
+                                        temp = save_sistent[key]
+                                        the_sistent = key
+                                x1_char = x2_2nd_marker + the_sistent\
+                                    - round(1/1.9 * save_sistent[the_sistent])
+                                segmented_char.append((x1_char, len(diff)))
+                                print('1/2 of the most consistent')
                             else:
-                                print('below 2nd right side')
-                                segmented_char.append((right_side_val, len(diff)))
-                                break
+                                segmented_char.append((x2_2nd_marker,
+                                                       len(diff)))
+                                print('Consistent hist not found between marker')
+                        else:
+                            segmented_char.append((x2_2nd_marker,
+                                                   len(diff)))
+                            print('1st marker and 2nd marker is overlaped')
+
+                        # Getting the first character by steep down
+                        # count_down = False
+                        # cord_x = 0
+                        # temp = 0
+                        # save_down = {}
+                        # char_on_steep = False
+                        # if input_image.baseline_img_body_h <= 1:
+                        #     word_height_sorted = 3
+                        # else:
+                        #     word_height_sorted = input_image.\
+                        #         baseline_img_body_h
+
+                        # Get the steep down from right side
+                        # for gap in diff[::-1]:
+                        #     cord_x += 1
+                        #     if gap < x1_2nd_marker:
+                        #         break
+                        #     if gap > 0:
+                        #         temp += gap
+                        #         count_down = True
+                        #     if (gap == 0 or gap < 0) and count_down:
+                        #         save_down[cord_x] = temp
+                        #         temp = 0
+                        #         count_down = False
+
+                        # print('im saving= {}'.format(save_down))
+                        # cv2.waitKey(0)
+
+                        # for save in save_down:
+                        #     if w_width < 2 * input_image.baseline_img_body_h:
+                        #         segmented_char.append((0, w_width))
+                        #         print('equal w_width')
+                        #         break
+                        #     right_side_val = final_h_list_sorted[right_side_2nd
+                        #                                          ][1][1]  # x2
+                        #     if len(diff) - save > right_side_val:
+                        #         # Steep down value is x times grater than baseline
+                        #         if save_down[save] > 1 * input_image.\
+                        #                 baseline_img_body_h:
+                        #             # Char is x times greater than baseline
+                        #             if save > 1 * input_image.\
+                        #                     baseline_img_body_h:
+                        #                 segmented_char.append((len(diff) - save,
+                        #                                        len(diff)))
+                        #                 print('steep down')
+                        #                 break
+                        #             else:
+                        #                 continue
+                        #     else:
+                        #         print('below 2nd right side')
+                        #         segmented_char.append((right_side_val, len(diff)))
+                        #         break
 
                         # for x in range(len(diff))[::-1]:
                         #     if w_width < 2 * input_image.baseline_img_body_h:
