@@ -1826,7 +1826,7 @@ def main():
                                           (100, 100, 100), 2)
                         cv2.imshow('mark', mark_img)
                         cv2.waitKey(0)
-                        
+
                         # Get the most rightsided marker key
                         temp = 0
                         for key in final_h_list_sorted.keys():
