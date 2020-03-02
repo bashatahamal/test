@@ -485,58 +485,86 @@ class ImageProcessing():
 
         return self.h_projection
 
-    def detect_horizontal_line(self):
+    def detect_horizontal_line(self, image, pixel_limit_ste, pixel_limit_ets):
         # Detect line horizontal
+        if len(image.shape) == 3:
+            height, width, _ = image.shape
+            color_temp = image.copy()
+        else:
+            height, width = image.shape
         h_projection = self.h_projection
         up_flag = 0
         down_flag = 0
-        pixel_limit = 5
+        # pixel_limit = 5
         start_to_end = 0
-        end_to_start = 0
+        end_to_start = pixel_limit_ets + 1
         start_point = []
         for x in range(len(h_projection)):
-            if h_projection[x] == 0 and up_flag == 1:
-                start_point.append(x)
-                down_flag = 1
-                up_flag = 0
-
-            if up_flag == 1:
+            if h_projection[x] > 0 and up_flag == 1:
                 start_to_end += 1
-            else:
-                start_to_end = 0
 
-            if down_flag == 1:
+            if h_projection[x] == 0 and up_flag == 1:
+                # print(start_to_end)
+                start_point.append(x)
+                # print(start_point)
+                if start_to_end < pixel_limit_ste:
+                    del(start_point[len(start_point) - 1])
+                    # print('delete ste')
+                    down_flag = 0
+                    up_flag = 1
+                else:
+                    down_flag = 1
+                    up_flag = 0
+                    start_to_end = 0
+
+            if h_projection[x] == 0 and down_flag == 1:
                 end_to_start += 1
-                # print(end_to_start)
-            else:
-                end_to_start = 0
 
             if h_projection[x] > 0 and up_flag == 0:
                 # if count>=pixel_limit
+                # print('ets {}'.format(end_to_start))
                 start_point.append(x)
-                if down_flag == 1 and end_to_start < pixel_limit:
+                # print(start_point)
+                if end_to_start < pixel_limit_ets:
                     del(start_point[len(start_point)-1])
                     del(start_point[len(start_point)-1])
                     # print('delete')
                 # print(count)
                 up_flag = 1
                 down_flag = 0
-        self.start_point_h = start_point
+                end_to_start = 0
+        
+        if len(start_point) % 2 != 0:
+            if h_projection[len(h_projection) - 1] > 0:
+                start_point.append(len(h_projection) - 1)
 
+        self.start_point_h = start_point
+        # print('self from function = {}'.format(start_point))
+        # print('self from function self = {}'.format(self.start_point_h))
+        # print('height {}, width {}'.format(height, width))
+        # color_temp = color_temp[0:height, 0:width]
+        # color_temp[:] = 255
+        # for x in range(len(start_point)):
+        #     if x % 2 == 0:     # Start_point
+        #         cv2.line(color_temp, (0, start_point[x]),
+        #                  (width, start_point[x]), (0, 0, 255), 2)
+        #         # print(x)
+        #     else:         # End_point
+        #         cv2.line(color_temp, (0, start_point[x]),
+        #                  (width, start_point[x]), (255, 0, 0), 2)
+        # cv2.imshow('painting test', color_temp)
+        # cv2.waitKey(0)
         # Even is begining of line and Odd is end of line
         for x in range(len(start_point)):
-            # cv2.line(original_image, (0, start_point[x]), (len(v_projection),
-            #          start_point[x]), (0, 0, 255), 2)
-            # print(x)
             if x % 2 == 0:     # Start_point
-                cv2.line(self.original_image, (0, start_point[x]),
-                         (self.width, start_point[x]), (0, 0, 255), 2)
+                cv2.line(image, (0, start_point[x]),
+                         (width, start_point[x]), (0, 0, 255), 2)
                 # print(x)
             else:         # End_point
-                cv2.line(self.original_image, (0, start_point[x]),
-                         (self.width, start_point[x]), (255, 0, 0), 2)
-        # cv2.imshow('line', self.original_image)
-        # cv2.waitKey(0)
+                cv2.line(image, (0, start_point[x]),
+                         (width, start_point[x]), (100, 100, 255), 2)
+        cv2.imshow('horizontal line', image)
+        cv2.waitKey(0)
 
     def base_line(self, one_line_image):
         # Got self.base_start, self.base_end, self.one_line_image
@@ -570,47 +598,71 @@ class ImageProcessing():
         cv2.line(self.one_line_image, (0, self.base_end),
                  (self.width, self.base_end), (0, 255, 0), 2)
 
-    def detect_vertical_line(self, v_projection, image):
+    def detect_vertical_line(self, image, pixel_limit_ste):
         # Detect line vertical
-        # v_projection = self.v_projection
+        v_projection = self.v_projection
         # print(v_projection)
-        original_image = image.copy()
+        original_image = image
         up_flag = 0
         down_flag = 0
-        pixel_limit_v = 8
-        start_to_end_v = 0
-        start_point_v = []
+        start_to_end = 0
+        # end_to_start = pixel_limit_ets + 1
+        start_point = []
         for x in range(len(v_projection)):
-            if v_projection[x] > 0 and up_flag == 0:
-                start_point_v.append(x)
-                up_flag = 1
-                down_flag = 0
-
             if v_projection[x] > 0 and down_flag == 0:
-                start_to_end_v += 1
+                start_to_end += 1
 
             if v_projection[x] == 0 and up_flag == 1:
-                start_point_v.append(x)
-                # print(start_to_end_v)
-                if start_to_end_v < pixel_limit_v:
-                    del(start_point_v[len(start_point_v) - 1])
-                    del(start_point_v[len(start_point_v) - 1])
-                    # print(start_to_end_v)
-                    print('delete')
-                start_to_end_v = 0
-                up_flag = 0
+                # print(start_to_end)
+                start_point.append(x)
+                # print(start_point)
+                if start_to_end < pixel_limit_ste:
+                    del(start_point[len(start_point) - 1])
+                    del(start_point[len(start_point) - 1])
+                    # print('delete ste')
+                    # down_flag = 0
+                    # up_flag = 1
+                # else:
                 down_flag = 1
+                up_flag = 0
+                start_to_end = 0
 
-        self.start_point_v = start_point_v
-        # print(start_point_v)
+            # if v_projection[x] == 0 and down_flag == 1:
+            #     end_to_start += 1
+
+            if v_projection[x] > 0 and up_flag == 0:
+                start_point.append(x)
+                # print('>0 {}'.format(start_point))
+                # if end_to_start < pixel_limit_ets:
+                #     del(start_point[len(start_point)-1])
+                #     del(start_point[len(start_point)-1])
+                    # print('delete')
+                    # up_flag = 0
+                    # down_flag = 1
+                # print(count)
+                # else:
+                up_flag = 1
+                down_flag = 0
+                end_to_start = 0
+
+        if len(start_point) % 2 != 0:
+            if v_projection[len(v_projection) - 1] > 0:
+                start_point.append(len(v_projection) - 1)
+        self.start_point_v = start_point
+        # print(start_point)
         # Even is begining of line and Odd is end of line
-        for x in range(len(start_point_v)):
+        for x in range(len(start_point)):
             if x % 2 == 0:
-                cv2.line(original_image, (start_point_v[x], 0),
-                         (start_point_v[x], self.height), (0, 0, 0), 2)
+                cv2.line(original_image, (start_point[x], 0),
+                         (start_point[x], self.height), (0, 0, 0), 2)
             else:
+<<<<<<< HEAD
                 cv2.line(original_image, (start_point_v[x], 0),
                          (start_point_v[x], self.height), (100, 100, 100), 2)
+=======
+                cv2.line(original_image, (start_point[x], 0),
+                         (start_point[x], self.height), (100, 100, 100), 2)
+>>>>>>> mess
 
         cv2.imshow('line', original_image)
         print('>')
@@ -674,14 +726,14 @@ class ImageProcessing():
                 # cv2.destroyAllWindows()
             self.bag_of_v_crop = bag_of_v_crop
 
-    def eight_conectivity(self, image):
+    def eight_conectivity(self, image, oneline_baseline):
         # image = cv2.bitwise_not(image)
         height, width = image.shape
         # print('eight conectivity')
         # cv2.imshow('eight', image)
         # cv2.waitKey(0)
         # print(image)
-        print('height= {}, width= {}'. format(height, width))
+        # print('height= {}, width= {}'. format(height, width))
         # print(len(image))
         self.conn_pack = {}
         reg = 1
@@ -1027,8 +1079,9 @@ class ImageProcessing():
                                         connected_list[c_list]]:
                                     if x_join not in self.conn_pack[
                                             connected_list[0]]:
-                                        self.conn_pack[connected_list[0]
-                                                ].append(x_join)
+                                        self.conn_pack[
+                                            connected_list[0]
+                                        ].append(x_join)
                             for c_list in range(len(connected_list) - 1):
                                 c_list += 1
                                 print('delete {}'.format(connected_list[c_list]))
@@ -1040,9 +1093,9 @@ class ImageProcessing():
                             self.conn_pack['region_' + str(reg)] = []
                             for x2_join in x_y:
                                 if x2_join not in self.conn_pack['region_'
-                                        + str(reg)]: 
+                                                                 + str(reg)]:
                                     self.conn_pack['region_'
-                                        + str(reg)].append(x2_join)
+                                                   + str(reg)].append(x2_join)
 
         conn_val_list = self.conn_pack.values()
         temp_length = []
@@ -1052,12 +1105,32 @@ class ImageProcessing():
         cv2.waitKey(0)
         temp_delete = []
         temp_marker = []
+        # print(self.conn_pack)
+        # print(oneline_baseline)
+        # cv2.waitKey(0)
         # Get region body and paint it
-        temp_conn_pack = copy.deepcopy(self.conn_pack)
+        # temp_conn_pack = copy.deepcopy(self.conn_pack)
+        # for key in self.conn_pack:
+        #     if len(self.conn_pack[key]) < 1/5 * max(temp_length):
+        #         print('_______________')
+        #         print(self.conn_pack[key][0][0])
+        #         cv2.waitKey(0)
+        #         temp_delete.append(key)
+        # If region is not in the baseline then it's not a body image
         for key in self.conn_pack:
-            if len(self.conn_pack[key]) < 1/5 * max(temp_length):
+            found = False
+            for reg in self.conn_pack[key]:
+                if found:
+                    break
+                for base in range(oneline_baseline[0], oneline_baseline[1]+1):
+                    if reg[0] == base:
+                        found = True
+                        break
+            if found is False:
                 temp_delete.append(key)
+        conn_pack_minus_body = {}
         for delt in temp_delete:
+            conn_pack_minus_body[delt] = self.conn_pack[delt]
             del(self.conn_pack[delt])
 
         self.image_body = image.copy()
@@ -1079,15 +1152,18 @@ class ImageProcessing():
         print('base start={} , end={}'.format(self.base_start, self.base_end))
         print('baseline height = {}'. format(self.baseline_img_body_h))
         cv2.waitKey(0)
-        
+
         # Get marker only region and paint it
-        for key in temp_conn_pack:
-            if 1/5 * max(temp_length) > len(temp_conn_pack[key])\
-                     > self.baseline_img_body_h:
+        # for key in temp_conn_pack:
+        #     if 1/5 * max(temp_length) > len(temp_conn_pack[key])\
+        #              > self.baseline_img_body_h:
+        #         temp_marker.append(key)
+        for key in conn_pack_minus_body:
+            if len(conn_pack_minus_body[key]) > self.baseline_img_body_h:
                 temp_marker.append(key)
         self.conn_pack_marker_only = {}
         for mark in temp_marker:
-            self.conn_pack_marker_only[mark] = (temp_conn_pack[mark])
+            self.conn_pack_marker_only[mark] = (conn_pack_minus_body[mark])
 
         self.image_marker_only = image.copy()
         self.image_marker_only[:] = 255
@@ -1235,15 +1311,15 @@ class ImageProcessing():
         #                             # same_reg.append((j, k))
         #                             connected = True
         #                             break
-                        
+   
 
-                        
+  
         # print(same_reg)
         # cv2.waitKey(0)
         # for lr in same_reg:
         #     for val in self.conn_pack[lr[1]]:
         #         self.conn_pack[lr[0]].add(val)
-                
+
         #     # print(lr[0])
         #     # cv2.waitKey(0)
         # save = []
@@ -1252,7 +1328,7 @@ class ImageProcessing():
         #         if reg_1 == (same_reg[x][1], same_reg[x][0]):
         #             save.append(x)
         #             break
-                    
+
 
         # print(same_reg)
         # print(len(same_reg))
@@ -1336,8 +1412,12 @@ def main():
 
         input_image = ImageProcessing(original_image=original_image.copy())
         input_image.horizontal_projection(image.copy())  # adaptive binaryimage
-        input_image.detect_horizontal_line()  # got self.start_point_h
-        cv2.imshow('from main', input_image.original_image)
+        input_image.detect_horizontal_line(
+            image=original_image.copy(),
+            pixel_limit_ste=5,  # Start to end
+            pixel_limit_ets=5   # End to start
+        )  # Got self.start_point_h
+        # cv2.imshow('from main', input_image.original_image)
         input_image.crop_image(h_point=input_image.start_point_h,
                                input_image=original_image.copy())  # crop ori
 
@@ -1376,6 +1456,10 @@ def main():
             oneline_baseline = []
             oneline_baseline.append(input_image.base_start)
             oneline_baseline.append(input_image.base_end)
+            if oneline_baseline[1] < oneline_baseline[0]:
+                temp = oneline_baseline[0]
+                oneline_baseline[0] = oneline_baseline[1]
+                oneline_baseline[1] = temp
             cv2.imshow('Base start =' + str(input_image.base_start)
                        + ' end =' + str(input_image.base_end),
                        input_image.one_line_image)
@@ -1408,8 +1492,12 @@ def main():
                 # cv2.waitKey(0)
 
             # for key in font_type.get_marker_thresh().keys():
-            v_projection = input_image.vertical_projection(temp_image)
-            input_image.detect_vertical_line(v_projection, temp_image.copy())
+            input_image.vertical_projection(temp_image)
+            input_image.detect_vertical_line(
+                image=temp_image.copy(),
+                pixel_limit_ste=8,  # Start to end
+                # pixel_limit_ets=0   # End to start
+            )
             # print(input_image.start_point_v)
             # Crop next word marker wether it's inside or beside 
             crop_words = {}
@@ -1469,8 +1557,8 @@ def main():
                                             break
                                         else:
                                             break
-            print(crop_words)
-            print(v_point)
+            # print(crop_words)
+            # print(v_point)
             if object_result:
                 # object_result = font_type.get_object_result()
                 font_type.display_marker_result(input_image=temp_image_ori)
@@ -1570,6 +1658,7 @@ def main():
                             join.append(name[x] + '_')
                             # print(name[x])
                     join = ''.join(join)
+                    print('join = {}'.format(join))
 
                     if name[1] == 'beside':
                         final_img = temp_image.copy()[:, x_value[0]:x_value[1]]
@@ -1588,7 +1677,9 @@ def main():
                         # kernel = np.ones((2,2), np.uint8)
                         # erosion = cv2.erode(final_img.copy(),kernel,iterations = 1)
                         # opening = cv2.morphologyEx(final_img.copy(), cv2.MORPH_OPEN, kernel)
-                        closing = cv2.morphologyEx(final_img.copy(), cv2.MORPH_CLOSE, kernel)
+                        closing = cv2.morphologyEx(
+                            final_img.copy(), cv2.MORPH_CLOSE, kernel
+                        )
                         final_img = cv2.bitwise_not(closing)
                         cv2.imshow('morph', final_img)
                         print('morph')
@@ -1602,65 +1693,345 @@ def main():
                         # cv2.imshow('closing', closing)
                         # print('closing')
                         # cv2.waitKey(0)
-                        # Get final word baseline 
+                        # Get final word baseline
                         # input_image.horizontal_projection(final_img)
                         # input_image.base_line(final_img.copy())
                         # word_baseline_height = input_image.base_end \
                         #                        - input_image.base_start
-                        # oneline_height = oneline_baseline[1] - oneline_baseline[0]
+                        oneline_height = oneline_baseline[1] - oneline_baseline[0]
                         # print(oneline_height)
                         # cv2.waitKey(0)
-                        input_image.eight_conectivity(final_img)
+                        # Eight conn resulting image body and marker only
+                        input_image.eight_conectivity(final_img, oneline_baseline)
                         print('back to main')
                         cv2.waitKey(0)
-                        print('reg length={}'.format(len(input_image.conn_pack)))
-                        
-                        # Doing vertical word projection
+                        # print('reg length={}'.format(
+                        # len(input_image.conn_pack)))
+
+                        # Doing vertical & horizontal word projection
+                        # to get marker only coordinat
                         final_h_proj = input_image.horizontal_projection(
                             input_image.image_marker_only
                         )
-                        final_v_proj = input_image.vertical_projection(
-                            input_image.image_marker_only
+                        if oneline_height <= 1:
+                            oneline_height_sorted = 3
+                        else:
+                            oneline_height_sorted = oneline_height
+                        input_image.detect_horizontal_line(
+                            image=input_image.image_marker_only.copy(),
+                            pixel_limit_ste=oneline_height_sorted,
+                            pixel_limit_ets=1
                         )
-                        input_image.detect_horizontal_line()
-                        # h_projection = horizontal_projection(pixel_gray.copy())
 
-                        plt.subplot(211), plt.imshow(input_image.image_marker_only)
-                        plt.subplot(212), plt.plot(np.arange(0, len(final_h_proj), 1), final_h_proj)
+                        # Make sure every start point has an end
+                        len_h = len(input_image.start_point_h)
+                        if len_h % 2 != 0:
+                            del(input_image.start_point_h[len_h - 1])
+                        # print(input_image.start_point_h)
+                        # Doing v_projection on every h_projection word
+                        final_h_list = {}
+                        reg = 0
+                        for x in range(len(input_image.start_point_h)):
+                            if x % 2 == 0:
+                                h_img = input_image.image_marker_only[
+                                    input_image.start_point_h[x]:input_image.
+                                        start_point_h[x + 1], :
+                                ]
+                                # cv2.imshow('h_img', h_img)
+                                # height, width = h_img.shape
+                                # print('h {}  w {}'.format(height,width))
+                                # cv2.waitKey(0)
+                                input_image.vertical_projection(h_img)
+                                input_image.detect_vertical_line(
+                                    image=h_img.copy(),
+                                    pixel_limit_ste=oneline_height_sorted
+                                )
+
+                                for l in range(len(input_image.start_point_v)):
+                                    if l % 2 == 0:
+                                        reg += 1
+                                        # Format((y1, y2), (x1, x2))
+                                        final_h_list[reg] = \
+                                            (input_image.start_point_h[x],
+                                             input_image.start_point_h[x+1]),\
+                                            (input_image.start_point_v[l],
+                                             input_image.start_point_v[l+1])
+
+                                # final_h_list.extend(input_image.start_point_v)
+                                # print('hlist {}'.format(h_list))
+                                # print('final h {}'.format(final_h_list))
+                                # print(len(final_h_list))
+                                # cv2.waitKey(0)
+
+                        # print('hlist {}'.format(h_list))
+                        print('final h {}'.format(final_h_list))
+                        cv2.waitKey(0)
+
+                        # If marker not found then it's not a char !!!
+                        if final_h_list == {}:
+                            print('>>> It is not a character --> continue ')
+                            cv2.waitKey(0)
+                            continue
+
+                        # Check to merging overlaping marker
+                        final_h_list_sorted = copy.deepcopy(final_h_list)
+                        # count_x = 0
+                        reg = 0
+                        for x in final_h_list:
+                            # count_x += 1
+                            # count_x_cmp = 0
+                            for x_cmp in final_h_list:
+                                # count_x_cmp += 1
+                                start = False
+                                end = False
+                                # if count_x == count_x_cmp:
+                                #     continue
+                                if x == x_cmp:
+                                    continue
+                                # for cord in range(x[1][0], x[1][1] + 1):
+                                for cord in range(final_h_list[x][1][0],
+                                                  final_h_list[x][1][1] + 1):
+                                    # print(cord)
+                                    if cord == final_h_list[x_cmp][1][0]:
+                                        end = True
+                                    if cord == final_h_list[x_cmp][1][1]:
+                                        start = True
+                                        break
+                                if start and end:
+                                    print('x {}, xcmp {}'.format(x, x_cmp))
+                                    cv2.waitKey(0)
+                                    reg += 1
+                                    if x < x_cmp:
+                                        final_h_list_sorted['add'+str(reg)] =\
+                                            (final_h_list[x][0][0],
+                                             final_h_list[x_cmp][0][1]),\
+                                            (final_h_list[x][1][0],
+                                             final_h_list[x][1][1])
+                                        # Format((y1, y2), (x1, x2))
+                                        if x in final_h_list_sorted:
+                                            del(final_h_list_sorted[x])
+                                        if x_cmp in final_h_list_sorted:
+                                            del(final_h_list_sorted[x_cmp])
+                                    else:
+                                        final_h_list_sorted['add'+str(reg)] =\
+                                            (final_h_list[x_cmp][0][0],
+                                             final_h_list[x][0][1]),\
+                                            (final_h_list[x][1][0],
+                                             final_h_list[x][1][1])
+                                        # Format((y1, y2), (x1, x2))
+                                        if x in final_h_list_sorted:
+                                            del(final_h_list_sorted[x])
+                                        if x_cmp in final_h_list_sorted:
+                                            del(final_h_list_sorted[x_cmp])
+
+                        print(final_h_list_sorted)
+                        cv2.waitKey(0)
+                        mark_img = input_image.image_marker_only.copy()
+                        for key in final_h_list_sorted.keys():
+                            cv2.rectangle(mark_img,
+                                          (final_h_list_sorted[key][1][0],
+                                           final_h_list_sorted[key][0][0]),
+                                          (final_h_list_sorted[key][1][1],
+                                           final_h_list_sorted[key][0][1]),
+                                          (100, 100, 100), 2)
+                        cv2.imshow('mark', mark_img)
+                        cv2.waitKey(0)
+
+                        # Get the most rightsided marker key
+                        temp = 0
+                        for key in final_h_list_sorted.keys():
+                            if final_h_list_sorted[key][1][1] > temp:
+                                temp = final_h_list_sorted[key][1][1]
+                                right_side = key
+                        # Get the 2nd max x2 value key
+                        temp = 0
+                        for key in final_h_list_sorted.keys():
+                            if key == right_side:
+                                continue
+                            if final_h_list_sorted[key][1][1] > temp:
+                                # Check if the gap between end marker is
+                                # greater than 1/2 of it length if not
+                                # then it's still on the same char
+                                if abs(
+                                    final_h_list_sorted[key][1][0]\
+                                    - final_h_list_sorted[right_side][1][0]
+                                ) > 1/2 * (
+                                    final_h_list_sorted[key][1][1]\
+                                    - final_h_list_sorted[key][1][0]
+                                ):
+                                    temp = final_h_list_sorted[key][1][1]
+                                    right_side_2nd = key
+                                else:
+                                    continue
+                        print('1st {}, 2nd {}'.format(right_side, right_side_2nd))
+
+
+                        # plt.subplot(211), plt.imshow(input_image.image_marker_only)
+                        # plt.subplot(212), plt.plot(np.arange(0, len(final_h_proj), 1), final_h_proj)
                         # plt.subplot(211), plt.imshow(input_image.image_marker_only)
                         # plt.subplot(212), plt.plot(np.arange(0, len(final_v_proj), 1), final_v_proj)
                         # plt.subplot(222), plt.plot(np.arange(0, len(h_projection), 1), h_projection)
                         # plt.xlim([0,256])
+                        # plt.show()
+                        # cv2.waitKey(0)
+
+                        # Getting differentiation list on every word pixel
+                        body_v_proj = input_image.vertical_projection(
+                            input_image.image_body
+                        )
+                        diff = [0]
+                        for x in range(len(body_v_proj)):
+                            if x < len(body_v_proj) - 1:
+                                temp_diff = int(body_v_proj[x + 1])\
+                                            - int(body_v_proj[x])
+                                diff.append(temp_diff)
+
+                        print(diff)
+                        plt.subplot(211), plt.imshow(input_image.image_body)
+                        plt.subplot(212), plt.plot(
+                            np.arange(0, len(body_v_proj), 1), body_v_proj
+                        )
                         plt.show()
                         cv2.waitKey(0)
 
-                        # Checking to compare with baseline word to get char
-                        # segmented_char = []
-                        # if w_width < 2 * input_image.baseline_img_body_h:
-                        #     segmented_char.append((0,w_width))
-                        # body_v_proj = input_image.vertical_projection(input_image\
-                        #                                               .image_body)
-                        # diff = [0]
-                        # for x in range(len(body_v_proj)):
-                        #     if x > 0:
-                        #         temp_diff = abs[int(body_v_proj[x])
-                        #                         - int(body_v_proj[x-1])]
-                        #         diff.append(temp_diff)
-                        # char_on_steep = False
-                        # for gap in range(len(diff))[::-1]:
-                        #     if diff[gap] > 2 * input_image.baseline_img_body_h:
-                        #         if body_v_proj[gap] == 0:
-                        #             segmented_char.append((gap, len(diff)))
-                        #             char_on_steep = True
-                        #             break
-                        #         if len(diff) - gap < 2 * input_image.baseline_\
-                        #                 img_body_h :
-                        #             continue
-                        #         else:
-                        #             segmented_char.append((gap, len(diff)))
-                        #             char_on_steep = True
-                        #             break
+                        # Getting 1st char by it's 2nd marker
+                        segmented_char = []
+                        # x1_2nd_marker = final_h_list_sorted[right_side_2nd
+                        #                                     ][1][0]
+                        x2_2nd_marker = final_h_list_sorted[right_side_2nd
+                                                            ][1][1]
+                        x1_1st_marker = final_h_list_sorted[right_side][1][0]
+                        save_sistent = {}
+                        counting = False
+                        temp = 0
+                        count_dinat = 0
+                        count_sistent = 0
+                        if x1_1st_marker - x2_2nd_marker > 0:
+                            for x in range(x2_2nd_marker, x1_1st_marker + 1):
+                                count_dinat += 1
+                                if diff[x] == 0:
+                                    count_sistent += 1
+                                    counting = True
+                                if ((diff[x] > 0 or diff[x] < 0)
+                                        or x == x1_1st_marker) and counting:
+                                    save_sistent[count_dinat] = count_sistent
+                                    count_sistent = 0
+                                    counting = False
+                            print(save_sistent)
+                            cv2.waitKey(0)
+                            if save_sistent != {}:
+                                for key in save_sistent:
+                                    if save_sistent[key] > temp:
+                                        temp = save_sistent[key]
+                                        the_sistent = key
+                                x1_char = x2_2nd_marker + the_sistent\
+                                    - round(1/1.9 * save_sistent[the_sistent])
+                                segmented_char.append((x1_char, len(diff)))
+                                print('1/2 of the most consistent')
+                            else:
+                                segmented_char.append((x2_2nd_marker,
+                                                       len(diff)))
+                                print('Consistent hist not found between marker')
+                        else:
+                            segmented_char.append((x2_2nd_marker,
+                                                   len(diff)))
+                            print('1st marker and 2nd marker is overlaped')
 
+                        # Getting the first character by steep down
+                        # count_down = False
+                        # cord_x = 0
+                        # temp = 0
+                        # save_down = {}
+                        # char_on_steep = False
+                        # if input_image.baseline_img_body_h <= 1:
+                        #     word_height_sorted = 3
+                        # else:
+                        #     word_height_sorted = input_image.\
+                        #         baseline_img_body_h
+
+                        # Get the steep down from right side
+                        # for gap in diff[::-1]:
+                        #     cord_x += 1
+                        #     if gap < x1_2nd_marker:
+                        #         break
+                        #     if gap > 0:
+                        #         temp += gap
+                        #         count_down = True
+                        #     if (gap == 0 or gap < 0) and count_down:
+                        #         save_down[cord_x] = temp
+                        #         temp = 0
+                        #         count_down = False
+
+                        # print('im saving= {}'.format(save_down))
+                        # cv2.waitKey(0)
+
+                        # for save in save_down:
+                        #     if w_width < 2 * input_image.baseline_img_body_h:
+                        #         segmented_char.append((0, w_width))
+                        #         print('equal w_width')
+                        #         break
+                        #     right_side_val = final_h_list_sorted[right_side_2nd
+                        #                                          ][1][1]  # x2
+                        #     if len(diff) - save > right_side_val:
+                        #         # Steep down value is x times grater than baseline
+                        #         if save_down[save] > 1 * input_image.\
+                        #                 baseline_img_body_h:
+                        #             # Char is x times greater than baseline
+                        #             if save > 1 * input_image.\
+                        #                     baseline_img_body_h:
+                        #                 segmented_char.append((len(diff) - save,
+                        #                                        len(diff)))
+                        #                 print('steep down')
+                        #                 break
+                        #             else:
+                        #                 continue
+                        #     else:
+                        #         print('below 2nd right side')
+                        #         segmented_char.append((right_side_val, len(diff)))
+                        #         break
+
+                        # for x in range(len(diff))[::-1]:
+                        #     if w_width < 2 * input_image.baseline_img_body_h:
+                        #         segmented_char.append((0, w_width))
+                        #         break
+                            # if diff[x] > 2 * word_height_sorted:
+                            #     if body_v_proj[x] == 0:
+                            #         print('zero')
+                            #         segmented_char.append((x, len(diff)))
+                            #         char_on_steep = True
+                            #         break
+                            #     if len(diff) - x < 2 * input_image.\
+                            #             baseline_img_body_h:
+                            #         print('not that long')
+                            #         continue
+                            #     else:
+                            #         segmented_char.append((x, len(diff)))
+                            #         print('normal')
+                            #         char_on_steep = True
+                            #         break
+                            # right_side_val = final_h_list_sorted[
+                            #                     right_side_2nd][1][1]
+                            # if x <= right_side_val:
+                            #     print('below 2nd right side')
+                            #     segmented_char.append((right_side_val, len(diff)))
+                            #     break
+
+                        print('segmented char = {}'.format(segmented_char))
+                        draw_img = final_img.copy()
+                        cv2.imshow('dd', draw_img)
+                        print('draw img')
+                        cv2.waitKey(0)
+                        cv2.line(draw_img,
+                                 (segmented_char[0][0], w_height),
+                                 (segmented_char[0][0], 0),
+                                 (100, 100, 100), 2)
+                        cv2.line(draw_img,
+                                 (segmented_char[0][1], w_height),
+                                 (segmented_char[0][1], 0),
+                                 (100, 100, 100), 2)
+                        cv2.imshow('final char !', draw_img)
+                        print('>>> Final char')
+                        cv2.waitKey(0)
                         # for region in input_image.region:
                         #     value = input_image.region[region]
                         #     # print(value)
