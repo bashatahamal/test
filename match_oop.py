@@ -963,7 +963,7 @@ class ImageProcessing():
         #                                     x_y.append((y - 1, x + 1))
         #                                 # count += 1
         #                                 # print('r3')
-                            
+
         #                     count = len(x_y) - len(x_y_c)
         #                     # print('count after c_1= {}'.format(count))
         #                     if count == 0:
@@ -1420,7 +1420,7 @@ class ImageProcessing():
             return skip
 
         if final_h_list != {}:
-            # Check to merging overlaping marker
+            # Check to merge overlaping marker
             final_h_list_sorted = copy.deepcopy(final_h_list)
             # count_x = 0
             reg = 0
@@ -1942,6 +1942,7 @@ def main():
                                 = (v_point[w_index], v_point[w_index + 1])
                         # print('final beside')
 
+            # Looking for final segmented character
             print(crop_words_final)
             for key in crop_words_final:
                 name = key.split('_')
