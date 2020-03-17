@@ -489,7 +489,7 @@ class ImageProcessing():
         # Detect line horizontal
         if len(image.shape) == 3:
             height, width, _ = image.shape
-            color_temp = image.copy()
+            # color_temp = image.copy()
         else:
             height, width = image.shape
         h_projection = self.h_projection
@@ -1486,6 +1486,16 @@ class ImageProcessing():
 
             # If only one group marker the it's the char !!!
             if len(final_h_list_sorted) == 1:
+                print(final_h_list_sorted)
+                body_v_proj = self.vertical_projection(
+                    self.image_body
+                )
+                plt.subplot(211), plt.imshow(self.image_body)
+                plt.subplot(212), plt.plot(
+                    np.arange(0, len(body_v_proj), 1), body_v_proj
+                )
+                plt.show()
+                cv2.waitKey(0)
                 segmented_char.append((0, w_width))
                 print('only have one marker')
                 return segmented_char
@@ -1561,7 +1571,7 @@ class ImageProcessing():
                 temp = 0
                 count_dinat = 0
                 count_sistent = 0
-                if x1_1st_marker - x2_2nd_marker > 0:
+                if x1_1st_marker - x2_2nd_marker > 0:  # marker is'nt ovrlapped
                     for x in range(x2_2nd_marker, x1_1st_marker + 1):
                         count_dinat += 1
                         if diff[x] == 0:
@@ -1574,6 +1584,7 @@ class ImageProcessing():
                             counting = False
                     print(save_sistent)
                     cv2.waitKey(0)
+                    # cut at the most consistent diff equal 0
                     cut = 1/1
                     if save_sistent != {}:
                         for key in save_sistent:
