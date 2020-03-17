@@ -3,6 +3,8 @@ import mysql.connector
 import concatenate as ct
 import os
 import base64
+import cv2
+from datetime import datetime
 # from PIL import Image
 # import io
 
@@ -76,12 +78,71 @@ list_type = []
 empty_image = 'empty_image.png'
 
 
-def get_base64_str_from_file(filepath):
-    with open(filepath, "rb") as f:
-        bytes_content = f.read()  # bytes
-        bytes_64 = base64.b64encode(bytes_content)
-    # return bytes_64.decode('utf-8') # bytes--->str  (remove `b`)
-    return bytes_content
+# def get_base64_str_from_file(filepath):
+#     with open(filepath, "rb") as f:
+#         bytes_content = f.read()  # bytes
+#         bytes_64 = base64.b64encode(bytes_content)
+#     # return bytes_64.decode('utf-8') # bytes--->str  (remove `b`)
+#     return bytes_content
+
+def refresh_sql_result_from_DB():
+    global sql_result
+    global font_type
+    global QS
+    global char_name
+    global marker_type
+    global image_location
+    global status_bm
+    # No font type
+    if values['_MARKERTYPE_'] != [] and values['_FONT_'] == '' \
+            and values['_LISTBOX_'] != []:
+        status_bm = status_lb + '   '\
+                    + values['_MARKERTYPE_'][0]
+        window.Element('_STATUS_').Update(status_bm)
+
+        for x in range(len(char_list_symbol)):
+            if values['_LISTBOX_'][0] == char_list_symbol[x]:
+                # print(char_name)
+                db_cursor = db.cursor()
+                font_type = values['_FONT_']
+                QS = values['_QS_']
+                char_name = char_list_nameonly[x]
+                marker_type = values['_MARKERTYPE_'][0]
+                image_location = values['_INPUT_']
+                sql_query = "SELECT * FROM dataset WHERE marker_type='" \
+                            + marker_type + "' AND dataset_type='original'\
+                            AND char_name='" + char_name + "'"
+                # print(sql_query)
+                db_cursor.execute(sql_query)
+                sql_result = db_cursor.fetchall()
+
+    # Select font type
+    if values['_MARKERTYPE_'] != [] and values['_FONT_'] != '' \
+            and values['_LISTBOX_'] != []:
+        status_bm = status_lb + '   '\
+                    + values['_MARKERTYPE_'][0] + ' - '\
+                    + values['_FONT_']
+        window.Element('_STATUS_').Update(status_bm)
+
+        for x in range(len(char_list_symbol)):
+            if values['_LISTBOX_'][0] == char_list_symbol[x]:
+                # print(char_name)
+                db_cursor = db.cursor()
+                font_type = values['_FONT_']
+                QS = values['_QS_']
+                char_name = char_list_nameonly[x]
+                marker_type = values['_MARKERTYPE_'][0]
+                image_location = values['_INPUT_']
+                sql_query = "SELECT * FROM dataset WHERE font_type='"\
+                            + font_type + "' AND marker_type='" + marker_type\
+                            + "' AND dataset_type='original' AND char_name='"\
+                            + char_name + "'"
+                # print(sql_query)
+                db_cursor.execute(sql_query)
+                sql_result = db_cursor.fetchall()
+                # print(sql_result)
+
+    # return sql_result, font_type, QS, char_name, marker_type, image_location
 
 
 try:
@@ -132,25 +193,28 @@ layout = [
      sg.Checkbox('', key='_LOCKDEL_', enable_events=True),
      sg.Text('', justification='left'),
      sg.Image(key='_IMAGE_', filename=empty_image, visible=True,
-     pad=((0, 60), (0, 0))),
+     pad=((0, 0), (0, 0))),
+     sg.Image(key='_IMAGE2_', filename=empty_image, visible=True,
+     pad=((0, 0), (0, 0))),
      sg.Text('', justification='right'),
      sg.Button('Add', size=(7, 1), key='_ADDBUTTON_',
      button_color=('white', 'green'))],
-    [sg.Image(key='_IMAGE1_', filename=empty_image, visible=True,
-     pad=((15, 0), (0, 10))),
-     sg.Image(key='_IMAGE2_', filename=empty_image, visible=True,
-     pad=((26.4, 25), (0, 10))),
-     sg.Image(key='_IMAGE3_', filename=empty_image, visible=True,
-     pad=((20, 0), (0, 10)))],
-    [sg.Text('', key='_STATUS_'), sg.Text(db_stat, justification='right',
-     text_color='black', key='_DB_')]
-    
+    # [sg.Image(key='_IMAGE1_', filename=empty_image, visible=True,
+    #  pad=((15, 0), (0, 10))),
+    #  sg.Image(key='_IMAGE3_', filename=empty_image, visible=True,
+    #  pad=((20, 0), (0, 10)))],
+    [sg.Text('')],
+    [sg.Text('', key='_STATUS_', justification='left')],
+    [sg.Text('Total char:', key='_TOTALCHAR_', justification='left'),
+     sg.Text(db_stat, justification='right', text_color='black', key='_DB_')],
+    [sg.Text('Last action', key='_LASTACT_', justification='center',
+     text_color='blue')]
 ]
 
 # sg.theme('DarkBrown1')
 window = sg.Window('Alternative items', layout)
 
-
+last_act = ''
 while True:
     try:
         db = mysql.connector.connect(
@@ -171,13 +235,14 @@ while True:
         db_stat = 'Not connected'
     # Run __TIMEOUT__ event every 50 ms
     # print(db.is_connected())
+    db_cursor = db.cursor()
     event, values = window.Read()
     if start:
         if not db.is_connected():
             window.Element('_DB_').Update('Offline', text_color='blue')
     else:
         window.Element('_DB_').Update(value='Offline', text_color='blue')
-    print(event, values)
+    # print(event, values)
     select_done = False
     if values['_MARKERTYPE_'] != []:
         marker_type_last_value = values['_MARKERTYPE_'][0]
@@ -198,6 +263,11 @@ while True:
                                              button_color=('gray', 'gray'))
 
     sql_result = []
+    font_type = []
+    QS = []
+    char_name = []
+    marker_type = []
+    image_location = []
     delete = False
     # Alif
     # x = 0
@@ -239,58 +309,13 @@ while True:
         window.Element('_MARKERTYPE_').Update(
             values=marker_type_full, set_to_index=set_index
         )
-        status_lb= status + values['_LISTBOX_'][0]
+        status_lb = status + values['_LISTBOX_'][0]
         window.Element('_STATUS_').Update(status_lb)
 
-    # No font type
-    if values['_MARKERTYPE_'] != [] and values['_FONT_'] == '' \
-            and values['_LISTBOX_'] != []:
-        status_bm = status_lb + '   '\
-                    + values['_MARKERTYPE_'][0]
-        window.Element('_STATUS_').Update(status_bm)
-
-        for x in range(len(char_list_symbol)):
-            if values['_LISTBOX_'][0] == char_list_symbol[x]:
-                # print(char_name)
-                db_cursor = db.cursor()
-                font_type = values['_FONT_']
-                QS = values['_QS_']
-                char_name = char_list_nameonly[x]
-                marker_type = values['_MARKERTYPE_'][0]
-                image_location = values['_INPUT_']
-                sql_query = "SELECT * FROM dataset WHERE marker_type='" \
-                            + marker_type + "' AND char_name='" + char_name \
-                            + "'"
-                # print(sql_query)
-                db_cursor.execute(sql_query)
-                sql_result = db_cursor.fetchall()
-                print('IM READING DATABASE')
-
-    # Select font type
-    if values['_MARKERTYPE_'] != [] and values['_FONT_'] != '' \
-            and values['_LISTBOX_'] != []:
-        status_bm = status_lb + '   '\
-                    + values['_MARKERTYPE_'][0] + ' - '\
-                    + values['_FONT_']
-        window.Element('_STATUS_').Update(status_bm)
-
-        for x in range(len(char_list_symbol)):
-            if values['_LISTBOX_'][0] == char_list_symbol[x]:
-                # print(char_name)
-                db_cursor = db.cursor()
-                font_type = values['_FONT_']
-                QS = values['_QS_']
-                char_name = char_list_nameonly[x]
-                marker_type = values['_MARKERTYPE_'][0]
-                image_location = values['_INPUT_']
-                sql_query = "SELECT * FROM dataset WHERE font_type='"\
-                            + font_type + "' AND marker_type='" + marker_type\
-                            + "' AND char_name='" + char_name + "'"
-                # print(sql_query)
-                db_cursor.execute(sql_query)
-                sql_result = db_cursor.fetchall()
-                # print(sql_result)
-                print('IM READING DATABASE')
+    # Updating No font type & Select font type sql_result
+    # sql_result, font_type, QS, char_name, marker_type, image_location \
+    #     = refresh_sql_result_from_DB()
+    refresh_sql_result_from_DB()
 
     # View Image
     if sql_result != [] and list_type == []:
@@ -302,7 +327,7 @@ while True:
             list_type.append(res[0] + '_' + str(count))
             list_id.append(res[6])
         window.Element('_LISTTYPE_').Update(values=list_type)
-        print('IM UPDATING LISTTYPE')
+
     elif sql_result != [] and list_type != [] and (
             event == 'Refresh' or event == '_ADDBUTTON_' or event == '_DELBUTTON_'
             or event == '_INPUT_'):
@@ -314,8 +339,9 @@ while True:
             list_type.append(res[0] + '_' + str(count))
             list_id.append(res[6])
         window.Element('_LISTTYPE_').Update(values=list_type)
-        print('IM UPDATING LISTTYPE')
-    elif event == 'Refresh' or event == '_MARKERTYPE_' or delete:
+
+    elif event == 'Refresh' or event == '_MARKERTYPE_' or delete \
+            or event == '_DELBUTTON_':
         list_type = []
         list_id = []
         count = 0
@@ -324,12 +350,12 @@ while True:
             list_type.append(res[0] + '_' + str(count))
             list_id.append(res[6])
         window.Element('_LISTTYPE_').Update(values=list_type)
-        print('IM UPDATING LISTTYPE')
+
     elif sql_result == []:
         list_type = []
         window.Element('_LISTTYPE_').Update(values=list_type)
-        print('IM UPDATING LISTTYPE')
 
+    # Showing image
     if event == '_LISTTYPE_' and values['_LISTTYPE_'] != []:
         res_id = 100
         for x in range(len(list_id)):
@@ -341,40 +367,77 @@ while True:
         # print(list_id)
         # print(sql_query)
         db_cursor.execute(sql_query)
-        sql_result = db_cursor.fetchall()
-        print(sql_result)
-        view_image_loc = sql_result[0][4]
-        print(view_image_loc) 
+        sql_result_img = db_cursor.fetchall()
+        # print(sql_result_img)
+        view_image_loc = sql_result_img[0][3]
+        selected_QS = sql_result_img[0][4]
+        # print(view_image_loc)
         window.Element('_IMAGE_').Update(filename=view_image_loc)
+        key = view_image_loc.split('/')
+        key[2] = 'square'
+        view_image_loc = '/'.join(key)
+        # print(view_image_loc)
+        window.Element('_IMAGE2_').Update(filename=view_image_loc)
+        selected_QS = status_bm + '@' + selected_QS
+        window.Element('_STATUS_').Update(selected_QS)
     elif values['_LISTTYPE_'] == []:
         window.Element('_IMAGE_').Update(filename=empty_image)
+        window.Element('_IMAGE2_').Update(filename=empty_image)
 
     # ADDING DATASET
     if values['_MARKERTYPE_'] != [] and values['_LISTBOX_'] != [] \
             and values['_FONT_'] != '' and values['_QS_'] != '' \
             and event == '_ADDBUTTON_':
         if font_type != '' and QS != '' and image_location != '':
-            store_folder = './collection/' + font_type + '/' + char_name
-            if not os.path.exists(store_folder):
-                os.makedirs(store_folder)
+            # Check folder
+            store_folder_ori = './collection/original/' \
+                               + font_type + '/' + char_name
+            if not os.path.exists(store_folder_ori):
+                os.makedirs(store_folder_ori)
+            store_folder_sqr = './collection/square/' \
+                               + font_type + '/' + char_name
+            if not os.path.exists(store_folder_sqr):
+                os.makedirs(store_folder_sqr)
 
-            cnt = len(list_type) + 1
+            # cnt = len(list_type) + 1
+            # print(cnt)
             # best format has to be *.png
-            ct.make_it_square(image_location, store_folder + '/'
-                              + marker_type + '_' + str(cnt) + '.png')
+            img_ori, img_sqr = ct.make_it_square(image_location)
+            # ct.make_it_square(image_location, store_folder + '/'
+            #                   + marker_type + '_' + str(cnt) + '.png')
 
-            image_location = store_folder + '/' + marker_type \
-                + '_' + str(cnt) + '.png'
+            # Write image
+            now = datetime.now()
+            dt_string = now.strftime("%y%m%d%H%M%S")
+
+            output_name_ori = store_folder_ori + '/' + marker_type \
+                + '_' + dt_string + '.png'
+            output_name_sqr = store_folder_sqr + '/' + marker_type \
+                + '_' + dt_string + '.png'
+            print(output_name_ori)
+            cv2.imwrite(output_name_ori, img_ori, [cv2.IMWRITE_PNG_BILEVEL])
+            cv2.imwrite(output_name_sqr, img_sqr, [cv2.IMWRITE_PNG_BILEVEL])
+
             sql_query = "INSERT INTO dataset (font_type, char_name,\
-                        marker_type, image_location, QS, ID)\
-                        VALUES (%s, %s, %s, %s, %s, NULL)"
+                        marker_type, image_location, QS, dataset_type, ID)\
+                        VALUES (%s, %s, %s, %s, %s ,%s, NULL)"
             sql_values = (font_type, char_name, marker_type,
-                          image_location, QS)
+                          output_name_ori, QS, 'original')
+            db_cursor.execute(sql_query, sql_values)
+            db.commit()
+            sql_query = "INSERT INTO dataset (font_type, char_name,\
+                        marker_type, image_location, QS, dataset_type, ID)\
+                        VALUES (%s, %s, %s, %s, %s ,%s, NULL)"
+            sql_values = (font_type, char_name, marker_type,
+                          output_name_sqr, QS, 'square')
             db_cursor.execute(sql_query, sql_values)
             db.commit()
 
             window.Element('_INPUT_').Update('')
-            print('adding ' + marker_type + '_' + str(cnt) + ' to database')
+            last_act = ''
+            last_act = 'Add ' + marker_type + '_' + dt_string \
+                       + ' to database'
+            print(last_act)
 
     # Delete
     up = False
@@ -385,6 +448,7 @@ while True:
         up = False
 
     if event == '_DELBUTTON_':
+        last_act = ''
         res_id = 100
         for x in range(len(list_id)):
             if values['_LISTTYPE_'][0] == list_type[x]:
@@ -393,16 +457,49 @@ while True:
         sql_query = "SELECT * FROM dataset WHERE ID='" \
                     + str(list_id[res_id]) + "'"
         db_cursor.execute(sql_query)
-        sql_result = db_cursor.fetchall()
-        print(sql_result)
-        delete_image_loc = sql_result[0][4]
+        sql_result_del = db_cursor.fetchall()
+        # print(sql_result)
+        delete_image_loc = sql_result_del[0][3]
         sql_query = "DELETE FROM dataset WHERE ID='" \
                     + str(list_id[res_id]) + "'"
         db_cursor.execute(sql_query)
         db.commit()
         os.remove(delete_image_loc)
+        last_act = last_act + '\n' + 'Delete id {} and {}'.format(
+            str(list_id[res_id]), delete_image_loc)
         print('Delete id {} and {}'.format(str(list_id[res_id]),
                                            delete_image_loc))
+        sql_query = "DELETE FROM dataset WHERE ID='" \
+                    + str(list_id[res_id] + 1) + "'"
+        db_cursor.execute(sql_query)
+        db.commit()
+        key = delete_image_loc.split('/')
+        key[2] = 'square'
+        delete_image_loc = '/'.join(key)
+        os.remove(delete_image_loc)
+        last_act = last_act + '\n' + 'Delete id {} and {}'.format(
+            str(list_id[res_id]), delete_image_loc)
+        print('Delete id {} and {}'.format(str(list_id[res_id]),
+                                           delete_image_loc))
+
+        refresh_sql_result_from_DB()
+        # print(sql_result)
+        list_type = []
+        list_id = []
+        count = 0
+        for res in sql_result:
+            count += 1
+            list_type.append(res[0] + '_' + str(count))
+            list_id.append(res[6])
+        window.Element('_LISTTYPE_').Update(values=list_type)
+
+    sql_query = "SELECT `ID` FROM `dataset`"
+    db_cursor.execute(sql_query)
+    sql_result_id = db_cursor.fetchall()
+    total_char = 'Total char: ' + str(int(len(sql_result_id)/2))
+    window.Element('_TOTALCHAR_').Update(total_char)
+    window.Element('_LASTACT_').Update(last_act)
+
     #     for x in range(len(char_list_symbol)):
     #         if values['_LISTBOX_'][0] == char_list_symbol[x]:
     #             # print(char_name)
