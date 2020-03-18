@@ -804,24 +804,27 @@ class ImageProcessing():
             cv2.imshow('image body', self.image_body)
             print('image_body')
             cv2.waitKey(0)
+
         # Calculate h_projection on body region to get word baseline
         # for marker only segmentation
-        self.horizontal_projection(self.image_body)
-        self.base_line(self.image_body.copy())
-        self.baseline_img_body_h = abs(self.base_end - self.base_start)
-        print('oneline image from base line funtion')
-        cv2.imshow('self.oneline image', self.one_line_image)
-        print('base start={} , end={}'.format(self.base_start, self.base_end))
-        print('baseline height = {}'. format(self.baseline_img_body_h))
-        cv2.waitKey(0)
+        # self.horizontal_projection(self.image_body)
+        # self.base_line(self.image_body.copy())
+        # self.baseline_img_body_h = abs(self.base_end - self.base_start)
+        # print('oneline image from base line funtion')
+        # cv2.imshow('self.oneline image', self.one_line_image)
+        # print('base start={} , end={}'.format(self.base_start, self.base_end))
+        # print('baseline height = {}'. format(self.baseline_img_body_h))
+        # cv2.waitKey(0)
 
         # Get marker only region and paint it
-        # for key in temp_conn_pack:
-        #     if 1/5 * max(temp_length) > len(temp_conn_pack[key])\
-        #              > self.baseline_img_body_h:
-        #         temp_marker.append(key)
+        oneline_height = oneline_baseline[1] - oneline_baseline[0]
+        if oneline_height <= 1:
+            oneline_height_sorted = 3
+        else:
+            oneline_height_sorted = oneline_height
+
         for key in conn_pack_minus_body:
-            if len(conn_pack_minus_body[key]) > self.baseline_img_body_h:
+            if len(conn_pack_minus_body[key]) > oneline_height_sorted:
                 temp_marker.append(key)
         self.conn_pack_marker_only = {}
         for mark in temp_marker:
@@ -1390,8 +1393,9 @@ def main():
                             oneline_baseline
                         )
                         if segmented_char == 'continue':
-                            print('>> from main to continue next \
-                                  word candidate')
+                            print(
+                                '>> from main to continue next word candidate'
+                            )
                             continue
 
                     if name[1] == 'inside':
@@ -1406,8 +1410,9 @@ def main():
                             oneline_baseline
                         )
                         if segmented_char == 'continue':
-                            print('>> from main to continue next \
-                                  word candidate')
+                            print(
+                                '>> from main to continue next word candidate'
+                            )
                             continue
 
                     print('segmented char = {}'.format(segmented_char))
