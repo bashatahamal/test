@@ -228,9 +228,6 @@ class FontWrapper(Marker):
                 self.numstep = self._Data["numstep"]
             else:
                 self.numstep = 0
-            # self.key = self._Data[data]
-            # print(type(self.data))
-        # print(self.key)
 
         self.pocket = {}
         # super().__init__()
@@ -271,50 +268,6 @@ class FontWrapper(Marker):
                     m = 0
                 else:
                     m += 1
-        # print(self.temp_colour)
-        # tanwin = 0
-        # nun    = 0
-        # mim    = 0
-        # for key in self.get_marker_thresh().keys():
-        #     x = key.split('_')
-        #     if x[0] == 'tanwin':
-        #         tanwin+=1
-        #     if x[0] == 'nun':
-        #         nun+=1
-        #     if x[0] == 'mim':
-        #         mim+=1
-        # print('Tanwin {} nun {} mim {}'.format(tanwin, nun, mim))
-        # self.pick_colour  =[]
-        # reserved_tanwin = tanwin
-        # reserved_nun    = nun
-        # reserved_mim    = mim
-        # for x in range(len(self.get_marker_thresh())):
-        #     if reserved_tanwin <= len(colour_tanwin):
-        #         if tanwin > 0:
-        #             self.pick_colour.append(colour_tanwin[tanwin-1])
-        #             tanwin-=1
-        #             # print(tanwin)
-        #     else :
-        #         if tanwin > 0:
-        #             self.pick_colour.append(colour_tanwin[0])
-        #             tanwin-=1
-        #     if reserved_nun <= len(colour_nun):
-        #         if tanwin <= 0 and nun > 0:
-        #             self.pick_colour.append(colour_nun[nun-1])
-        #             nun-=1
-        #     else:
-        #         if tanwin <= 0 and nun > 0:
-        #             self.pick_colour.append(colour_nun[0])
-        #             nun-=1
-        #     if reserved_mim <= len(colour_mim):
-        #         if nun <= 0 and mim > 0:
-        #             self.pick_colour.append(colour_mim[mim-1])
-        #             mim-=1
-        #     else:
-        #         if nun <= 0 and mim > 0:
-        #             self.pick_colour.append(colour_mim[0])
-        #             mim-=1
-        # print(self.pick_colour)
 
     def get_marker_thresh(self):
         return self.marker_thresh
@@ -404,44 +357,66 @@ def font(imagePath, image):
     # LPMQ_Font
     # print("LPMQ")
     loc_list_LPMQ = sorted(glob.glob('./marker/LPMQ/*.png'))
-    font_LPMQ = FontWrapper(thresh_list={'tanwin_1': 0.7, 'tanwin_2': 0.7,
-                                         'nun_stand': 0.53, 'nun_beg_1': 0.7,
-                                         'nun_beg_2': 0.7, 'nun_mid': 0.7,
-                                         'nun_end': 0.7, 'mim_stand': 0.7,
-                                         'mim_beg': 0.8, 'mim_mid': 0.7,
-                                         'mim_end_1': 0.7, 'mim_end_2': 0.7},
+    font_LPMQ = FontWrapper(thresh_list={'tanwin_1': 0.7,
+                                         'tanwin_2': 0.7,
+                                         'nun_stand': 0.53,
+                                         'nun_beg_1': 0.7,
+                                         'nun_beg_2': 0.7,
+                                         'nun_mid': 0.7,
+                                         'nun_end': 0.7,
+                                         'mim_stand': 0.7,
+                                         'mim_beg': 0.8,
+                                         'mim_mid': 0.7,
+                                         'mim_end_1': 0.7,
+                                         'mim_end_2': 0.7},
                             loc_list=loc_list_LPMQ, image_loc=imagePath,
                             image=image, visualize=False, nms_thresh=0.3,
                             numstep=30)
     # AlQalam_Font
     # print("AlQalam")
     loc_list_AlQalam = sorted(glob.glob('./marker/AlQalam/*.png'))
-    font_AlQalam = FontWrapper(thresh_list={'tanwin_1': 0.7, 'tanwin_2': 0.56,
-                                            'nun_stand': 0.8, 'nun_beg': 0.7,
-                                            'nun_mid': 0.7, 'nun_end': 0.7,
-                                            'mim_stand': 0.7, 'mim_beg': 0.7,
-                                            'mim_mid': 0.7, 'mim_end': 0.7},
+    font_AlQalam = FontWrapper(thresh_list={'tanwin_1': 0.7,
+                                            'tanwin_2': 0.56,
+                                            'nun_stand': 0.8,
+                                            'nun_beg': 0.7,
+                                            'nun_mid': 0.7,
+                                            'nun_end': 0.7,
+                                            'mim_stand': 0.7,
+                                            'mim_beg': 0.7,
+                                            'mim_mid': 0.7,
+                                            'mim_end': 0.7},
                                loc_list=loc_list_AlQalam, image_loc=imagePath,
                                image=image, visualize=False, nms_thresh=0.3)
     # meQuran_Font
     # print("meQuran")
     loc_list_meQuran = sorted(glob.glob('./marker/meQuran/*.png'))
-    font_meQuran = FontWrapper(thresh_list={'tanwin_1': 0.7, 'tanwin_2': 0.65,
-                                            'nun_stand': 0.7, 'nun_beg_1': 0.7,
-                                            'nun_beg_2': 0.7, 'nun_mid': 0.7,
-                                            'nun_end': 0.7, 'mim_stand': 0.7,
-                                            'mim_beg': 0.7, 'mim_mid': 0.7,
-                                            'mim_end_1': 0.7, 'mim_end_2': 0.68},
+    font_meQuran = FontWrapper(thresh_list={'tanwin_1': 0.7,
+                                            'tanwin_2': 0.65,
+                                            'nun_stand': 0.7,
+                                            'nun_beg_1': 0.7,
+                                            'nun_beg_2': 0.7,
+                                            'nun_mid': 0.7,
+                                            'nun_end': 0.7,
+                                            'mim_stand': 0.7,
+                                            'mim_beg': 0.7,
+                                            'mim_mid': 0.7,
+                                            'mim_end_1': 0.7,
+                                            'mim_end_2': 0.68},
                                loc_list=loc_list_meQuran, image_loc=imagePath,
                                image=image, visualize=False, nms_thresh=0.3)
     # PDMS_Font
     # print("PDMS")
     loc_list_PDMS = sorted(glob.glob('./marker/PDMS/*.png'))
-    font_PDMS = FontWrapper(thresh_list={'tanwin_1': 0.7, 'tanwin_2': 0.7,
-                                         'nun_stand': 0.7, 'nun_beg': 0.65,
-                                         'nun_mid': 0.7, 'nun_end': 0.7,
-                                         'mim_stand': 0.7, 'mim_beg': 0.7,
-                                         'mim_mid': 0.7, 'mim_end': 0.65},
+    font_PDMS = FontWrapper(thresh_list={'tanwin_1': 0.7,
+                                         'tanwin_2': 0.7,
+                                         'nun_stand': 0.7,
+                                         'nun_beg': 0.65,
+                                         'nun_mid': 0.7,
+                                         'nun_end': 0.7,
+                                         'mim_stand': 0.7,
+                                         'mim_beg': 0.7,
+                                         'mim_mid': 0.7,
+                                         'mim_end': 0.65},
                             loc_list=loc_list_PDMS, image_loc=imagePath,
                             image=image, visualize=False, nms_thresh=0.3)
 
@@ -468,8 +443,6 @@ class ImageProcessing():
 
     def vertical_projection(self, image_v):
         image = image_v.copy()
-        # cv2.imshow('doing v_projection', image)
-        # print(len(image))
         image[image < 127] = 1
         image[image >= 127] = 0
         self.v_projection = np.sum(image, axis=0)
@@ -478,7 +451,6 @@ class ImageProcessing():
 
     def horizontal_projection(self, image_h):
         image = image_h.copy()
-        # cv2.imshow('h', image)
         image[image < 127] = 1
         image[image >= 127] = 0
         self.h_projection = np.sum(image, axis=1)
@@ -521,15 +493,11 @@ class ImageProcessing():
                 end_to_start += 1
 
             if h_projection[x] > 0 and up_flag == 0:
-                # if count>=pixel_limit
-                # print('ets {}'.format(end_to_start))
                 start_point.append(x)
                 # print(start_point)
                 if end_to_start < pixel_limit_ets:
                     del(start_point[len(start_point)-1])
                     del(start_point[len(start_point)-1])
-                    # print('delete')
-                # print(count)
                 up_flag = 1
                 down_flag = 0
                 end_to_start = 0
@@ -539,21 +507,7 @@ class ImageProcessing():
                 start_point.append(len(h_projection) - 1)
 
         self.start_point_h = start_point
-        # print('self from function = {}'.format(start_point))
-        # print('self from function self = {}'.format(self.start_point_h))
-        # print('height {}, width {}'.format(height, width))
-        # color_temp = color_temp[0:height, 0:width]
-        # color_temp[:] = 255
-        # for x in range(len(start_point)):
-        #     if x % 2 == 0:     # Start_point
-        #         cv2.line(color_temp, (0, start_point[x]),
-        #                  (width, start_point[x]), (0, 0, 255), 2)
-        #         # print(x)
-        #     else:         # End_point
-        #         cv2.line(color_temp, (0, start_point[x]),
-        #                  (width, start_point[x]), (255, 0, 0), 2)
-        # cv2.imshow('painting test', color_temp)
-        # cv2.waitKey(0)
+
         # Even is begining of line and Odd is end of line
         for x in range(len(start_point)):
             if x % 2 == 0:     # Start_point
@@ -572,7 +526,6 @@ class ImageProcessing():
         # print(h_projection)
         # original_image = one_line_image
         self.one_line_image = one_line_image
-        # print(h_projection)
         diff = [0]
         for x in range(len(h_projection)):
             if x > 0:
@@ -619,37 +572,20 @@ class ImageProcessing():
                 if start_to_end < pixel_limit_ste:
                     del(start_point[len(start_point) - 1])
                     del(start_point[len(start_point) - 1])
-                    # print('delete ste')
-                    # down_flag = 0
-                    # up_flag = 1
-                # else:
                 down_flag = 1
                 up_flag = 0
                 start_to_end = 0
 
-            # if v_projection[x] == 0 and down_flag == 1:
-            #     end_to_start += 1
-
             if v_projection[x] > 0 and up_flag == 0:
                 start_point.append(x)
-                # print('>0 {}'.format(start_point))
-                # if end_to_start < pixel_limit_ets:
-                #     del(start_point[len(start_point)-1])
-                #     del(start_point[len(start_point)-1])
-                    # print('delete')
-                    # up_flag = 0
-                    # down_flag = 1
-                # print(count)
-                # else:
                 up_flag = 1
                 down_flag = 0
-                end_to_start = 0
+                # end_to_start = 0
 
         if len(start_point) % 2 != 0:
             if v_projection[len(v_projection) - 1] > 0:
                 start_point.append(len(v_projection) - 1)
         self.start_point_v = start_point
-        # print(start_point)
         # Even is begining of line and Odd is end of line
         for x in range(len(start_point)):
             if x % 2 == 0:
@@ -667,14 +603,9 @@ class ImageProcessing():
     def crop_image(self, input_image, h_point=False, v_point=False):
         if h_point:
             start_point = h_point
-            # if input_image!=False:
             original_image = input_image
-            # cv2.imshow('crop', original_image)
             print('>')
             cv2.waitKey(0)
-            # else:
-            #     original_image = self.original_image
-            # print(start_point)
             bag_of_h_crop = {}
             for x in range(len(start_point)):
                 if x + 2 > len(start_point):
@@ -695,16 +626,10 @@ class ImageProcessing():
             start_point_v = v_point
             # if input_image!=False:
             original_image = input_image
-            # else:
-            #     original_image = self.original_image
             bag_of_v_crop = {}
             count = 0
             for image in bag_of_h_crop:
-                # print(image)
-                # y = int(image/2)
                 for x in range(len(start_point_v)):
-                    # print('inside loop')
-                    # print(image)
                     count += 1
                     if x % 2 == 0:
                         x1 = start_point[image]
@@ -724,263 +649,12 @@ class ImageProcessing():
     def eight_conectivity(self, image, oneline_baseline):
         # image = cv2.bitwise_not(image)
         height, width = image.shape
-        # print('eight conectivity')
-        # cv2.imshow('eight', image)
-        # cv2.waitKey(0)
-        # print(image)
-        # print('height= {}, width= {}'. format(height, width))
-        # print(len(image))
         self.conn_pack = {}
         reg = 1
         connected = True
         count = 0
-        # self.conn_pack['region_' + str(reg)] = set()
-        # self.region = {}
-        # for x in range(width):
-        #     for y in range(height):
-        #         skip_pixel = False
-        #         if self.region != {}:
-        #             for k_l in self.region.values():
-        #                 # print('k_l= {}'.format(k_l))
-        #                 # cv2.waitKey(0)
-        #                 # k_l = list(k_l)
-        #                 # print('k_l_list = {}, x,y = {}'.format(k_l[0], (x,y)))
-        #                 # print(image[y,x])
-        #                 if skip_pixel:
-        #                     break
-        #                 for m in k_l:
-        #                     # print(m)
-        #                     # print('y,x={}'.format((y,x)))
-        #                     # cv2.waitKey(0)
-        #                     if (y,x) == m:
-        #                         # print('continue')
-        #                         skip_pixel = True
-        #                         break
-        #         if skip_pixel:
-        #             # print('skip piksel continue')
-        #             continue
-        #         x_y = []
-        #         x_y_c = []
-        #         # print('x, y = {}'.format(x,y))
-        #         flag = False
-        #         count = 0
-        #         count_1 = 0
-        #         print('out while')
-        #         while(True):
-        #             # print('x_y[]={}'.format(x_y))
-        #             # print('x_y_c[]={}'.format(x_y_c))
-        #             # print('count ={}'.format(count))
-        #             # cv2.waitKey(0)
-        #             if image[y, x] == 0 and flag is False:
-        #                 # master coordinat
-        #                 flag = True
-        #                 x_y.append((y, x))
-        #                 # count += 1
-        #                 # Left
-        #                 if x - 1 > 0:
-        #                     if y + 1 < height:
-        #                         if image[y + 1, x - 1] == 0:
-        #                             x_y.append((y + 1, x - 1))
-        #                             count += 1
-        #                             # print('l1')
 
-        #                     if image[y, x - 1] == 0:
-        #                         x_y.append((y, x - 1))
-        #                         count += 1
-        #                         # print('l2')
-        #                     if y - 1 > 0:
-        #                         if image[y - 1, x - 1] == 0:
-        #                             x_y.append((y - 1, x - 1))
-        #                             count += 1
-        #                             # print('l3')
-        #                 # Middle
-        #                 if y + 1 < height:
-        #                     if image[y + 1, x] == 0:
-        #                         x_y.append((y + 1, x))
-        #                         count += 1
-        #                     # print('m1')
-        #                 # print('m2')
-        #                 if y - 1 > 0:
-        #                     if image[y - 1, x] == 0:
-        #                         x_y.append((y - 1, x))
-        #                         count += 1
-        #                         # print('m3')
-        #                 # Right
-        #                 if x + 1 < width:
-        #                     if y + 1 < height:
-        #                         if image[y + 1, x + 1] == 0:
-        #                             x_y.append((y + 1, x + 1))
-        #                             count += 1
-        #                             # print('r1')
-        #                     if image[y, x + 1] == 0:
-        #                         x_y.append((y, x + 1))
-        #                         count += 1
-        #                         # print('r2')
-        #                     if y - 1 > 0:
-        #                         if image[y - 1, x + 1] == 0:
-        #                             x_y.append((y - 1, x + 1))
-        #                             count += 1
-        #                             # print('r3')
-        #                 # print('x_y[]={}'.format(x_y))
-        #                 # cv2.waitKey(0)
-        #             # print('x_y= {}'.format(x_y))
-        #             # print('region= {}'.format(reg))
-        #             # cv2.waitKey(0)
-        #             if count ==0:
-        #                 print('break from count zero')
-        #                 # cv2.waitKey(0)
-        #                 break
-
-        #             if x_y != []:
-        #                 # print('x_y[set_c]={}'.format(x_y))
-        #                 # # cv2.waitKey(0)
-        #                 count_1 = 0
-        #                 x_y_c = copy.deepcopy(x_y)
-        #                 for c in range(count):
-        #                     x_y_l = len(x_y) - count + c
-        #                     # print('x_y_l={}'.format(x_y_l))
-        #                     y_l = (x_y)[x_y_l][0]
-        #                     x_l = (x_y)[x_y_l][1]
-        #                     # print('y_c= {}'.format(y_l))
-        #                     # cv2.waitKey(0)
-        #                     # print('x_y_c[set_c]={}'.format(x_y_c))
-        #                     # cv2.waitKey(0)
-        #                     # Left
-        #                     if x_l - 1 > 0:
-        #                         if y_l + 1 < height:
-        #                             if image[y_l + 1, x_l - 1] == 0:
-        #                                 if (y_l + 1, x_l - 1) not in x_y_c:
-        #                                     x_y_c.append((y_l + 1, x_l - 1))
-        #                                 # count_1 += 1
-
-        #                     if image[y_l, x_l - 1] == 0:
-        #                         if (y_l, x_l - 1) not in x_y_c:
-        #                             x_y_c.append((y_l, x_l - 1))
-        #                         # count_1 += 1
-        #                     if y_l - 1 > 0:
-        #                         if image[y_l - 1, x_l - 1] == 0:
-        #                             if (y_l - 1, x_l - 1) not in x_y_c:
-        #                                 x_y_c.append((y_l - 1, x_l - 1))
-        #                             # count_1 += 1
-        #                     # Middle
-        #                     if y_l + 1 < height:
-        #                         if image[y_l + 1, x_l] == 0:
-        #                             if (y_l + 1, x_l) not in x_y_c:
-        #                                 x_y_c.append((y_l + 1, x_l))
-        #                             # count_1 += 1
-        #                     # print('m2')
-        #                     if y - 1 > 0:
-        #                         if image[y - 1, x] == 0:
-        #                             if (y - 1, x) not in x_y_c:
-        #                                 x_y_c.append((y - 1, x))
-        #                             # count_1 += 1
-        #                             # print('m3')
-        #                     # Right
-        #                     if x + 1 < width:
-        #                         if y + 1 < height:
-        #                             if image[y + 1, x + 1] == 0:
-        #                                 if (y + 1, x + 1) not in x_y_c:
-        #                                     x_y_c.append((y + 1, x + 1))
-        #                                 # count_1 += 1
-        #                                 # print('r1')
-        #                         if image[y, x + 1] == 0:
-        #                             if (y, x + 1) not in x_y_c:
-        #                                 x_y_c.append((y, x + 1))
-        #                             # count_1 += 1
-        #                             # print('r2')
-        #                         if y - 1 > 0:
-        #                             if image[y - 1, x + 1] == 0:
-        #                                 if (y - 1, x + 1) not in x_y_c:
-        #                                     x_y_c.append((y - 1, x + 1))
-        #                                 # count_1 += 1
-        #                                 # print('r3')
-        #                 count_1 = len(x_y_c) - len(x_y)
-        #                 # print('count_1 after c= {}'.format(count_1))
-        #                 if count_1 == 0:
-        #                     print('break from count 1')
-        #                     # cv2.waitKey(0)
-        #                     break
-
-        #                 count = 0
-        #                 # print('x_y_c[]={}'.format(x_y_c))
-        #                 # cv2.waitKey(0)
-        #                 x_y = copy.deepcopy(x_y_c)
-        #                 for c_1 in range(count_1):
-        #                     x_y_l = len(x_y_c) - count_1 + c_1
-        #                     y_l = (x_y_c)[x_y_l][0]
-        #                     x_l = (x_y_c)[x_y_l][1]
-        #                     # print('y_c1= {}'.format(y_l))
-        #                     # cv2.waitKey(0)
-        #                     # print('x_y_c1[set_c]={}'.format(x_y))
-        #                     # cv2.waitKey(0)
-
-        #                     # Left
-        #                     if x_l - 1 > 0:
-        #                         if y_l + 1 < height:
-        #                             if image[y_l + 1, x_l - 1] == 0:
-        #                                 if (y_l + 1, x_l - 1) not in x_y:
-        #                                     x_y.append((y_l + 1, x_l - 1))
-        #                                 # count += 1
-
-        #                     if image[y_l, x_l - 1] == 0:
-        #                         if (y_l, x_l - 1) not in x_y:
-        #                             x_y.append((y_l, x_l - 1))
-        #                         # count += 1
-        #                     if y_l - 1 > 0:
-        #                         if image[y_l - 1, x_l - 1] == 0:
-        #                             if (y_l - 1, x_l - 1) not in x_y:
-        #                                 x_y.append((y_l - 1, x_l - 1))
-        #                             # count += 1
-        #                     # Middle
-        #                     if y_l + 1 < height:
-        #                         if image[y_l + 1, x_l] == 0:
-        #                             if (y_l + 1, x_l) not in x_y:
-        #                                 x_y.append((y_l + 1, x_l))
-        #                             # count += 1
-        #                     # print('m2')
-        #                     if y - 1 > 0:
-        #                         if image[y - 1, x] == 0:
-        #                             if (y - 1, x) not in x_y:
-        #                                 x_y.append((y - 1, x))
-        #                             # count += 1
-        #                             # print('m3')
-        #                     # Right
-        #                     if x + 1 < width:
-        #                         if y + 1 < height:
-        #                             if image[y + 1, x + 1] == 0:
-        #                                 if (y + 1, x + 1) not in x_y:
-        #                                     x_y.append((y + 1, x + 1))
-        #                                 # count += 1
-        #                                 # print('r1')
-        #                         if image[y, x + 1] == 0:
-        #                             if (y, x + 1) not in x_y:
-        #                                 x_y.append((y, x + 1))
-        #                             # count += 1
-        #                             # print('r2')
-        #                         if y - 1 > 0:
-        #                             if image[y - 1, x + 1] == 0:
-        #                                 if (y - 1, x + 1) not in x_y:
-        #                                     x_y.append((y - 1, x + 1))
-        #                                 # count += 1
-        #                                 # print('r3')
-
-        #                     count = len(x_y) - len(x_y_c)
-        #                     # print('count after c_1= {}'.format(count))
-        #                     if count == 0:
-        #                         print('break from count')
-        #                         # cv2.waitKey(0)
-        #                         break
-
-        #         if x_y != [] :
-        #             if len(x_y) >= len(x_y_c):
-        #                 self.region['region_' + str(reg)] = x_y
-        #                 reg+=1
-        #             if len(x_y_c) >= len(x_y):
-        #                 self.region['region_' + str(reg)] = x_y_c
-        #                 reg+=1
-        # print(self.region)
-
-
+        # Doing eight conn on every pixel one by one
         for x in range(width):
             for y in range(height):
                 if image[y, x] == 0:
@@ -1025,19 +699,20 @@ class ImageProcessing():
                                 x_y.append((y - 1, x + 1))
                                 # print('r3')
 
-                    # print('x_y= {}'.format(x_y))
-                    # print('region= {}'.format(reg))
-
+                    # First region only (Inizialitation)
                     if self.conn_pack == {}:
                         self.conn_pack['region_1'] = []
                         for x1_join in x_y:
                             if x1_join not in self.conn_pack['region_1']:
                                 self.conn_pack['region_1'].append(x1_join)
                         # print('inisialitation')
+
+                    # Next step is here
                     connected = False
                     connected_list = []
-                    # print('connected empty')
                     if self.conn_pack != {}:
+                        # Check how many region is connected
+                        # with detected eight neighbour
                         for x_list in x_y:
                             # if connected:
                             #     break
@@ -1048,18 +723,12 @@ class ImageProcessing():
                                 for val in self.conn_pack[r]:
                                     # if connected:
                                     #     break
-                                    # for val_list in val:
                                     if x_list == val:
                                         if r not in connected_list:
                                             connected_list.append(r)
-                                        # print('xlist= {}, val={}'.format(
-                                        # x_list,val))
-                                        # cv2.waitKey(0)
-                                        # for x_join in x_y:
-                                        #     self.conn_pack['region_' + str(r)
-                                        #           ].add(x_join)
                                         connected = True
                                         # break
+                        # Append eight conn to first detected region
                         if connected_list != []:
                             for x_join in x_y:
                                 if x_join not in self.conn_pack[
@@ -1068,6 +737,10 @@ class ImageProcessing():
                                                    ].append(x_join)
                         # print('connected list={}'.format(connected_list))
                         # cv2.waitKey(0)
+
+                        # If eight conn is overlapped (in more than 1 region)
+                        # then join every next region to first detected region
+                        # and delete who join
                         if len(connected_list) > 1:
                             for c_list in range(len(connected_list) - 1):
                                 c_list += 1
@@ -1086,7 +759,8 @@ class ImageProcessing():
                                 del(self.conn_pack[connected_list[c_list]])
                                 # print(connected_list[c_list])
 
-                        if connected is False:
+                        # if not connected then just create a new region
+                        if not connected:
                             reg += 1
                             self.conn_pack['region_' + str(reg)] = []
                             for x2_join in x_y:
@@ -1095,25 +769,14 @@ class ImageProcessing():
                                     self.conn_pack['region_'
                                                    + str(reg)].append(x2_join)
 
+        # Get every region length
         conn_val_list = self.conn_pack.values()
         temp_length = []
         for x in conn_val_list:
             temp_length.append(len(x))
-        print(temp_length)
-        cv2.waitKey(0)
+
         temp_delete = []
         temp_marker = []
-        # print(self.conn_pack)
-        # print(oneline_baseline)
-        # cv2.waitKey(0)
-        # Get region body and paint it
-        # temp_conn_pack = copy.deepcopy(self.conn_pack)
-        # for key in self.conn_pack:
-        #     if len(self.conn_pack[key]) < 1/5 * max(temp_length):
-        #         print('_______________')
-        #         print(self.conn_pack[key][0][0])
-        #         cv2.waitKey(0)
-        #         temp_delete.append(key)
         # If region is not in the baseline then it's not a body image
         for key in self.conn_pack:
             found = False
@@ -1127,10 +790,11 @@ class ImageProcessing():
             if found is False:
                 temp_delete.append(key)
         conn_pack_minus_body = {}
+        # Get body only and minus body region
         for delt in temp_delete:
             conn_pack_minus_body[delt] = self.conn_pack[delt]
             del(self.conn_pack[delt])
-
+        # Paint body only region
         self.image_body = image.copy()
         self.image_body[:] = 255
         for region in self.conn_pack:
@@ -1162,7 +826,7 @@ class ImageProcessing():
         self.conn_pack_marker_only = {}
         for mark in temp_marker:
             self.conn_pack_marker_only[mark] = (conn_pack_minus_body[mark])
-
+        # Paint marker only region
         self.image_marker_only = image.copy()
         self.image_marker_only[:] = 255
         for region in self.conn_pack_marker_only:
@@ -1172,151 +836,6 @@ class ImageProcessing():
             cv2.imshow('marker only', self.image_marker_only)
             print('marker only')
             cv2.waitKey(0)
-
-        #             # reg = new_reg
-        # self.conn_pack_sort = copy.deepcopy(self.conn_pack)
-        # same_reg =[]
-        # for j in self.conn_pack:
-        #     for k in self.conn_pack:
-        #         # print(self.conn_pack)
-        #         # print(self.conn_pack[k])
-        #         # cv2.waitKey(0)
-        #         connected = False
-        #         if j == k:
-        #             continue
-        #         for q in self.conn_pack[j]:
-        #             if connected:
-        #                 break
-        #             for w in self.conn_pack[k]:
-        #                 # print('q={} ,w={}'.format(q,w))
-        #                 # cv2.waitKey(0)
-
-        #                 # Left
-        #                 x = q[1]
-        #                 y = q[0]
-        #                 if x - 1 > 0:
-        #                     if y + 1 < height:
-        #                         if (y + 1, x - 1) == w:
-        #                             if k in self.conn_pack_sort \
-        #                                     and j in self.conn_pack_sort :
-        #                                 # print(k)
-        #                                 # cv2.waitKey(0)
-        #                                 for val in self.conn_pack_sort[k]:
-        #                                     self.conn_pack_sort[j].add(val)
-        #                                 del(self.conn_pack_sort[k])
-        #                             # print(j +'=' + k)
-        #                             # same_reg.append((j, k))
-        #                             connected = True
-        #                             break
-        #                             # print('l1')
-        #                     if (y, x - 1) == w:
-        #                         if k in self.conn_pack_sort\
-        #                                 and j in self.conn_pack_sort :
-        #                             for val in self.conn_pack_sort[k]:
-        #                                 self.conn_pack_sort[j].add(val)
-        #                             del(self.conn_pack_sort[k])
-        #                         # print(j +'=' + k)
-        #                         # same_reg.append((j, k))
-        #                         connected = True
-        #                         break
-        #                     if y - 1 > 0:
-        #                         if (y - 1, x - 1) == w:
-        #                             if k in self.conn_pack_sort\
-        #                                     and j in self.conn_pack_sort :
-        #                                 for val in self.conn_pack_sort[k]:
-        #                                     self.conn_pack_sort[j].add(val)
-        #                                 del(self.conn_pack_sort[k])
-        #                             # print(j +'=' + k)
-        #                             # same_reg.append((j, k))
-        #                             connected = True
-        #                             break
-        #                             # print('l3')
-        #                 # Middle
-        #                 if y + 1 < height:
-        #                     if (y + 1, x) == w:
-        #                         if k in self.conn_pack_sort\
-        #                                 and j in self.conn_pack_sort:
-        #                             # print(k)
-        #                             # cv2.waitKey(0)
-        #                             for val in self.conn_pack_sort[k]:
-        #                                 # print(j)
-        #                                 # cv2.waitKey(0)
-        #                                 self.conn_pack_sort[j].add(val)
-        #                             del(self.conn_pack_sort[k])
-        #                         # print(j +'=' + k)
-        #                         # same_reg.append((j, k))
-        #                         connected = True
-        #                         break
-        #                     # print('m1')
-        #                 if y - 1 > 0:
-        #                     if (y - 1, x) == w:
-        #                         if k in self.conn_pack_sort\
-        #                                 and j in self.conn_pack_sort:
-        #                             for val in self.conn_pack_sort[k]:
-        #                                 self.conn_pack_sort[j].add(val)
-        #                             del(self.conn_pack_sort[k])
-        #                         # print(j +'=' + k)
-        #                         # same_reg.append((j, k))
-        #                         connected = True
-        #                         break
-
-        #                 # Right
-        #                 if x + 1 < width:
-        #                     if y + 1 < height:
-        #                         if (y + 1, x + 1) == w:
-        #                             if k in self.conn_pack_sort\
-        #                                     and j in self.conn_pack_sort:
-        #                                 for val in self.conn_pack_sort[k]:
-        #                                     self.conn_pack_sort[j].add(val)
-        #                                 del(self.conn_pack_sort[k])
-        #                             # print(j +'=' + k)
-        #                             # same_reg.append((j, k))
-        #                             connected = True
-        #                             break
-        #                     if (y, x + 1) == w:
-        #                         if k in self.conn_pack_sort\
-        #                                 and j in self.conn_pack_sort:
-        #                             for val in self.conn_pack_sort[k]:
-        #                                 self.conn_pack_sort[j].add(val)
-        #                             del(self.conn_pack_sort[k])
-        #                         # print(j +'=' + k)
-        #                         # same_reg.append((j, k))
-        #                         connected = True
-        #                         break
-        #                     if y - 1 > 0:
-        #                         if (y - 1, x + 1) == w:
-        #                             if k in self.conn_pack_sort\
-        #                                     and j in self.conn_pack_sort:
-        #                                 for val in self.conn_pack_sort[k]:
-        #                                     self.conn_pack_sort[j].add(val)
-        #                                 del(self.conn_pack_sort[k])
-        #                             # print(j +'=' + k)
-        #                             # same_reg.append((j, k))
-        #                             connected = True
-        #                             break
-
-        # print(same_reg)
-        # cv2.waitKey(0)
-        # for lr in same_reg:
-        #     for val in self.conn_pack[lr[1]]:
-        #         self.conn_pack[lr[0]].add(val)
-
-        #     # print(lr[0])
-        #     # cv2.waitKey(0)
-        # save = []
-        # for reg_1 in same_reg:
-        #     for x in range(len(same_reg)):
-        #         if reg_1 == (same_reg[x][1], same_reg[x][0]):
-        #             save.append(x)
-        #             break
-
-        # print(same_reg)
-        # print(len(same_reg))
-        # print(save)
-        # cv2.waitKey(0)
-        # for val in self.conn_pack_sort[k]:
-        #     self.conn_pack_sort[j].add(val)
-        # del(self.conn_pack_sort[k])
 
     def find_final_segmented_char(self, image, oneline_baseline):
         skip = 'continue'
@@ -1350,8 +869,6 @@ class ImageProcessing():
         # word_baseline_height = self.base_end \
         #                        - self.base_start
         oneline_height = oneline_baseline[1] - oneline_baseline[0]
-        # print(oneline_height)
-        # cv2.waitKey(0)
         # Eight conn resulting image body and marker only
         self.eight_conectivity(final_img, oneline_baseline)
         print('back to find_final_segmented_char function ')
@@ -1437,7 +954,7 @@ class ImageProcessing():
                         continue
                     # for cord in range(x[1][0], x[1][1] + 1):
                     for cord in range(final_h_list[x][1][0],
-                                        final_h_list[x][1][1] + 1):
+                                      final_h_list[x][1][1] + 1):
                         # print(cord)
                         if cord == final_h_list[x_cmp][1][0]:
                             end = True
@@ -1476,15 +993,15 @@ class ImageProcessing():
             mark_img = self.image_marker_only.copy()
             for key in final_h_list_sorted.keys():
                 cv2.rectangle(mark_img,
-                            (final_h_list_sorted[key][1][0],
-                            final_h_list_sorted[key][0][0]),
-                            (final_h_list_sorted[key][1][1],
-                            final_h_list_sorted[key][0][1]),
-                            (100, 100, 100), 2)
+                              (final_h_list_sorted[key][1][0],
+                               final_h_list_sorted[key][0][0]),
+                              (final_h_list_sorted[key][1][1],
+                               final_h_list_sorted[key][0][1]),
+                              (100, 100, 100), 2)
             cv2.imshow('mark', mark_img)
             cv2.waitKey(0)
 
-            # If only one group marker the it's the char !!!
+            # If only one group marker then it's the char !!!
             if len(final_h_list_sorted) == 1:
                 print(final_h_list_sorted)
                 body_v_proj = self.vertical_projection(
@@ -1528,18 +1045,6 @@ class ImageProcessing():
                         else:
                             continue
                 print('1st {}, 2nd {}'.format(right_side, right_side_2nd))
-
-                # plt.subplot(211), plt.imshow(self.image_marker_only)
-                # plt.subplot(212), plt.plot(np.arange(0, len(final_h_proj), 1),
-                #  final_h_proj)
-                # plt.subplot(211), plt.imshow(self.image_marker_only)
-                # plt.subplot(212), plt.plot(np.arange(0, len(final_v_proj), 1),
-                #  final_v_proj)
-                # plt.subplot(222), plt.plot(np.arange(0, len(h_projection), 1),
-                #  h_projection)
-                # plt.xlim([0,256])
-                # plt.show()
-                # cv2.waitKey(0)
 
                 # Getting differentiation list on every word pixel
                 body_v_proj = self.vertical_projection(
@@ -1602,84 +1107,6 @@ class ImageProcessing():
                     segmented_char.append((x2_2nd_marker, len(diff)))
                     print('1st marker and 2nd marker is overlaped')
 
-                # Getting the first character by steep down
-                # count_down = False
-                # cord_x = 0
-                # temp = 0
-                # save_down = {}
-                # char_on_steep = False
-                # if self.baseline_img_body_h <= 1:
-                #     word_height_sorted = 3
-                # else:
-                #     word_height_sorted = self.\
-                #         baseline_img_body_h
-
-                # Get the steep down from right side
-                # for gap in diff[::-1]:
-                #     cord_x += 1
-                #     if gap < x1_2nd_marker:
-                #         break
-                #     if gap > 0:
-                #         temp += gap
-                #         count_down = True
-                #     if (gap == 0 or gap < 0) and count_down:
-                #         save_down[cord_x] = temp
-                #         temp = 0
-                #         count_down = False
-
-                # print('im saving= {}'.format(save_down))
-                # cv2.waitKey(0)
-
-                # for save in save_down:
-                #     if w_width < 2 * self.baseline_img_body_h:
-                #         segmented_char.append((0, w_width))
-                #         print('equal w_width')
-                #         break
-                #     right_side_val = final_h_list_sorted[right_side_2nd
-                #                                          ][1][1]  # x2
-                #     if len(diff) - save > right_side_val:
-                #         # Steep down value is x times grater than baseline
-                #         if save_down[save] > 1 * self.\
-                #                 baseline_img_body_h:
-                #             # Char is x times greater than baseline
-                #             if save > 1 * self.\
-                #                     baseline_img_body_h:
-                #                 segmented_char.append((len(diff) - save,
-                #                                        len(diff)))
-                #                 print('steep down')
-                #                 break
-                #             else:
-                #                 continue
-                #     else:
-                #         print('below 2nd right side')
-                #         segmented_char.append((right_side_val, len(diff)))
-                #         break
-
-                # for x in range(len(diff))[::-1]:
-                #     if w_width < 2 * self.baseline_img_body_h:
-                #         segmented_char.append((0, w_width))
-                #         break
-                    # if diff[x] > 2 * word_height_sorted:
-                    #     if body_v_proj[x] == 0:
-                    #         print('zero')
-                    #         segmented_char.append((x, len(diff)))
-                    #         char_on_steep = True
-                    #         break
-                    #     if len(diff) - x < 2 * self.\
-                    #             baseline_img_body_h:
-                    #         print('not that long')
-                    #         continue
-                    #     else:
-                    #         segmented_char.append((x, len(diff)))
-                    #         print('normal')
-                    #         char_on_steep = True
-                    #         break
-                    # right_side_val = final_h_list_sorted[
-                    #                     right_side_2nd][1][1]
-                    # if x <= right_side_val:
-                    #     print('below 2nd right side')
-                    #     segmented_char.append((right_side_val, len(diff)))
-                    #     break
         return segmented_char
 
 
@@ -1902,35 +1329,12 @@ def main():
                     # print('join {}'.format(join))
                     # print('nrxt {}'.format(next_))
                 if name[0] == 'word':
-                    word_ = crop_words[key]
+                    # word_ = crop_words[key]
                     next_image = temp_image.copy()[:, next_[0]:next_[1]]
-                    next_v_proj = input_image.vertical_projection(next_image)
-                    # plt.subplot(121), plt.imshow(next_image)
-                    # plt.subplot(122), plt.plot(np.arange(0, len(next_v_proj), 1), next_v_proj)
-                    # plt.show()
-                    word_image = temp_image.copy()[:, word_[0]:word_[1]]
-                    word_v_proj = input_image.vertical_projection(word_image)
-                    # plt.subplot(121), plt.imshow(word_image)
-                    # plt.subplot(122), plt.plot(np.arange(0, len(word_v_proj), 1), word_v_proj)
-                    # plt.show()
+                    # word_image = temp_image.copy()[:, word_[0]:word_[1]]
                     next_h_proj = input_image.horizontal_projection(next_image)
-                    input_image.base_line(next_image.copy())
-                    # cv2.imshow('Base start =' + str(input_image.base_start)
-                    #            + ' end =' + str(input_image.base_end),
-                    #            input_image.one_line_image)
-                    # print('>')
-                    # cv2.waitKey(0)
-                    word_h_proj = input_image.horizontal_projection(word_image)
-                    input_image.base_line(word_image.copy())
-                    # cv2.imshow('Base start =' + str(input_image.base_start)
-                    #            + ' end =' + str(input_image.base_end),
-                    #            input_image.one_line_image)
-                    # print('>')
-                    # cv2.waitKey(0)
-                    # print(input_image.base_start)
-                    # print(input_image.base_end)
-                    # print(len(next_h_proj))
-                    # print(next_h_proj)
+                    # input_image.base_line(next_image.copy())
+                    # input_image.base_line(word_image.copy())
                     # Get crop word index
                     for x in range(len(v_point)):
                         if x % 2 == 0:
@@ -1986,7 +1390,8 @@ def main():
                             oneline_baseline
                         )
                         if segmented_char == 'continue':
-                            print('>> from main to continue next word candidate')
+                            print('>> from main to continue next \
+                                  word candidate')
                             continue
 
                     if name[1] == 'inside':
@@ -2001,7 +1406,8 @@ def main():
                             oneline_baseline
                         )
                         if segmented_char == 'continue':
-                            print('>> from main to continue next word candidate')
+                            print('>> from main to continue next \
+                                  word candidate')
                             continue
 
                     print('segmented char = {}'.format(segmented_char))
@@ -2021,12 +1427,7 @@ def main():
                     print('>>> Final char')
                     cv2.waitKey(0)
 
-
     cv2.destroyAllWindows()
-
-# cv2.imshow('crop', view)
-# cv2.waitKey(0)
-# cv2.destroyAllWindows()
 
 
 if __name__ == '__main__':

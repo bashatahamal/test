@@ -2,13 +2,13 @@ import PySimpleGUIQt as sg
 import mysql.connector
 import concatenate as ct
 import os
-import base64
+# import base64
 import cv2
 from datetime import datetime
 # from PIL import Image
 # import io
 
-char_list_symbol= [
+char_list_symbol = [
     'Alif          ‫ا‬',
     'Bā’           ‫ب‬',
     'Tā’           ‫ت‬',
@@ -41,7 +41,7 @@ char_list_symbol= [
 char_list_nameonly = [
     'Alif‬', 'Bā’', 'Tā’', 'Ṡā’‬', 'Jīm', 'h_Ḥā’‬', 'Khā’‬',
     'Dāl‬', 'Żāl‬', 'Rā’‬', 'zai‬', 'sīn‬', 'syīn‬', 's_ṣād',
-    'd_ḍād', 't_ṭā’‬','z_ẓȧ’‬', '‘ain', 'gain‬', 'fā’‬', 'qāf‬',
+    'd_ḍād', 't_ṭā’‬', 'z_ẓȧ’‬', '‘ain', 'gain‬', 'fā’‬', 'qāf‬',
     'kāf‬', 'lām‬', 'mīm‬', 'nūn‬', 'wāw‬', 'hā’‬', 'yā’‬'
 ]
 # marker_list_full = [
@@ -166,8 +166,8 @@ except mysql.connector.errors.InterfaceError:
 layout = [
     [sg.Text('Font:'), sg.Text('QS:')],
     [sg.Input(do_not_clear=True, enable_events=False, focus=False,
-     key='_FONT_'), sg.Input(do_not_clear=True, enable_events=False, focus=False,
-     key='_QS_')],
+     key='_FONT_'), sg.Input(do_not_clear=True, enable_events=False,
+     focus=False, key='_QS_')],
     [sg.Button('Refresh'), sg.Exit()],
     [sg.Listbox(values=char_list_symbol, size=(15, 5.5), key='_LISTBOX_',
                 enable_events=True, select_mode='single', auto_size_text=True),
@@ -223,6 +223,7 @@ while True:
             passwd='',
             database='collection'
         )
+        db_cursor = db.cursor()
         start = True
         db_stat = 'Connected.'
     except mysql.connector.errors.ProgrammingError:
@@ -235,7 +236,6 @@ while True:
         db_stat = 'Not connected'
     # Run __TIMEOUT__ event every 50 ms
     # print(db.is_connected())
-    db_cursor = db.cursor()
     event, values = window.Read()
     if start:
         if not db.is_connected():
@@ -256,7 +256,7 @@ while True:
     if event == '_LOCKDEL_' and values['_LOCKDEL_']:
         window.Element('_DELBUTTON_').Update(disabled=False,
                                              button_color=('white', 'green'))
-    if event == '_DELBUTTON_' :
+    if event == '_DELBUTTON_':
         window.Element('_LOCKDEL_').Update(False)
     if not values['_LOCKDEL_']:
         window.Element('_DELBUTTON_').Update(disabled=True,
@@ -329,8 +329,8 @@ while True:
         window.Element('_LISTTYPE_').Update(values=list_type)
 
     elif sql_result != [] and list_type != [] and (
-            event == 'Refresh' or event == '_ADDBUTTON_' or event == '_DELBUTTON_'
-            or event == '_INPUT_'):
+            event == 'Refresh' or event == '_ADDBUTTON_'
+            or event == '_DELBUTTON_' or event == '_INPUT_'):
         list_type = []
         list_id = []
         count = 0
@@ -414,7 +414,7 @@ while True:
                 + '_' + dt_string + '.png'
             output_name_sqr = store_folder_sqr + '/' + marker_type \
                 + '_' + dt_string + '.png'
-            print(output_name_ori)
+            # print(output_name_ori)
             cv2.imwrite(output_name_ori, img_ori, [cv2.IMWRITE_PNG_BILEVEL])
             cv2.imwrite(output_name_sqr, img_sqr, [cv2.IMWRITE_PNG_BILEVEL])
 
@@ -478,8 +478,8 @@ while True:
         delete_image_loc = '/'.join(key)
         os.remove(delete_image_loc)
         last_act = last_act + '\n' + 'Delete id {} and {}'.format(
-            str(list_id[res_id]), delete_image_loc)
-        print('Delete id {} and {}'.format(str(list_id[res_id]),
+            str(list_id[res_id] + 1), delete_image_loc)
+        print('Delete id {} and {}'.format(str(list_id[res_id] + 1),
                                            delete_image_loc))
 
         refresh_sql_result_from_DB()
@@ -499,96 +499,6 @@ while True:
     total_char = 'Total char: ' + str(int(len(sql_result_id)/2))
     window.Element('_TOTALCHAR_').Update(total_char)
     window.Element('_LASTACT_').Update(last_act)
-
-    #     for x in range(len(char_list_symbol)):
-    #         if values['_LISTBOX_'][0] == char_list_symbol[x]:
-    #             # print(char_name)
-    #             db_cursor = db.cursor()
-    #             font_type = values['_FONT_']
-    #             QS = values['_QS_']
-    #             char_name = char_list_nameonly[x]
-    #             marker_type = values['_MARKERTYPE_'][0]
-    #             marker_name = values['_MARKERNAME_'][0]
-    #             image_location = values['_INPUT_']
-    #             sql_query = "SELECT * FROM dataset WHERE font_type='"\
-    #                         + font_type + "' AND marker_type='" + marker_type\
-    #                         + "' AND char_name='" + char_name \
-    #                         + "' AND marker_name='" + marker_name + "'"
-    #             # print(sql_query)
-    #             db_cursor.execute(sql_query)
-    #             sql_result = db_cursor.fetchall()
-    #             # print(myresult)
-
-    #             if sql_result == []:
-    #                 for x in range(1, 11):
-    #                     window.Element('_IMAGE' + str(x) + '_').Update(
-    #                         visible=False
-    #                     )
-    #                 window.Element('_ADDTYPE_').Update(disabled=True)
-    #                 window.Element('_ADDTYPEINPUT_').Update(disabled=True)
-                    
-    #                 if font_type != '' and QS != '' and image_location != '':
-    #                     store_folder = './collection/' + font_type + '/'\
-    #                                     + marker_name
-    #                     if not os.path.exists(store_folder):
-    #                         os.makedirs(store_folder)
-                        
-    #                     ct.make_it_square(image_location, store_folder + '/'
-    #                                       + marker_type + '.png')
-
-    #                     image_location = store_folder + '/'+ marker_type + '.png'
-    #                     sql_query = "INSERT INTO dataset (font_type, char_name,\
-    #                              marker_type, marker_name, image_location, QS, ID)\
-    #                              VALUES (%s, %s, %s, %s, %s, %s, NULL)"
-    #                     sql_values = (font_type, char_name, marker_type,
-    #                                 marker_name, image_location, QS)
-    #                     db_cursor.execute(sql_query, sql_values)
-    #                     db.commit()
-
-    #                     window.Element('_INPUT_').Update('')
-    #                     print('adding ' + marker_name + ' to database')
-    #             else:
-    #                 print(sql_result)
-    #                 for x in range(1, 11):
-    #                     window.Element('_IMAGE' + str(x) + '_').Update(
-    #                         visible=False
-    #                     )
-    #                 window.Element('_ADDTYPE_').Update(disabled=False)
-    #                 window.Element('_ADDTYPEINPUT_').Update(disabled=False)
-    #                 if event == '_ADDTYPEINPUT_' and QS != '':
-                        
-    #                     store_folder = './collection/' + font_type + '/'\
-    #                                    + marker_name
-    #                     # if not os.path.exists(store_folder):
-    #                     #     os.makedirs(store_folder)
-    #                     image_location = values['_ADDTYPEINPUT_']
-
-    #                     ct.make_it_square(image_location, store_folder + '/'
-    #                                       + marker_type + '_'
-    #                                       + str(len(sql_result) + 1) + '.png')
-
-    #                     image_location = store_folder + '/' + marker_type \
-    #                         + '_' + str(len(sql_result) + 1) + '.png'
-    #                     sql_query = "INSERT INTO dataset (font_type, char_name,\
-    #                              marker_type, marker_name, image_location,\
-    #                              QS, ID)\
-    #                              VALUES (%s, %s, %s, %s, %s, %s, NULL)"
-    #                     sql_values = (font_type, char_name, marker_type,
-    #                                   marker_name, image_location, QS)
-    #                     db_cursor.execute(sql_query, sql_values)
-    #                     db.commit()
-    #                     # window.Element('_ADDTYPEINPUT_').Update('')
-    #                     # window.Element('_ADDTYPEINPUT_').Update(disabled=True)
-    #                     print('adding new type ' + marker_name + ' to database')
-
-    #                 for x in range(len(sql_result)):
-    #                     img_data = get_base64_str_from_file(sql_result[x][4])
-    #                     window.Element('_IMAGE' + str(x+1) + '_').Update(
-    #                         data=img_data, visible=True
-    #                     )
-
-
-
 
 
 window.Close()
