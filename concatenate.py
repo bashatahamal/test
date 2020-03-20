@@ -74,8 +74,10 @@ def make_it_square(image_location):
     # full_concatImage = np.concatenate(
     #     (concatenate_l, img_original, concatenate_r), axis=1
     # )
-    # concatenate_u = np.full((concatenate_u, targeted_size), 255, dtype=np.uint8)
-    # concatenate_d = np.full((concatenate_d, targeted_size), 255, dtype=np.uint8)
+    # concatenate_u = np.full((concatenate_u, targeted_size), 255,
+    #                         dtype=np.uint8)
+    # concatenate_d = np.full((concatenate_d, targeted_size), 255,
+    #                         dtype=np.uint8)
     # full_concatImage = np.concatenate(
     #     (concatenate_u, full_concatImage, concatenate_d), axis=0
     # )

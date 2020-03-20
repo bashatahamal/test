@@ -457,7 +457,8 @@ class ImageProcessing():
 
         return self.h_projection
 
-    def detect_horizontal_line(self, image, pixel_limit_ste, pixel_limit_ets):
+    def detect_horizontal_line(self, image, pixel_limit_ste, pixel_limit_ets,
+                               view=True):
         # Detect line horizontal
         if len(image.shape) == 3:
             height, width, _ = image.shape
@@ -509,16 +510,17 @@ class ImageProcessing():
         self.start_point_h = start_point
 
         # Even is begining of line and Odd is end of line
-        for x in range(len(start_point)):
-            if x % 2 == 0:     # Start_point
-                cv2.line(image, (0, start_point[x]),
-                         (width, start_point[x]), (0, 0, 255), 2)
-                # print(x)
-            else:         # End_point
-                cv2.line(image, (0, start_point[x]),
-                         (width, start_point[x]), (100, 100, 255), 2)
-        cv2.imshow('horizontal line', image)
-        cv2.waitKey(0)
+        if view:
+            for x in range(len(start_point)):
+                if x % 2 == 0:     # Start_point
+                    cv2.line(image, (0, start_point[x]),
+                            (width, start_point[x]), (0, 0, 255), 2)
+                    # print(x)
+                else:         # End_point
+                    cv2.line(image, (0, start_point[x]),
+                            (width, start_point[x]), (100, 100, 255), 2)
+            cv2.imshow('horizontal line', image)
+            cv2.waitKey(0)
 
     def base_line(self, one_line_image):
         # Got self.base_start, self.base_end, self.one_line_image
@@ -551,7 +553,7 @@ class ImageProcessing():
         cv2.line(self.one_line_image, (0, self.base_end),
                  (self.width, self.base_end), (0, 255, 0), 2)
 
-    def detect_vertical_line(self, image, pixel_limit_ste):
+    def detect_vertical_line(self, image, pixel_limit_ste, view=True):
         # Detect line vertical
         v_projection = self.v_projection
         # print(v_projection)
@@ -587,18 +589,19 @@ class ImageProcessing():
                 start_point.append(len(v_projection) - 1)
         self.start_point_v = start_point
         # Even is begining of line and Odd is end of line
-        for x in range(len(start_point)):
-            if x % 2 == 0:
-                cv2.line(original_image, (start_point[x], 0),
-                         (start_point[x], self.height), (0, 0, 0), 2)
-            else:
-                cv2.line(original_image, (start_point[x], 0),
-                         (start_point[x], self.height), (100, 100, 100), 2)
+        if view:
+            for x in range(len(start_point)):
+                if x % 2 == 0:
+                    cv2.line(original_image, (start_point[x], 0),
+                            (start_point[x], self.height), (0, 0, 0), 2)
+                else:
+                    cv2.line(original_image, (start_point[x], 0),
+                            (start_point[x], self.height), (100, 100, 100), 2)
 
-        cv2.imshow('line', original_image)
-        print('>')
-        cv2.waitKey(0)
-        # print(start_point_v)
+            cv2.imshow('line', original_image)
+            print('>')
+            cv2.waitKey(0)
+            # print(start_point_v)
 
     def crop_image(self, input_image, h_point=False, v_point=False):
         if h_point:
@@ -613,7 +616,7 @@ class ImageProcessing():
                     continue
                 if x % 2 == 0:
                     bag_of_h_crop[x] = original_image[
-                                        start_point[x]:start_point[x+1], :]
+                                        start_point[x]:start_point[x+1] + 1, :]
             # print(bag_of_h_crop)
             for image in bag_of_h_crop:
                 cv2.imshow('bag_h'+str(image), bag_of_h_crop[image])
@@ -812,7 +815,8 @@ class ImageProcessing():
         # self.baseline_img_body_h = abs(self.base_end - self.base_start)
         # print('oneline image from base line funtion')
         # cv2.imshow('self.oneline image', self.one_line_image)
-        # print('base start={} , end={}'.format(self.base_start, self.base_end))
+        # print('base start={} , end={}'.format(
+        # self.base_start, self.base_end))
         # print('baseline height = {}'. format(self.baseline_img_body_h))
         # cv2.waitKey(0)
 
@@ -844,7 +848,8 @@ class ImageProcessing():
         skip = 'continue'
         # List available for final segmented char
         segmented_char = []
-        final_img = cv2.bitwise_not(image)
+        final_img = image
+        # final_img = cv2.bitwise_not(image)
         w_height, w_width = final_img.shape
         # cv2.imshow('inverse', final_img)
         kernel = np.ones((2, 2), np.uint8)
@@ -852,35 +857,21 @@ class ImageProcessing():
         # kernel = np.ones((2,2), np.uint8)
         # erosion = cv2.erode(final_img.copy(),kernel,iterations = 1)
         # opening = cv2.morphologyEx(final_img.copy(), cv2.MORPH_OPEN, kernel)
-        closing = cv2.morphologyEx(final_img.copy(), cv2.MORPH_CLOSE, kernel)
-        final_img = cv2.bitwise_not(closing)
-        cv2.imshow('morph', final_img)
-        print('morph')
-        cv2.waitKey(0)
-        # cv2.imshow('dilation', dilation)
-        # print('dilation')
+        # closing = cv2.morphologyEx(final_img.copy(), cv2.MORPH_CLOSE, kernel)
+        # final_img = cv2.bitwise_not(closing)
+
+        # cv2.imshow('find_final_segmented_char', final_img)
+        # print('find_final_segmented_char')
         # cv2.waitKey(0)
-        # cv2.imshow('opening', opening)
-        # print('opening')
-        # cv2.waitKey(0)
-        # cv2.imshow('closing', closing)
-        # print('closing')
-        # cv2.waitKey(0)
-        # Get final word baseline
-        # self.horizontal_projection(final_img)
-        # self.base_line(final_img.copy())
-        # word_baseline_height = self.base_end \
-        #                        - self.base_start
-        oneline_height = oneline_baseline[1] - oneline_baseline[0]
+
         # Eight conn resulting image body and marker only
         self.eight_conectivity(final_img, oneline_baseline)
         print('back to find_final_segmented_char function ')
         cv2.waitKey(0)
-        # print('reg length={}'.format(
-        # len(self.conn_pack)))
 
         # Doing vertical & horizontal word projection
         # to get marker only coordinat
+        oneline_height = oneline_baseline[1] - oneline_baseline[0]
         self.horizontal_projection(self.image_marker_only)
         if oneline_height <= 1:
             oneline_height_sorted = 3
@@ -889,7 +880,8 @@ class ImageProcessing():
         self.detect_horizontal_line(
             image=self.image_marker_only.copy(),
             pixel_limit_ste=oneline_height_sorted,
-            pixel_limit_ets=1
+            pixel_limit_ets=1,
+            view=False
         )
 
         # Make sure every start point has an end
@@ -905,14 +897,11 @@ class ImageProcessing():
                 h_img = self.image_marker_only[
                     self.start_point_h[x]:self.start_point_h[x + 1], :
                 ]
-                # cv2.imshow('h_img', h_img)
-                # height, width = h_img.shape
-                # print('h {}  w {}'.format(height,width))
-                # cv2.waitKey(0)
                 self.vertical_projection(h_img)
                 self.detect_vertical_line(
                     image=h_img.copy(),
-                    pixel_limit_ste=oneline_height_sorted
+                    pixel_limit_ste=oneline_height_sorted,
+                    view=False
                 )
 
                 for l in range(len(self.start_point_v)):
@@ -922,12 +911,6 @@ class ImageProcessing():
                         final_h_list[reg] = \
                             (self.start_point_h[x], self.start_point_h[x+1]),\
                             (self.start_point_v[l], self.start_point_v[l+1])
-
-                # final_h_list.extend(self.start_point_v)
-                # print('hlist {}'.format(h_list))
-                # print('final h {}'.format(final_h_list))
-                # print(len(final_h_list))
-                # cv2.waitKey(0)
 
         # print('hlist {}'.format(h_list))
         print('final h {}'.format(final_h_list))
@@ -1238,6 +1221,7 @@ def main():
             input_image.detect_vertical_line(
                 image=temp_image.copy(),
                 pixel_limit_ste=8,  # Start to end
+                view=False
                 # pixel_limit_ets=0   # End to start
             )
             # print(input_image.start_point_v)
@@ -1416,9 +1400,6 @@ def main():
                             continue
 
                     print('segmented char = {}'.format(segmented_char))
-                    draw_img = final_img.copy()
-                    cv2.imshow('dd', draw_img)
-                    print('draw img')
                     cv2.waitKey(0)
                     cv2.line(draw_img,
                              (segmented_char[0][0], w_height),
