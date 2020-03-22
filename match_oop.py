@@ -359,11 +359,11 @@ def font(imagePath, image):
     loc_list_LPMQ = sorted(glob.glob('./marker/LPMQ/*.png'))
     font_LPMQ = FontWrapper(thresh_list={'tanwin_1': 0.7,
                                          'tanwin_2': 0.7,
-                                         'nun_stand': 0.53,
+                                         'nun_stand': 0.55,
                                          'nun_beg_1': 0.7,
                                          'nun_beg_2': 0.7,
                                          'nun_mid': 0.7,
-                                         'nun_end': 0.7,
+                                         'nun_end': 0.6,
                                          'mim_stand': 0.7,
                                          'mim_beg': 0.8,
                                          'mim_mid': 0.7,
@@ -430,7 +430,10 @@ class ImageProcessing():
         # print('init')
         self._Data = kwargs
         self.original_image = self._Data['original_image']
-        self.height, self.width, _ = self.original_image.shape
+        if len(self.original_image.shape) == 3:
+            self.height, self.width, _ = self.original_image.shape
+        else:
+            self.height, self.width = self.original_image.shape
         # Instance variable list
         # self.v_projection = 0
         # self.h_projection = 0
@@ -772,12 +775,6 @@ class ImageProcessing():
                                     self.conn_pack['region_'
                                                    + str(reg)].append(x2_join)
 
-        # Get every region length
-        conn_val_list = self.conn_pack.values()
-        temp_length = []
-        for x in conn_val_list:
-            temp_length.append(len(x))
-
         temp_delete = []
         temp_marker = []
         # If region is not in the baseline then it's not a body image
@@ -836,12 +833,148 @@ class ImageProcessing():
         # Paint marker only region
         self.image_marker_only = image.copy()
         self.image_marker_only[:] = 255
+        self.image_body_dot = self.image_body.copy()
         for region in self.conn_pack_marker_only:
             value = self.conn_pack_marker_only[region]
+            image_marker = image.copy()
+            image_marker[:] = 255
+            pixel_count = 0
             for x in value:
+                pixel_count += 1
+                image_marker[x] = 0
                 self.image_marker_only[x] = 0
             cv2.imshow('marker only', self.image_marker_only)
             print('marker only')
+            cv2.waitKey(0)
+
+            # Dot detection
+            self.horizontal_projection(image_marker)
+            self.detect_horizontal_line(image_marker.copy(), 0, 0, False)
+            one_marker = image_marker[self.start_point_h[0]:
+                                      self.start_point_h[1], :]
+            self.vertical_projection(one_marker)
+            self.detect_vertical_line(one_marker.copy(), 0, False)
+            x1 = self.start_point_v[0]
+            x2 = self.start_point_v[1]
+            one_marker = one_marker[:, x1:x2]
+            print(one_marker)
+            cv2.imshow('fin', one_marker)
+            cv2.waitKey(0)
+            # cv2.imshow('marker only', image_marker)
+            # cv2.waitKey(0)
+            self.horizontal_projection(one_marker)
+            self.vertical_projection(one_marker)
+            img_h_v_proj = self.v_projection
+            img_h_h_proj = self.h_projection
+
+            # Looking for square skeleton
+            count_v = 0
+            max_v = 0
+            for v_sum in img_h_v_proj:
+                if v_sum > max_v:
+                    max_v = v_sum
+                    max_ord_v = count_v
+                count_v += 1
+            count_h = 0
+            max_h = 0
+            for h_sum in img_h_h_proj:
+                if h_sum > max_h:
+                    max_h = h_sum
+                    max_ord_h = count_h
+                count_h += 1
+            # start_x, end_x, start_y, end_y skeleton
+            height, width = one_marker.shape
+            for x_ in range(width):
+                if one_marker[max_ord_h, x_] == 0:
+                    start_x = x_
+                    break
+            end_x = start_x + int(max_h)
+            for y_ in range(height):
+                if one_marker[y_, max_ord_v] == 0:
+                    start_y = y_
+                    break
+            end_y = start_y + int(max_v)
+            # x1 = start_x, y1 = start_y
+            # x2 = end_x, y2 = end_y
+            print(start_x, end_x)
+            print(start_y, end_y)
+            print(max_h, max_v)
+            print(max_ord_h, max_ord_v)
+            if max_ord_v in range(start_x, end_x):
+                squareleton = one_marker[start_y:end_y, start_x:end_x]
+                cv2.imshow('squareleton', squareleton)
+                print(squareleton)
+                height, width = squareleton.shape
+                scale = 1.55
+                if width < scale * height:
+                    if height < scale * width:
+                        print('square')
+                        if pixel_count < height * width:
+                            for x in range(width):
+                                black = False
+                                white = False
+                                false_dot = False
+                                white_val = 0
+                                for y in range(height):
+                                    if squareleton[y, x] == 0:
+                                        black = True
+                                    if black and squareleton[y, x] > 0:
+                                        if not white:
+                                            white_val = 0
+                                        white = True
+                                    if black and white \
+                                            and squareleton[y, x] == 0:
+                                        false_dot = True
+                                        print('white hole')
+                                        break
+                                    # If to many whites is not a dot
+                                    if squareleton[y, x] > 0:
+                                        white_val += 1
+                                    if white_val > round(height/2):
+                                        print('to many white')
+                                        false_dot = True
+                                        break
+                                if false_dot:
+                                    print('NOT a dot')
+                                    break
+                            if not false_dot:
+                                print('Its a dot :)')
+                                for x in value:
+                                    self.image_body_dot[x] = 0
+
+                        else:
+                            print('The square is not enough')
+                            print('NOT a dot')
+                    else:
+                        print('portrait image')
+                        print('NOT a dot')
+                else:
+                    print('landscape')
+                    x_l = round(width/2)
+                    white_l = False
+                    black_l = False
+                    dot = False
+                    for y_l in range(height):
+                        if squareleton[y_l, x_l] > 0:
+                            white_l = True
+                        if white_l and squareleton[y_l, x_l] == 0:
+                            black_l = True
+                        if white_l and black_l and squareleton[y_l, x_l] > 0:
+                            dot = True
+                    if dot:
+                        print('Middle is w -> b -> w')
+                        print('Its a dot :)')
+                        for x in value:
+                            self.image_body_dot[x] = 0
+                    else:
+                        print('middle is wrong')
+                        print('NOT a dot')
+                cv2.waitKey(0)
+            else:
+                print('Just cannot create a square')
+                print('NOT a dot')
+                continue
+            cv2.imshow('dot + body', self.image_body_dot)
             cv2.waitKey(0)
 
     def find_final_segmented_char(self, image, oneline_baseline):
@@ -989,7 +1122,7 @@ class ImageProcessing():
 
             # If only one group marker then it's the char !!!
             if len(final_h_list_sorted) == 1:
-                print(final_h_list_sorted)
+                # print(final_h_list_sorted)
                 body_v_proj = self.vertical_projection(
                     self.image_body
                 )
@@ -998,8 +1131,17 @@ class ImageProcessing():
                     np.arange(0, len(body_v_proj), 1), body_v_proj
                 )
                 plt.show()
+                print(body_v_proj)
+                print(oneline_height_sorted)
+                print(final_h_list_sorted[1][1][0])
                 cv2.waitKey(0)
-                segmented_char.append((0, w_width))
+                for x in range(0, final_h_list_sorted[1][1][0])[::-1]:
+                    print(body_v_proj[x])
+                    if body_v_proj[x] > oneline_height_sorted:
+                        segmented_char = [(x + 1, w_width)]
+                        break
+                    else:
+                        segmented_char = [(0, w_width)]
                 print('only have one marker')
                 return segmented_char
 
@@ -1043,13 +1185,13 @@ class ImageProcessing():
                                     - int(body_v_proj[x])
                         diff.append(temp_diff)
 
-                print(diff)
-                plt.subplot(211), plt.imshow(self.image_body)
-                plt.subplot(212), plt.plot(
-                    np.arange(0, len(body_v_proj), 1), body_v_proj
-                )
-                plt.show()
-                cv2.waitKey(0)
+                # print(diff)
+                # plt.subplot(211), plt.imshow(self.image_body)
+                # plt.subplot(212), plt.plot(
+                #     np.arange(0, len(body_v_proj), 1), body_v_proj
+                # )
+                # plt.show()
+                # cv2.waitKey(0)
 
                 # Getting 1st char by it's 2nd marker
                 # x1_2nd_marker = final_h_list_sorted[right_side_2nd
@@ -1398,7 +1540,8 @@ def main():
                                 '>> from main to continue next word candidate'
                             )
                             continue
-
+                    # draw_img = final_img.copy()
+                    draw_img = input_image.image_body_dot
                     print('segmented char = {}'.format(segmented_char))
                     cv2.waitKey(0)
                     cv2.line(draw_img,

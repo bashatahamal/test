@@ -1,7 +1,8 @@
 [Dolphin]
+PreviewsShown=true
 SortOrder=1
 SortRole=modificationtime
-Timestamp=2020,2,14,22,24,16
+Timestamp=2020,3,22,5,48,55
 Version=4
 
 [Settings]

@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import dot
 
 
 def vertical_projection(image_v):
@@ -23,14 +24,43 @@ def horizontal_projection(image_h):
     return h_projection
 
 
+# def base_line(h_projection):
+#     diff = [0]
+#     for x in range(len(h_projection)):
+#         if x > 0:
+#             temp_diff = abs(int(h_projection[x]) - int(h_projection[x-1]))
+#             diff.append(temp_diff)
+
+#     temp = 0
+#     for x in range(len(diff)):
+#         if diff[x] > temp:
+#             temp = diff[x]
+#             base_end = x
+#     # Get the 2nd greatest to base_start
+#     temp = 0
+#     for x in range(len(diff)):
+#         if x == base_end:
+#             continue
+#         if diff[x] > temp:
+#             temp = diff[x]
+#             base_start = x
+
+#     return base_start, base_end
+
+
 def make_it_square(image_location):
     # targeted_size = 70
     originalImage = cv2.imread(image_location)
     grayImage = cv2.cvtColor(originalImage, cv2.COLOR_BGR2GRAY)
-    ret_img, bw_image = cv2.threshold(grayImage, 127, 255, cv2.THRESH_BINARY)
+    # ret_img, bw_image = cv2.threshold(grayImage, 127, 255, cv2.THRESH_BINARY)
+    bw_image = cv2.adaptiveThreshold(grayImage, 255,
+                                     cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                     cv2.THRESH_BINARY, 11, 2)
     height, width = bw_image.shape
-    v_proj = vertical_projection(bw_image)
-    h_proj = horizontal_projection(bw_image)
+    image_body = dot.eight_conn(bw_image)
+    v_proj = vertical_projection(image_body)
+    h_proj = horizontal_projection(image_body)
+
     # Get cropped coordinat
     y1 = 0
     for x in h_proj:
@@ -56,7 +86,7 @@ def make_it_square(image_location):
     x2 = width - x2
 
     # Get original image
-    img_original = bw_image[y1:y2, x1:x2]
+    img_original = image_body[y1:y2, x1:x2]
     # cv2.imshow('test', img_original)
     # cv2.imshow('ori', bw_image)
     # cv2.waitKey(0)
