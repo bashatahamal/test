@@ -517,11 +517,11 @@ class ImageProcessing():
             for x in range(len(start_point)):
                 if x % 2 == 0:     # Start_point
                     cv2.line(image, (0, start_point[x]),
-                            (width, start_point[x]), (0, 0, 255), 2)
+                             (width, start_point[x]), (0, 0, 255), 2)
                     # print(x)
                 else:         # End_point
                     cv2.line(image, (0, start_point[x]),
-                            (width, start_point[x]), (100, 100, 255), 2)
+                             (width, start_point[x]), (100, 100, 255), 2)
             cv2.imshow('horizontal line', image)
             cv2.waitKey(0)
 
@@ -596,10 +596,10 @@ class ImageProcessing():
             for x in range(len(start_point)):
                 if x % 2 == 0:
                     cv2.line(original_image, (start_point[x], 0),
-                            (start_point[x], self.height), (0, 0, 0), 2)
+                             (start_point[x], self.height), (0, 0, 0), 2)
                 else:
                     cv2.line(original_image, (start_point[x], 0),
-                            (start_point[x], self.height), (100, 100, 100), 2)
+                             (start_point[x], self.height), (100, 100, 100), 2)
 
             cv2.imshow('line', original_image)
             print('>')
@@ -777,6 +777,8 @@ class ImageProcessing():
 
         temp_delete = []
         temp_marker = []
+        max_length = 0
+        to_be_choosen = ''
         # If region is not in the baseline then it's not a body image
         for key in self.conn_pack:
             found = False
@@ -785,7 +787,13 @@ class ImageProcessing():
                     break
                 for base in range(oneline_baseline[0], oneline_baseline[1]+1):
                     if reg[0] == base:
-                        found = True
+                        # The longest in the baseline is the image body
+                        if len(self.conn_pack[key]) > max_length:
+                            if to_be_choosen != '':
+                                temp_delete.append(to_be_choosen)
+                            to_be_choosen = key
+                            max_length = len(self.conn_pack[key])
+                            found = True
                         break
             if found is False:
                 temp_delete.append(key)
@@ -985,7 +993,7 @@ class ImageProcessing():
         # final_img = cv2.bitwise_not(image)
         w_height, w_width = final_img.shape
         # cv2.imshow('inverse', final_img)
-        kernel = np.ones((2, 2), np.uint8)
+        # kernel = np.ones((2, 2), np.uint8)
         # dilation = cv2.dilate(final_img.copy(),kernel,iterations = 1)
         # kernel = np.ones((2,2), np.uint8)
         # erosion = cv2.erode(final_img.copy(),kernel,iterations = 1)
@@ -1126,22 +1134,27 @@ class ImageProcessing():
                 body_v_proj = self.vertical_projection(
                     self.image_body
                 )
-                plt.subplot(211), plt.imshow(self.image_body)
-                plt.subplot(212), plt.plot(
-                    np.arange(0, len(body_v_proj), 1), body_v_proj
-                )
-                plt.show()
+                # plt.subplot(211), plt.imshow(self.image_body)
+                # plt.subplot(212), plt.plot(
+                #     np.arange(0, len(body_v_proj), 1), body_v_proj
+                # )
+                # plt.show()
                 print(body_v_proj)
                 print(oneline_height_sorted)
                 print(final_h_list_sorted[1][1][0])
+                x_before_marker = final_h_list_sorted[1][1][0]
                 cv2.waitKey(0)
-                for x in range(0, final_h_list_sorted[1][1][0])[::-1]:
-                    print(body_v_proj[x])
-                    if body_v_proj[x] > oneline_height_sorted:
-                        segmented_char = [(x + 1, w_width)]
-                        break
-                    else:
-                        segmented_char = [(0, w_width)]
+                # Check if marker is not in 0 x coordinat to be able looping
+                if x_before_marker > 0:
+                    for x in range(0, x_before_marker)[::-1]:
+                        print(body_v_proj[x])
+                        if body_v_proj[x] > 2 * oneline_height_sorted:
+                            segmented_char = [(x + 1, w_width)]
+                            break
+                        else:
+                            segmented_char = [(0, w_width)]
+                else:
+                    segmented_char = [(0, w_width)]
                 print('only have one marker')
                 return segmented_char
 
@@ -1205,27 +1218,44 @@ class ImageProcessing():
                 count_dinat = 0
                 count_sistent = 0
                 if x1_1st_marker - x2_2nd_marker > 0:  # marker is'nt ovrlapped
-                    for x in range(x2_2nd_marker, x1_1st_marker + 1):
+                    for x in range(x2_2nd_marker, x1_1st_marker)[::-1]:
                         count_dinat += 1
+                        # if abs(diff[x]) > oneline_height_sorted:
+                        #     break
                         if diff[x] == 0:
                             count_sistent += 1
                             counting = True
                         if ((diff[x] > 0 or diff[x] < 0)
-                                or x == x1_1st_marker) and counting:
+                                or x == x2_2nd_marker) and counting:
                             save_sistent[count_dinat] = count_sistent
                             count_sistent = 0
                             counting = False
                     print(save_sistent)
+                    print(x1_1st_marker - x2_2nd_marker)
+                    plt.subplot(211), plt.imshow(self.image_body)
+                    plt.subplot(212), plt.plot(
+                        np.arange(x2_2nd_marker, x1_1st_marker, 1),\
+                            diff[x2_2nd_marker:x1_1st_marker]
+                    )
+                    plt.show()
                     cv2.waitKey(0)
                     # cut at the most consistent diff equal 0
-                    cut = 1/1
+                    cut = 1/2
                     if save_sistent != {}:
                         for key in save_sistent:
-                            if save_sistent[key] > temp:
-                                temp = save_sistent[key]
+                            # compare by a/b c/d (is it close enough
+                            # to be called consistent)
+                            enough = save_sistent[key] / key
+                            if enough > temp:
                                 the_sistent = key
-                        x1_char = x2_2nd_marker + the_sistent\
-                            - round(cut * save_sistent[the_sistent])
+                                temp = enough
+                            # if save_sistent[key] > temp:
+                            #     temp = save_sistent[key]
+                            #     the_sistent = key
+                        x1_char = x2_2nd_marker \
+                            + (x1_1st_marker - x2_2nd_marker - the_sistent)\
+                            + round(cut * save_sistent[the_sistent])
+                        # + the_sistent \
                         segmented_char.append((x1_char, len(diff)))
                         print('1/2 of the most consistent')
                     else:
@@ -1548,10 +1578,10 @@ def main():
                              (segmented_char[0][0], w_height),
                              (segmented_char[0][0], 0),
                              (100, 100, 100), 2)
-                    cv2.line(draw_img,
-                             (segmented_char[0][1], w_height),
-                             (segmented_char[0][1], 0),
-                             (100, 100, 100), 2)
+                    # cv2.line(draw_img,
+                    #          (segmented_char[0][1], w_height),
+                    #          (segmented_char[0][1], 0),
+                    #          (100, 100, 100), 2)
                     cv2.imshow('final char !', draw_img)
                     print('>>> Final char')
                     cv2.waitKey(0)

@@ -1,6 +1,4 @@
 import match_oop as mo
-import cv2
-# import glob
 import copy
 
 
@@ -288,7 +286,7 @@ def eight_conn(image):
                 else:
                     print('middle is wrong')
                     print('NOT a dot')
-            #cv2.waitKey(0)
+
         else:
             print('Just cannot create a square')
             print('NOT a dot')
@@ -306,99 +304,3 @@ def eight_conn(image):
 #     height, width = gray.shape
 #     cv2.imshow('sda', eight_conn(bin_image))
 #     cv2.waitKey(0)
-    # print('height {} width {}'.format(height, width))
-    # print(type(gray))
-    # process.vertical_projection(gray)
-    # process.horizontal_projection(gray)
-    # # plt.figure(0)
-    # # plt.subplot(311), plt.imshow(gray)
-    # # plt.subplot(312), plt.plot(
-    # #     np.arange(0, len(process.v_projection), 1), process.v_projection
-    # # )
-    # # plt.subplot(313), plt.plot(
-    # #     np.arange(0, len(process.h_projection), 1), process.h_projection
-    # # )
-    # # plt.show()
-    # img_v = {}
-    # process.detect_vertical_line(gray.copy(), 0)
-    # print(process.start_point_v)
-    # height, width = gray.shape
-    # print('height {} width {}'.format(height, width))
-    # for x in range(len(process.start_point_v)):
-    #     if x % 2 == 0:
-    #         print(x)
-    #         img_v[x] = gray[:, process.start_point_v[x]:
-    #                         process.start_point_v[x+1] + 1]
-
-    # img_h = {}
-    # for x in img_v:
-    #     process.horizontal_projection(img_v[x])
-    #     process.detect_horizontal_line(img_v[x].copy(), 0, 0)
-    #     print(process.start_point_h)
-    #     for y in range(len(process.start_point_h)):
-    #         # Get individual marker
-    #         if y % 2 == 0:
-    #             img_h[y] = img_v[x][process.start_point_h[y]:
-    #                                 process.start_point_h[y+1], :]
-    #             print(img_h[y])
-    #             cv2.imshow('ss', img_h[y])
-    #             cv2.waitKey(0)
-
-    #             process.vertical_projection(img_h[y])
-    #             process.detect_vertical_line(img_h[y].copy(), 0)
-    #             x1 = process.start_point_v[0]
-    #             x2 = process.start_point_v[1]
-    #             print(x1, x2)
-    #             marker_box_img = img_h[y][:, x1:x2]
-    #             print(marker_box_img)
-    #             cv2.imshow('fin', marker_box_img)
-    #             cv2.waitKey(0)
-
-    #             process.horizontal_projection(marker_box_img)
-    #             process.vertical_projection(marker_box_img)
-    #             img_h_v_proj = process.v_projection
-    #             img_h_h_proj = process.h_projection
-
-    #             # Looking for square skeleton
-    #             count_v = 0
-    #             max_v = 0
-    #             for v_sum in img_h_v_proj:
-    #                 if v_sum > max_v:
-    #                     max_v = v_sum
-    #                     max_ord_v = count_v
-    #                 count_v += 1
-    #             count_h = 0
-    #             max_h = 0
-    #             for h_sum in img_h_h_proj:
-    #                 if h_sum > max_h:
-    #                     max_h = h_sum
-    #                     max_ord_h = count_h
-    #                 count_h += 1
-    #             # start_x, end_x, start_y, end_y skeleton
-    #             height, width = marker_box_img.shape
-    #             tracing = False
-    #             for x_ in range(width):
-    #                 if marker_box_img[max_ord_h, x_] == 0:
-    #                     start_x = x_
-    #                     break
-    #             end_x = start_x + int(max_h)
-    #             tracing = False
-    #             for y_ in range(height):
-    #                 if marker_box_img[y_, max_ord_v] == 0:
-    #                     start_y = y_
-    #                     break
-    #             end_y = start_y + int(max_v)
-    #             # x1 = start_x, y1 = start_y
-    #             # x2 = end_x, y2 = end_y
-    #             print(start_x, end_x)
-    #             print(start_y, end_y)
-    #             print(max_h, max_v)
-    #             print(max_ord_h, max_ord_v)
-    #             if max_ord_v in range(start_x, end_x):
-    #                 squareleton = marker_box_img[start_y:end_y, start_x:end_x]
-    #                 cv2.imshow('squareleton', squareleton)
-    #                 print(squareleton)
-    #                 cv2.waitKey(0)
-    #             else:
-    #                 print('Just cannot create a square')
-    #                 continue
