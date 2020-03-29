@@ -652,6 +652,488 @@ class ImageProcessing():
                 # cv2.destroyAllWindows()
             self.bag_of_v_crop = bag_of_v_crop
 
+    def find_connectivity(self, x, y, height, width, image):
+        # count = 0
+        x_y = []
+        # Left
+        if x - 1 > 0:
+            if y + 1 < height:
+                if image[y + 1, x - 1] == 0:
+                    x_y.append((y + 1, x - 1))
+                    # x_y.append((x - 1, y + 1))
+                    # count += 1
+                    # print('l1')
+            if image[y, x - 1] == 0:
+                x_y.append((y, x - 1))
+                # x_y.append((x - 1, y))
+                # count += 1
+                # print('l2')
+            if y - 1 > 0:
+                if image[y - 1, x - 1] == 0:
+                    x_y.append((y - 1, x - 1))
+                    # x_y.append((x - 1, y - 1))
+                    # count += 1
+                    # print('l3')
+        # Middle
+        if y + 1 < height:
+            if image[y + 1, x] == 0:
+                x_y.append((y + 1, x))
+                # x_y.append((x, y + 1))
+                # count += 1
+            # print('m1')
+        x_y.append((y, x))
+        # x_y.append((x, y))
+        # count += 1
+        # print('m2')
+        if y - 1 > 0:
+            if image[y - 1, x] == 0:
+                x_y.append((y - 1, x))
+                # x_y.append((x, y - 1))
+                # count += 1
+                # print('m3')
+        # Right
+        if x + 1 < width:
+            if y + 1 < height:
+                if image[y + 1, x + 1] == 0:
+                    x_y.append((y + 1, x + 1))
+                    # x_y.append((x + 1, y + 1))
+                    # count += 1
+                    # print('r1')
+            if image[y, x + 1] == 0:
+                x_y.append((y, x + 1))
+                # x_y.append((x + 1, y))
+                # count += 1
+                # print('r2')
+            if y - 1 > 0:
+                if image[y - 1, x + 1] == 0:
+                    x_y.append((y - 1, x + 1))
+                    # x_y.append((x + 1, y - 1))
+                    # count += 1
+                    # print('r3')
+
+        return x_y
+
+    def eight_connectivity(self, image, oneline_baseline):
+        height, width = image.shape
+        image_process = image.copy()
+        image_process[:] = 255
+        oneline_height = oneline_baseline[1] - oneline_baseline[0]
+        if oneline_height <= 1:
+            oneline_height_sorted = 3
+        else:
+            oneline_height_sorted = oneline_height
+        self.conn_pack = {}
+        reg = 1
+        # Doing eight conn on every pixel one by one
+        for x in range(width):
+            for y in range(height):
+                if image_process[y, x] == 0:
+                    continue
+                if image[y, x] == 0:
+                    self.conn_pack['region_' + str(reg)] = []
+                    x_y = self.find_connectivity(x, y, height, width, image)
+                    length_ = len(self.conn_pack['region_' + str(reg)])
+                    for val in x_y:
+                        self.conn_pack['region_' + str(reg)].append(val)
+                    # print(self.conn_pack['region_' + str(reg)])
+                    # cv2.waitKey(0)
+                    first = True
+                    sub = False
+                    init = True
+                    while(True):
+                        if first:
+                            length_ = length_
+                            first = False
+                        else:
+                            length_ = l_after_sub
+
+                        if init:
+                            l_after_init = len(self.conn_pack[
+                                'region_'+str(reg)])
+                            for k in range(length_, l_after_init):
+                                x_y_sub = self.find_connectivity(
+                                    self.conn_pack['region_' + str(reg)][k][1],
+                                    self.conn_pack['region_' + str(reg)][k][0],
+                                    height, width, image
+                                )
+                                if len(x_y_sub) > 1:
+                                    sub = True
+                                    for vl in x_y_sub:
+                                        if vl not in self.conn_pack[
+                                                'region_' + str(reg)]:
+                                            self.conn_pack[
+                                                'region_' + str(reg)].append(
+                                                    vl)
+                        init = False
+                        if sub:
+                            # print(self.conn_pack['region_' + str(reg)])
+                            # cv2.waitKey(0)
+                            l_after_sub = len(self.conn_pack[
+                                'region_' + str(reg)])
+                            for k in range(l_after_init, l_after_sub):
+                                x_y_sub = self.find_connectivity(
+                                    self.conn_pack['region_' + str(reg)][k][1],
+                                    self.conn_pack['region_' + str(reg)][k][0],
+                                    height, width, image
+                                )
+                                if len(x_y_sub) > 1:
+                                    init = True
+                                    for vl in x_y_sub:
+                                        if vl not in self.conn_pack[
+                                                'region_' + str(reg)]:
+                                            self.conn_pack[
+                                                'region_' + str(reg)].append(
+                                                    vl)
+                        sub = False
+
+                        if not sub and not init:
+                            break
+
+                    for val in self.conn_pack['region_' + str(reg)]:
+                        image_process[val] = 0
+                    reg += 1
+                    # cv2.imshow('eight conn process', image_process)
+                    # print(self.conn_pack)
+                    # cv2.waitKey(0)
+
+        temp_marker = []
+        temp_delete = []
+        for key in self.conn_pack:
+            if len(self.conn_pack[key]) > oneline_height_sorted:
+                temp_marker.append(key)
+        self.conn_pack_sorted = {}
+        for mark in temp_marker:
+            self.conn_pack_sorted[mark] = (self.conn_pack[mark])
+        # If region is not in the baseline then it's not a body image
+        for key in self.conn_pack_sorted:
+            found = False
+            for reg in self.conn_pack_sorted[key]:
+                if found:
+                    break
+                # Catch region in range 2x the oneline baseline height
+                # for a better image body detection
+                for base in range(oneline_baseline[0] - oneline_height_sorted,
+                                  oneline_baseline[1]+1):
+                    if reg[0] == base:
+                        found = True
+                        break
+            if found is False:
+                temp_delete.append(key)
+        self.conn_pack_minus_body = {}
+        # Get body only and minus body region
+        for delt in temp_delete:
+            self.conn_pack_minus_body[delt] = self.conn_pack_sorted[delt]
+            del(self.conn_pack_sorted[delt])
+        # Paint body only region
+        self.image_body = image.copy()
+        self.image_body[:] = 255
+        for region in self.conn_pack_sorted:
+            value = self.conn_pack_sorted[region]  # imagebody region dict
+            for x in value:
+                self.image_body[x] = 0
+            # cv2.imshow('image body', self.image_body)
+            # print('image_body')
+            # cv2.waitKey(0)
+
+        # # Paint marker only region
+        # self.image_marker_only = image.copy()
+        # self.image_marker_only[:] = 255
+        # for region in self.conn_pack_minus_body:
+        #     value = self.conn_pack_minus_body[region]  # markeronly region dict
+        #     for x in value:
+        #         self.image_marker_only[x] = 0
+        #     cv2.imshow('marker only', self.image_marker_only)
+        #     # print('marker only')
+        #     # cv2.waitKey(0)
+
+        self.image_join = self.image_body.copy()
+        for region in self.conn_pack_minus_body:
+            value = self.conn_pack_minus_body[region]
+            for x in value:
+                self.image_join[x] = 0
+            # cv2.imshow('marker join', self.image_join)
+            # print('marker join')
+            # cv2.waitKey(0)
+
+        self.vertical_projection(self.image_body)
+        self.detect_vertical_line(
+            image=self.image_body.copy(),
+            pixel_limit_ste=0,
+            view=True
+        )
+        # print(self.start_point_v)
+        # Make sure every start point has an end
+        len_h = len(self.start_point_v)
+        if len_h % 2 != 0:
+            del(self.start_point_v[len_h - 1])
+        group_marker_list = {}
+        for x in range(len(self.start_point_v)):
+            if x % 2 == 0:
+                wall = (self.start_point_v[x], self.start_point_v[x+1])
+                group_marker_list[wall] = []
+                for region in self.conn_pack_sorted:
+                    value = self.conn_pack_sorted[region]
+                    for y_x in value:
+                        if self.start_point_v[x] <= y_x[1] \
+                                <= self.start_point_v[x+1]:
+                            group_marker_list[wall].append(region)
+                            break
+        # print(group_marker_list)
+        for region in group_marker_list.values():
+            max_length = 0
+            if len(region) > 1:
+                for x in region:
+                    if len(self.conn_pack_sorted[x]) > max_length:
+                        max_length = len(self.conn_pack_sorted[x])
+                for x in region:
+                    # If region is not 1/4 of the max length then move it
+                    # from image body to marker only
+                    if len(self.conn_pack_sorted[x]) < 1/4*max_length:
+                        self.conn_pack_minus_body[x] = self.conn_pack_sorted[x]
+                        del(self.conn_pack_sorted[x])
+
+        self.image_final_sorted = image.copy()
+        self.image_final_sorted[:] = 255
+        for region in self.conn_pack_sorted:
+            value = self.conn_pack_sorted[region]
+            for x in value:
+                self.image_final_sorted[x] = 0
+        cv2.imshow('image final sorted', self.image_final_sorted)
+        self.image_final_marker = image.copy()
+        self.image_final_marker[:] = 255
+        for region in self.conn_pack_minus_body:
+            value = self.conn_pack_minus_body[region]
+            for x in value:
+                self.image_final_marker[x] = 0
+        cv2.imshow('image final marker', self.image_final_marker)
+        cv2.waitKey(0)
+
+    def grouping_marker(self):
+        img_body_v_proj = self.start_point_v
+        # Make sure every start point has an end
+        len_h = len(img_body_v_proj)
+        if len_h % 2 != 0:
+            del(img_body_v_proj[len_h - 1])
+        self.group_marker_by_wall = {}
+        for x_x in range(len(img_body_v_proj)):
+            if x_x % 2 == 0:
+                wall = (img_body_v_proj[x_x], img_body_v_proj[x_x+1])
+                self.group_marker_by_wall[wall] = []
+        for region in self.conn_pack_minus_body:
+            value = self.conn_pack_minus_body[region]
+            x_y_value = []
+            for x in value:
+                x_y_value.append(x[::-1])
+            x_y_value = sorted(x_y_value)
+            # print(x_y_value)
+            x_y_value_l = []
+            for val in range(round(len(x_y_value)/2)):
+                x_y_value_l.append(x_y_value[0])
+                del(x_y_value[0])
+            x_y_value_l = x_y_value_l[::-1]
+            # print(x_y_value_l)
+            # print('_________________')
+            # print(x_y_value)
+            x_y_value_from_mid = []
+            count = -1
+            for x_1 in x_y_value:
+                count += 1
+                x_y_value_from_mid.append(x_1)
+                for x_2 in x_y_value_l:
+                    if count < len(x_y_value_l):
+                        x_y_value_from_mid.append(x_y_value_l[count])
+                    break
+
+            for x_x in range(len(img_body_v_proj)):
+                if x_x % 2 == 0:
+                    wall = (img_body_v_proj[x_x], img_body_v_proj[x_x+1])
+                    for x in x_y_value_from_mid:
+                        if wall[0] <= x[0] <= wall[1]:
+                            self.group_marker_by_wall[wall].append(region)
+                            break
+        print(self.group_marker_by_wall)
+
+    # def eight_connectivity(self, image, oneline_baseline):
+    #     height, width = image.shape
+    #     self.conn_pack = {}
+    #     reg = 1
+    #     connected = True
+    #     count = 0
+
+    #     # Doing eight conn on every pixel one by one
+    #     for x in range(width):
+    #         for y in range(height):
+
+    #             # for key in self.conn_pack:
+    #             #     for val in self.conn_pack[key]:
+    #             #         if val == (y, x):
+    #             #             # print('already recorded')
+    #             #             continue
+
+    #             if image[y, x] == 0:
+    #                 count += 1
+    #                 # self.conn_pack['region_' + reg].add((x,y))
+    #                 x_y = []
+    #                 # Left
+    #                 if x - 1 > 0:
+    #                     if y + 1 < height:
+    #                         if image[y + 1, x - 1] == 0:
+    #                             x_y.append((y + 1, x - 1))
+    #                             # print('l1')
+    #                     if image[y, x - 1] == 0:
+    #                         x_y.append((y, x - 1))
+    #                         # print('l2')
+    #                     if y - 1 > 0:
+    #                         if image[y - 1, x - 1] == 0:
+    #                             x_y.append((y - 1, x - 1))
+    #                             # print('l3')
+    #                 # Middle
+    #                 if y + 1 < height:
+    #                     if image[y + 1, x] == 0:
+    #                         x_y.append((y + 1, x))
+    #                     # print('m1')
+    #                 x_y.append((y, x))
+    #                 # print('m2')
+    #                 if y - 1 > 0:
+    #                     if image[y - 1, x] == 0:
+    #                         x_y.append((y - 1, x))
+    #                         # print('m3')
+    #                 # Right
+    #                 if x + 1 < width:
+    #                     if y + 1 < height:
+    #                         if image[y + 1, x + 1] == 0:
+    #                             x_y.append((y + 1, x + 1))
+    #                             # print('r1')
+    #                     if image[y, x + 1] == 0:
+    #                         x_y.append((y, x + 1))
+    #                         # print('r2')
+    #                     if y - 1 > 0:
+    #                         if image[y - 1, x + 1] == 0:
+    #                             x_y.append((y - 1, x + 1))
+    #                             # print('r3')
+
+    #                 # First region only (Inizialitation)
+    #                 if self.conn_pack == {}:
+    #                     self.conn_pack['region_1'] = []
+    #                     for x1_join in x_y:
+    #                         if x1_join not in self.conn_pack['region_1']:
+    #                             self.conn_pack['region_1'].append(x1_join)
+    #                     # print('inisialitation')
+
+    #                 # Next step is here
+    #                 connected = False
+    #                 connected_list = []
+    #                 if self.conn_pack != {}:
+    #                     # Check how many region is connected
+    #                     # with detected eight neighbour
+    #                     for x_list in x_y:
+    #                         # if connected:
+    #                         #     break
+    #                         for r in self.conn_pack.keys():
+    #                             # r += 1
+    #                             # if connected:
+    #                             #     break
+    #                             for val in self.conn_pack[r]:
+    #                                 # if connected:
+    #                                 #     break
+    #                                 if x_list == val:
+    #                                     if r not in connected_list:
+    #                                         connected_list.append(r)
+    #                                     connected = True
+    #                                     # break
+    #                     # Append eight conn to first detected region
+    #                     if connected_list != []:
+    #                         for x_join in x_y:
+    #                             if x_join not in self.conn_pack[
+    #                                     connected_list[0]]:
+    #                                 self.conn_pack[connected_list[0]
+    #                                                ].append(x_join)
+    #                     # print('connected list={}'.format(connected_list))
+    #                     # cv2.waitKey(0)
+
+    #                     # If eight conn is overlapped (in more than 1 region)
+    #                     # then join every next region to first detected region
+    #                     # and delete who join
+    #                     if len(connected_list) > 1:
+    #                         for c_list in range(len(connected_list) - 1):
+    #                             c_list += 1
+    #                             for x_join in self.conn_pack[
+    #                                     connected_list[c_list]]:
+    #                                 if x_join not in self.conn_pack[
+    #                                         connected_list[0]]:
+    #                                     self.conn_pack[
+    #                                         connected_list[0]
+    #                                     ].append(x_join)
+    #                         for c_list in range(len(connected_list) - 1):
+    #                             c_list += 1
+    #                             del(self.conn_pack[connected_list[c_list]])
+    #                             # print(connected_list[c_list])
+
+    #                     # if not connected then just create a new region
+    #                     if not connected:
+    #                         reg += 1
+    #                         self.conn_pack['region_' + str(reg)] = []
+    #                         for x2_join in x_y:
+    #                             if x2_join not in self.conn_pack['region_'
+    #                                                              + str(reg)]:
+    #                                 self.conn_pack['region_'
+    #                                                + str(reg)].append(x2_join)
+
+    #     temp_delete = []
+    #     temp_marker = []
+    #     # If region is not in the baseline then it's not a body image
+    #     for key in self.conn_pack:
+    #         found = False
+    #         for reg in self.conn_pack[key]:
+    #             if found:
+    #                 break
+    #             for base in range(oneline_baseline[0], oneline_baseline[1]+1):
+    #                 if reg[0] == base:
+    #                     found = True
+    #                     break
+    #         if found is False:
+    #             temp_delete.append(key)
+    #     conn_pack_minus_body = {}
+    #     # Get body only and minus body region
+    #     for delt in temp_delete:
+    #         conn_pack_minus_body[delt] = self.conn_pack[delt]
+    #         del(self.conn_pack[delt])
+    #     # Paint body only region
+    #     self.image_body = image.copy()
+    #     self.image_body[:] = 255
+    #     for region in self.conn_pack:
+    #         value = self.conn_pack[region]
+    #         for x in value:
+    #             self.image_body[x] = 0
+    #     cv2.imshow('image body', self.image_body)
+    #     print('image_body')
+    #     cv2.waitKey(0)
+
+    #     # Get marker only region and paint it
+    #     oneline_height = oneline_baseline[1] - oneline_baseline[0]
+    #     if oneline_height <= 1:
+    #         oneline_height_sorted = 3
+    #     else:
+    #         oneline_height_sorted = oneline_height
+
+    #     for key in conn_pack_minus_body:
+    #         if len(conn_pack_minus_body[key]) > oneline_height_sorted:
+    #             temp_marker.append(key)
+    #     self.conn_pack_marker_only = {}
+    #     for mark in temp_marker:
+    #         self.conn_pack_marker_only[mark] = (conn_pack_minus_body[mark])
+    #     # Paint marker only region
+    #     self.image_marker_only = image.copy()
+    #     self.image_marker_only[:] = 255
+    #     self.image_body_dot = self.image_body.copy()
+    #     for region in self.conn_pack_marker_only:
+    #         value = self.conn_pack_marker_only[region]
+    #         for x in value:
+    #             self.image_marker_only[x] = 0
+    #     cv2.imshow('marker only', self.image_marker_only)
+    #     print('marker only')
+    #     cv2.waitKey(0)
+
     def eight_conectivity(self, image, oneline_baseline):
         # image = cv2.bitwise_not(image)
         height, width = image.shape
@@ -1234,8 +1716,8 @@ class ImageProcessing():
                     print(x1_1st_marker - x2_2nd_marker)
                     plt.subplot(211), plt.imshow(self.image_body)
                     plt.subplot(212), plt.plot(
-                        np.arange(x2_2nd_marker, x1_1st_marker, 1),\
-                            diff[x2_2nd_marker:x1_1st_marker]
+                        np.arange(x2_2nd_marker, x1_1st_marker, 1),
+                        diff[x2_2nd_marker:x1_1st_marker]
                     )
                     plt.show()
                     cv2.waitKey(0)
@@ -1382,6 +1864,16 @@ def main():
 
             if isinstance(font_type, type(font_list[0])):
                 object_result = font_type.get_object_result()
+                print('into eight connectivity')
+                input_image.eight_connectivity(
+                    temp_image.copy(), oneline_baseline
+                )
+                conn_pack_sorted = copy.deepcopy(
+                    input_image.conn_pack_sorted
+                )
+                conn_pack_minus_body = copy.deepcopy(
+                    input_image.conn_pack_minus_body
+                )
                 # font_type.display_marker_result(input_image=temp_image_ori)
             else:
                 object_result = False
@@ -1390,14 +1882,41 @@ def main():
 
             # for key in font_type.get_marker_thresh().keys():
             input_image.vertical_projection(temp_image)
+            # input_image.detect_vertical_line(
+            #     image=temp_image.copy(),
+            #     pixel_limit_ste=0,  # Start to end
+            #     view=True
+            #     # pixel_limit_ets=0   # End to start
+            # )
+            # print(input_image.start_point_v)
+            input_image.vertical_projection(input_image.image_body)
             input_image.detect_vertical_line(
-                image=temp_image.copy(),
-                pixel_limit_ste=8,  # Start to end
-                view=False
+                image=input_image.image_body.copy(),
+                pixel_limit_ste=0,  # Start to end
+                view=True
                 # pixel_limit_ets=0   # End to start
             )
-            # print(input_image.start_point_v)
+            print(input_image.start_point_v)
+            # Calculate new base line processing from self.h_projection
+            input_image.horizontal_projection(input_image.image_body)
+            input_image.base_line(one_line_image=input_image.image_join)
+            oneline_baseline = []
+            oneline_baseline.append(input_image.base_start)
+            oneline_baseline.append(input_image.base_end)
+            if oneline_baseline[1] < oneline_baseline[0]:
+                temp = oneline_baseline[0]
+                oneline_baseline[0] = oneline_baseline[1]
+                oneline_baseline[1] = temp
 
+            # Grouping marker by its v_projection
+            input_image.grouping_marker()
+            group_marker_by_wall = copy.deepcopy(
+                input_image.group_marker_by_wall
+            )
+            print(object_result)
+            cv2.waitKey(0)
+            # cv2.imshow('join baseline', input_image.image_join)
+            # cv2.waitKey(0)
             # Crop next word marker wether it's inside or beside
             crop_words = {}
             if object_result:
@@ -1416,48 +1935,124 @@ def main():
                         name = ''.join(name)
                         # crop_words['ordinat_' + name]=temp_x
                         for arr in range(len(temp_x)):
-                            x = (temp_x)[arr][0]
+                            x2 = (temp_x)[arr][2]  # x2 is on the right
+                            x1 = (temp_x)[arr][0]  # x1 is on the left
+                            mid_x = x1 + round((x2 - x1)/2)  # x in the middle
                             print('ordinat ' + data + '={}'.format(x))
-                            marker_width = (temp_x[arr][2]) - x
-                            space_limit = 2 * marker_width
-                            v_point = input_image.start_point_v
-                            # print(v_point)
-                            print('marker {}'.format(space_limit))
-                            for v in range(len(v_point)):
-                                # print(v)
-                                if v % 2 > 0:
-                                    # print(v)
-                                    if x < v_point[v]:
-                                        space = (x - v_point[v-1])
-                                        print('space {}'.format(space))
-                                        # Marker position in v_point
-                                        if space >= space_limit:
-                                            # crop_words[data + '_' + str(arr)]
-                                            #     = (v_point[v-1], v_point[v])
-                                            print('add inside' + data)
-                                            crop_words['final_inside_' + name
-                                                       + '_' + str(arr)] \
-                                                = (v_point[v-1], v_point[v])
+                            # marker_width = (temp_x[arr][2]) - x
+                            wall_count = -1
+                            for wall in group_marker_by_wall:
+                                wall_count += 1
+                                if wall[0] <= mid_x <= wall[1]:
+                                    break
+                            cv2.waitKey(0)
+                            wall = group_marker_by_wall.keys()
+                            wall = list(wall)
+                            found_in_wall = False
+                            for region in group_marker_by_wall[
+                                    wall[wall_count]]:
+                                if found_in_wall:
+                                    break
+                                region_yx = conn_pack_minus_body[
+                                        region]
+                                for y_x in region_yx:
+                                    if y_x[1] < x1:
+                                        print('add inside wall')
+                                        crop_words['final_inside_' + name
+                                                   + '_' + str(arr)] \
+                                            = wall[wall_count]
+                                        crop_words['ordinat_' + name
+                                                   + '_' + str(arr)] \
+                                            = temp_x[arr]
+                                        found_in_wall = True
+                                        break
+                            if not found_in_wall:
+                                if wall_count > 0:
+                                    next_wall = wall[wall_count - 1]
+                                    found_next_wall = False
+                                    if group_marker_by_wall[next_wall] != []:
+                                        print('add next wall')
+                                        crop_words['final_beside_'
+                                                   + name + '_' + str(arr)] \
+                                            = next_wall
+                                        crop_words['ordinat_' + name
+                                                   + '_' + str(arr)] \
+                                            = temp_x[arr]
+                                        found_next_wall = True
+                                    if not found_next_wall and wall_count > 1:
+                                        beside_next_wall = wall[wall_count - 2]
+                                        if group_marker_by_wall[
+                                                beside_next_wall] != []:
+                                            print('add beside next wall')
+                                            crop_words['final_beside_'
+                                                       + name + '_'
+                                                       + str(arr)] \
+                                                = beside_next_wall
                                             crop_words['ordinat_' + name
                                                        + '_' + str(arr)] \
                                                 = temp_x[arr]
-                                            break
-                                        elif v > 1:
-                                            crop_words['next_' + name
-                                                       + '_' + str(arr)] \
-                                                = (v_point[v-3], v_point[v-2])
-                                            print('add next ' + data)
-                                            crop_words['word_' + name
-                                                       + '_' + str(arr)] \
-                                                = (v_point[v-1], v_point[v])
-                                            crop_words['ordinat_' + name
-                                                       + '_' + str(arr)] \
-                                                = temp_x[arr]
-                                            break
-                                        else:
-                                            break
+
+
+            # crop_words = {}
+            # if object_result:
+            #     for data in object_result:
+            #         if isinstance(object_result[data], type(np.array([]))):
+            #             temp_x = object_result[data]
+            #             part = data.split('_')
+            #             name = []
+            #             for x in range(len(part)):
+            #                 if x == 0:
+            #                     continue
+            #                 if x == len(part) - 1:
+            #                     name.append(part[x])
+            #                 else:
+            #                     name.append(part[x] + '_')
+            #             name = ''.join(name)
+            #             # crop_words['ordinat_' + name]=temp_x
+            #             for arr in range(len(temp_x)):
+            #                 x = (temp_x)[arr][0]
+            #                 print('ordinat ' + data + '={}'.format(x))
+            #                 marker_width = (temp_x[arr][2]) - x
+            #                 space_limit = 2 * marker_width
+            #                 v_point = input_image.start_point_v
+            #                 # print(v_point)
+            #                 print('marker {}'.format(space_limit))
+            #                 for v in range(len(v_point)):
+            #                     # print(v)
+            #                     if v % 2 > 0:
+            #                         # print(v)
+            #                         if x < v_point[v]:
+            #                             space = (x - v_point[v-1])
+            #                             print('space {}'.format(space))
+            #                             # Marker position in v_point
+            #                             if space >= space_limit:
+            #                                 # crop_words[data + '_' + str(arr)]
+            #                                 #     = (v_point[v-1], v_point[v])
+            #                                 print('add inside' + data)
+            #                                 crop_words['final_inside_' + name
+            #                                            + '_' + str(arr)] \
+            #                                     = (v_point[v-1], v_point[v])
+            #                                 crop_words['ordinat_' + name
+            #                                            + '_' + str(arr)] \
+            #                                     = temp_x[arr]
+            #                                 break
+            #                             elif v > 1:
+            #                                 crop_words['next_' + name
+            #                                            + '_' + str(arr)] \
+            #                                     = (v_point[v-3], v_point[v-2])
+            #                                 print('add next ' + data)
+            #                                 crop_words['word_' + name
+            #                                            + '_' + str(arr)] \
+            #                                     = (v_point[v-1], v_point[v])
+            #                                 crop_words['ordinat_' + name
+            #                                            + '_' + str(arr)] \
+            #                                     = temp_x[arr]
+            #                                 break
+            #                             else:
+            #                                 break
             # print(crop_words)
             # print(v_point)
+
             if object_result:
                 # object_result = font_type.get_object_result()
                 font_type.display_marker_result(input_image=temp_image_ori)
@@ -1466,62 +2061,65 @@ def main():
                 print('>')
                 cv2.waitKey(0)
 
-            # Check v_projection words if there is a hanging marker
-            # and get crop words final and store it with 'final_beside'
-            crop_words_final = crop_words.copy()
-            for key in crop_words:
-                name = key.split('_')
-                # print('key {}'.format(key))
-                if name[0] == 'next':
-                    next_ = crop_words[key]
-                    join = []
-                    for x in range(len(name)):
-                        if x == 0:
-                            continue
-                        if x == len(name) - 1:
-                            join.append(name[x])
-                            # print(name[x])
-                        else:
-                            join.append(name[x] + '_')
-                            # print(name[x])
-                    join = ''.join(join)
-                    # print('join {}'.format(join))
-                    # print('nrxt {}'.format(next_))
-                if name[0] == 'word':
-                    # word_ = crop_words[key]
-                    next_image = temp_image.copy()[:, next_[0]:next_[1]]
-                    # word_image = temp_image.copy()[:, word_[0]:word_[1]]
-                    next_h_proj = input_image.horizontal_projection(next_image)
-                    # input_image.base_line(next_image.copy())
-                    # input_image.base_line(word_image.copy())
-                    # Get crop word index
-                    for x in range(len(v_point)):
-                        if x % 2 == 0:
-                            if v_point[x] == next_[0]:
-                                w_index = x
-                                break
-                    # print(w_index)
-                    # Check if horizontal p is not zero
-                    # (skipping hanging marker)
-                    base_check = next_h_proj[oneline_baseline[0]:
-                                             oneline_baseline[1]]
-                    if np.all(base_check == 0):
-                        if w_index >= 2:
-                            crop_words_final['final_beside_' + join]\
-                                    = (v_point[w_index - 2],
-                                       v_point[w_index - 1])
-                            print('final beside origin')
-                    else:
-                        crop_words_final['final_beside_' + join]\
-                                = (v_point[w_index], v_point[w_index + 1])
-                        # print('final beside')
+            # # Check v_projection words if there is a hanging marker
+            # # and get crop words final and store it with 'final_beside'
+            # crop_words_final = crop_words.copy()
+            # for key in crop_words:
+            #     name = key.split('_')
+            #     # print('key {}'.format(key))
+            #     if name[0] == 'next':
+            #         next_ = crop_words[key]
+            #         join = []
+            #         for x in range(len(name)):
+            #             if x == 0:
+            #                 continue
+            #             if x == len(name) - 1:
+            #                 join.append(name[x])
+            #                 # print(name[x])
+            #             else:
+            #                 join.append(name[x] + '_')
+            #                 # print(name[x])
+            #         join = ''.join(join)
+            #         # print('join {}'.format(join))
+            #         # print('nrxt {}'.format(next_))
+            #     if name[0] == 'word':
+            #         # word_ = crop_words[key]
+            #         next_image = temp_image.copy()[:, next_[0]:next_[1]]
+            #         # word_image = temp_image.copy()[:, word_[0]:word_[1]]
+            #         next_h_proj = input_image.horizontal_projection(next_image)
+            #         # input_image.base_line(next_image.copy())
+            #         # input_image.base_line(word_image.copy())
+            #         # Get crop word index
+            #         for x in range(len(v_point)):
+            #             if x % 2 == 0:
+            #                 if v_point[x] == next_[0]:
+            #                     w_index = x
+            #                     break
+            #         # print(w_index)
+            #         # Check if horizontal p is not zero
+            #         # (skipping hanging marker)
+            #         base_check = next_h_proj[oneline_baseline[0]:
+            #                                  oneline_baseline[1]]
+            #         if np.all(base_check == 0):
+            #             if w_index >= 2:
+            #                 crop_words_final['final_beside_' + join]\
+            #                         = (v_point[w_index - 2],
+            #                            v_point[w_index - 1])
+            #                 print('final beside origin')
+            #         else:
+            #             crop_words_final['final_beside_' + join]\
+            #                     = (v_point[w_index], v_point[w_index + 1])
+            #             # print('final beside')
 
             # Looking for final segmented character
-            print(crop_words_final)
-            for key in crop_words_final:
+            # print(crop_words_final)
+            # for key in crop_words_final:
+            print(crop_words)
+            for key in crop_words:
                 name = key.split('_')
                 if name[0] == 'final':
-                    x_value = crop_words_final[key]
+                    # x_value = crop_words_final[key]
+                    x_value = crop_words[key]
                     # print(x_value)
                     join = []
                     for x in range(len(name)):
@@ -1555,7 +2153,9 @@ def main():
                             continue
 
                     if name[1] == 'inside':
-                        x1_ordinat = crop_words_final['ordinat_' + join][0]
+                        # x1_ordinat = crop_words_final['ordinat_' + join][0]
+                        # Cut before the detected char marker
+                        x1_ordinat = crop_words['ordinat_' + join][0]
                         print('x1_ordinat = {}'.format(x1_ordinat))
                         cv2.waitKey(0)
                         final_img = temp_image.copy()[:, x_value[0]:x1_ordinat]
