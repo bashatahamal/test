@@ -1524,8 +1524,8 @@ class ImageProcessing():
         count = 1
         final_group_marker = {}
         final_group_dot = {}
-        final_group_marker['char_'+str(count)] = []
-        final_group_dot['char_'+str(count)] = []
+        final_group_marker['char_{:02d}'.format(count)] = []
+        final_group_dot['char_{:02d}'.format(count)] = []
         # Grouping marker and dot separately
         print('Marker POS_____')
         print(marker_pos)
@@ -1541,7 +1541,7 @@ class ImageProcessing():
                 x1_next = marker_pos[region_next][0]
                 x2_now = marker_pos[region][1]
                 x1_now = marker_pos[region][0]
-                dist = x2_now - x1_next
+                dist = x1_now - x1_next
                 length_next = x2_next - x1_next
 
                 for val in self.conn_pack_minus_body[region]:
@@ -1556,26 +1556,30 @@ class ImageProcessing():
                 # print(str(dot))
                 # cv2.waitKey(0)
                 if dot:
-                    final_group_dot['char_'+str(count)].append(region)
+                    final_group_dot['char_{:02d}'.format(count)].append(region)
 
                 # Append next_marker in one char if overlapped and count=same
                 if (x1_now <= x1_next <= x2_now
                     or x1_next <= x2_now <= x2_next)\
                         or (x1_now <= x2_next <= x2_now
                             and dist < 2/3 * length_next):
-                    if region not in final_group_marker['char_'+str(count)]:
-                        final_group_marker['char_'+str(count)].append(region)
+                    if region not in final_group_marker[
+                            'char_{:02d}'.format(count)]:
+                        final_group_marker[
+                            'char_{:02d}'.format(count)].append(region)
                     if region_next not in final_group_marker[
-                            'char_'+str(count)]:
-                        final_group_marker['char_'+str(count)].append(
+                            'char_{:02d}'.format(count)]:
+                        final_group_marker['char_{:02d}'.format(count)].append(
                             region_next)
                 # If not overlapped then append and create new char
                 else:
-                    if region not in final_group_marker['char_'+str(count)]:
-                        final_group_marker['char_'+str(count)].append(region)
+                    if region not in final_group_marker[
+                            'char_{:02d}'.format(count)]:
+                        final_group_marker[
+                            'char_{:02d}'.format(count)].append(region)
                     count += 1
-                    final_group_marker['char_'+str(count)] = []
-                    final_group_dot['char_'+str(count)] = []
+                    final_group_marker['char_{:02d}'.format(count)] = []
+                    final_group_dot['char_{:02d}'.format(count)] = []
 
             if x == 0:
                 region = key_marker_pos[x]
@@ -1589,9 +1593,11 @@ class ImageProcessing():
                 pixel_count = len(self.conn_pack_minus_body[region])
                 dot = self.dot_detection(canvas, pixel_count)
                 if dot:
-                    final_group_dot['char_'+str(count)].append(region)
-                if region not in final_group_marker['char_'+str(count)]:
-                    final_group_marker['char_'+str(count)].append(region)
+                    final_group_dot['char_{:02d}'.format(count)].append(region)
+                if region not in final_group_marker[
+                        'char_{:02d}'.format(count)]:
+                    final_group_marker[
+                        'char_{:02d}'.format(count)].append(region)
 
         # check dot if theres is two dot that parallel and the whitespace is
         # not more than 1/3 dot size then append that to char as one char if
@@ -1640,11 +1646,20 @@ class ImageProcessing():
         for char in final_group_dot:
             for region in final_group_dot[char]:
                 value = self.conn_pack_minus_body[region]
+                print(region)
+                print(value)
+                print(wall)
                 for x in value:
+                    # Move the wall border if dot region is larger
+                    if x[1] < wall[0]:
+                        wall = (x[1]-1, wall[1])
+                    if x[1] > wall[1]:
+                        wall = (wall[0], x[1]+1)
                     self.image_final_sorted[x] = 0
         # Crop final candidate
         char_list = list(final_group_marker.keys())
-        if len(final_group_marker) == 0:
+        # If marker not found then it's not a char !!!
+        if len(final_group_marker[char_list[0]]) == 0:
             print('__ It is not a character__')
             return 'continue'
 
@@ -2178,48 +2193,48 @@ def main():
             else:
                 object_result = False
                 print('Not a valuable result found check the numstep!')
+                continue
                 # cv2.waitKey(0)
 
-            # for key in font_type.get_marker_thresh().keys():
-            input_image.vertical_projection(temp_image)
+            # # for key in font_type.get_marker_thresh().keys():
+            # input_image.vertical_projection(temp_image)
+            # # input_image.detect_vertical_line(
+            # #     image=temp_image.copy(),
+            # #     pixel_limit_ste=0,  # Start to end
+            # #     view=True
+            # #     # pixel_limit_ets=0   # End to start
+            # # )
+            # # print(input_image.start_point_v)
+            # input_image.vertical_projection(input_image.image_body)
             # input_image.detect_vertical_line(
-            #     image=temp_image.copy(),
+            #     image=input_image.image_body.copy(),
             #     pixel_limit_ste=0,  # Start to end
             #     view=True
             #     # pixel_limit_ets=0   # End to start
             # )
-            # print(input_image.start_point_v)
-            input_image.vertical_projection(input_image.image_body)
-            input_image.detect_vertical_line(
-                image=input_image.image_body.copy(),
-                pixel_limit_ste=0,  # Start to end
-                view=True
-                # pixel_limit_ets=0   # End to start
-            )
-            # print(input_image.start_point_v)
-            # Calculate new base line processing from self.h_projection
-            input_image.horizontal_projection(input_image.image_body)
-            input_image.base_line(one_line_image=input_image.image_join)
-            oneline_baseline = []
-            oneline_baseline.append(input_image.base_start)
-            oneline_baseline.append(input_image.base_end)
-            if oneline_baseline[1] < oneline_baseline[0]:
-                temp = oneline_baseline[0]
-                oneline_baseline[0] = oneline_baseline[1]
-                oneline_baseline[1] = temp
-
-            # Grouping marker by its v_projection
-            input_image.grouping_marker()
-            group_marker_by_wall = copy.deepcopy(
-                input_image.group_marker_by_wall
-            )
-            print(object_result)
-            cv2.waitKey(0)
+            # # print(input_image.start_point_v)
+            # # Calculate new base line processing from self.h_projection
+            # input_image.horizontal_projection(input_image.image_body)
+            # input_image.base_line(one_line_image=input_image.image_join)
+            # oneline_baseline = []
+            # oneline_baseline.append(input_image.base_start)
+            # oneline_baseline.append(input_image.base_end)
+            # if oneline_baseline[1] < oneline_baseline[0]:
+            #     temp = oneline_baseline[0]
+            #     oneline_baseline[0] = oneline_baseline[1]
+            #     oneline_baseline[1] = temp
             # cv2.imshow('join baseline', input_image.image_join)
             # cv2.waitKey(0)
             # Crop next word marker wether it's inside or beside
             crop_words = {}
             if object_result:
+                # Grouping marker by its v_projection
+                input_image.grouping_marker()
+                group_marker_by_wall = copy.deepcopy(
+                    input_image.group_marker_by_wall
+                )
+                print(object_result)
+                cv2.waitKey(0)
                 for data in object_result:
                     if isinstance(object_result[data], type(np.array([]))):
                         temp_x = object_result[data]
@@ -2292,6 +2307,8 @@ def main():
                                                        + '_' + str(arr)] \
                                                 = temp_x[arr]
 
+                font_type.display_marker_result(input_image=temp_image_ori)
+
 
             # crop_words = {}
             # if object_result:
@@ -2352,14 +2369,6 @@ def main():
             #                                 break
             # print(crop_words)
             # print(v_point)
-
-            if object_result:
-                # object_result = font_type.get_object_result()
-                font_type.display_marker_result(input_image=temp_image_ori)
-            else:
-                print('Not a valuable result found check the numstep!')
-                print('>')
-                cv2.waitKey(0)
 
             # # Check v_projection words if there is a hanging marker
             # # and get crop words final and store it with 'final_beside'
