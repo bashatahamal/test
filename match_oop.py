@@ -1404,8 +1404,8 @@ class ImageProcessing():
         print(max_ord_h, max_ord_v)
         if max_ord_v in range(start_x, end_x):
             squareleton = one_marker[start_y:end_y, start_x:end_x]
-            # cv2.imshow('squareleton', squareleton)
-            # print(squareleton)
+            cv2.imshow('squareleton', squareleton)
+            print(squareleton)
             height, width = squareleton.shape
             scale = 1.55
             if width < scale * height:
@@ -1479,7 +1479,7 @@ class ImageProcessing():
             print('NOT a dot')
             return False
 
-    def find_final_processed_char(self, wall):
+    def find_final_processed_char(self, wall, oneline_baseline):
         # wall parameter is (x1=true wall, x2=x1_final_char/true wall)
         # depends on wether it's final char inside or beside
         wall_list = list(self.group_marker_by_wall.keys())
@@ -1656,20 +1656,26 @@ class ImageProcessing():
                     if x[1] > wall[1]:
                         wall = (wall[0], x[1]+1)
                     self.image_final_sorted[x] = 0
+
         # Crop final candidate
+        oneline_height = oneline_baseline[1] - oneline_baseline[0]
+        if oneline_height <= 1:
+            oneline_height_sorted = 3
+        else:
+            oneline_height_sorted = oneline_height
         char_list = list(final_group_marker.keys())
         # If marker not found then it's not a char !!!
-        if len(final_group_marker[char_list[0]]) == 0:
+        if len(final_group_marker[char_list[0]]) == 0:  # No char at all
             print('__ It is not a character__')
             return 'continue'
 
-        if len(final_group_marker) == 1:
+        if len(final_group_marker) == 1:  # There's only one char
             final_segmented_char_candidate = self.image_final_sorted[
                 :, wall[0]:wall[1]
             ]
-            self.horizontal_projection(final_segmented_char_candidate)
-            self.base_line(final_segmented_char_candidate.copy())
-            word_baseline_height = self.base_end - self.base_start
+            # self.horizontal_projection(final_segmented_char_candidate)
+            # self.base_line(final_segmented_char_candidate.copy())
+            # word_baseline_height = self.base_end - self.base_start
             body_v_projection = self.vertical_projection(
                 final_segmented_char_candidate
             )
@@ -1679,7 +1685,8 @@ class ImageProcessing():
             # Check if marker is not in 0 x coordinat to be able looping
             if x_b4_marker > 0:
                 for x in range(0, x_b4_marker)[::-1]:
-                    if body_v_projection[x] > 2 * word_baseline_height:
+                    # if body_v_projection[x] > 2 * word_baseline_height:
+                    if body_v_projection[x] > 2 * oneline_height_sorted:
                         final_segmented_char = final_segmented_char_candidate[
                             :, x+1:wall[1]
                         ]
@@ -1691,7 +1698,7 @@ class ImageProcessing():
             print('__Final word only have one marker__')
             return final_segmented_char
 
-        if len(final_group_marker) > 1:
+        if len(final_group_marker) > 1:  # At least there are two chars or more
             final_segmented_char_candidate = self.image_final_sorted[
                 # Cut image after the most right sided group marker on char_2
                 :, marker_pos[final_group_marker[char_list[1]][0]][1]:wall[1]
@@ -2453,7 +2460,9 @@ def main():
                         w_height, w_width = final_img.shape
                         cv2.imshow('beside', final_img)
                         final_segmented_char \
-                            = input_image.find_final_processed_char(x_value)
+                            = input_image.find_final_processed_char(
+                                x_value, oneline_baseline
+                        )
                         if final_segmented_char == 'continue':
                             print(
                                 '>> from main to continue next word candidate'
@@ -2471,7 +2480,9 @@ def main():
                         cv2.imshow('inside', final_img)
                         final_wall = (x_value[0], x1_ordinat)
                         final_segmented_char \
-                            = input_image.find_final_processed_char(final_wall)
+                            = input_image.find_final_processed_char(
+                                final_wall, oneline_baseline
+                        )
                         if final_segmented_char == 'continue':
                             print(
                                 '>> from main to continue next word candidate'
