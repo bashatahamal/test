@@ -57,7 +57,7 @@ def make_it_square(image_location):
                                      cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                      cv2.THRESH_BINARY, 11, 2)
     height, width = bw_image.shape
-    image_body = dot.eight_conn(bw_image)
+    image_body = dot.body_and_dot_region(bw_image)
     v_proj = vertical_projection(image_body)
     h_proj = horizontal_projection(image_body)
 

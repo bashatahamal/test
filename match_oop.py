@@ -717,6 +717,7 @@ class ImageProcessing():
     def eight_connectivity(self, image, oneline_baseline):
         height, width = image.shape
         image_process = image.copy()
+        # For image flag
         image_process[:] = 255
         oneline_height = oneline_baseline[1] - oneline_baseline[0]
         if oneline_height <= 1:

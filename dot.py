@@ -1,306 +1,420 @@
-import match_oop as mo
 import copy
+import numpy as np
 
 
-def eight_conn(image):
-    height, width = image.shape
-    process = mo.ImageProcessing(original_image=image)
-    conn_pack = {}
-    reg = 1
-    connected = True
-    count = 0
+class ImageProcessing():
 
-    # Doing eight conn on every pixel one by one
-    for x in range(width):
-        for y in range(height):
-            if image[y, x] == 0:
-                count += 1
-                # conn_pack['region_' + reg].add((x,y))
-                x_y = []
-                # Left
-                if x - 1 > 0:
-                    if y + 1 < height:
-                        if image[y + 1, x - 1] == 0:
-                            x_y.append((y + 1, x - 1))
-                            # print('l1')
-                    if image[y, x - 1] == 0:
-                        x_y.append((y, x - 1))
-                        # print('l2')
-                    if y - 1 > 0:
-                        if image[y - 1, x - 1] == 0:
-                            x_y.append((y - 1, x - 1))
-                            # print('l3')
-                # Middle
-                if y + 1 < height:
-                    if image[y + 1, x] == 0:
-                        x_y.append((y + 1, x))
-                    # print('m1')
-                x_y.append((y, x))
-                # print('m2')
-                if y - 1 > 0:
-                    if image[y - 1, x] == 0:
-                        x_y.append((y - 1, x))
-                        # print('m3')
-                # Right
-                if x + 1 < width:
-                    if y + 1 < height:
-                        if image[y + 1, x + 1] == 0:
-                            x_y.append((y + 1, x + 1))
-                            # print('r1')
-                    if image[y, x + 1] == 0:
-                        x_y.append((y, x + 1))
-                        # print('r2')
-                    if y - 1 > 0:
-                        if image[y - 1, x + 1] == 0:
-                            x_y.append((y - 1, x + 1))
-                            # print('r3')
+    def vertical_projection(self, image_v):
+        image = image_v.copy()
+        image[image < 127] = 1
+        image[image >= 127] = 0
+        self.v_projection = np.sum(image, axis=0)
 
-                # First region only (Inizialitation)
-                if conn_pack == {}:
-                    conn_pack['region_1'] = []
-                    for x1_join in x_y:
-                        if x1_join not in conn_pack['region_1']:
-                            conn_pack['region_1'].append(x1_join)
-                    # print('inisialitation')
+        return self.v_projection
 
-                # Next step is here
-                connected = False
-                connected_list = []
-                if conn_pack != {}:
-                    # Check how many region is connected
-                    # with detected eight neighbour
-                    for x_list in x_y:
-                        # if connected:
-                        #     break
-                        for r in conn_pack.keys():
-                            # r += 1
-                            # if connected:
-                            #     break
-                            for val in conn_pack[r]:
-                                # if connected:
-                                #     break
-                                if x_list == val:
-                                    if r not in connected_list:
-                                        connected_list.append(r)
-                                    connected = True
-                                    # break
-                    # Append eight conn to first detected region
-                    if connected_list != []:
-                        for x_join in x_y:
-                            if x_join not in conn_pack[
-                                    connected_list[0]]:
-                                conn_pack[connected_list[0]].append(x_join)
-                    # print('connected list={}'.format(connected_list))
+    def horizontal_projection(self, image_h):
+        image = image_h.copy()
+        image[image < 127] = 1
+        image[image >= 127] = 0
+        self.h_projection = np.sum(image, axis=1)
+
+        return self.h_projection
+
+    def detect_horizontal_line(self, image, pixel_limit_ste, pixel_limit_ets,
+                               view=True):
+        # Detect line horizontal
+        if len(image.shape) == 3:
+            height, width, _ = image.shape
+            # color_temp = image.copy()
+        else:
+            height, width = image.shape
+        h_projection = self.h_projection
+        up_flag = 0
+        down_flag = 0
+        # pixel_limit = 5
+        start_to_end = 0
+        end_to_start = pixel_limit_ets + 1
+        start_point = []
+        for x in range(len(h_projection)):
+            if h_projection[x] > 0 and up_flag == 1:
+                start_to_end += 1
+
+            if h_projection[x] == 0 and up_flag == 1:
+                # print(start_to_end)
+                start_point.append(x)
+                # print(start_point)
+                if start_to_end < pixel_limit_ste:
+                    del(start_point[len(start_point) - 1])
+                    # print('delete ste')
+                    down_flag = 0
+                    up_flag = 1
+                else:
+                    down_flag = 1
+                    up_flag = 0
+                    start_to_end = 0
+
+            if h_projection[x] == 0 and down_flag == 1:
+                end_to_start += 1
+
+            if h_projection[x] > 0 and up_flag == 0:
+                start_point.append(x)
+                # print(start_point)
+                if end_to_start < pixel_limit_ets:
+                    del(start_point[len(start_point)-1])
+                    del(start_point[len(start_point)-1])
+                up_flag = 1
+                down_flag = 0
+                end_to_start = 0
+
+        if len(start_point) % 2 != 0:
+            if h_projection[len(h_projection) - 1] > 0:
+                start_point.append(len(h_projection) - 1)
+
+        self.start_point_h = start_point
+
+    def detect_vertical_line(self, image, pixel_limit_ste, view=True):
+        # Detect line vertical
+        v_projection = self.v_projection
+        # print(v_projection)
+        original_image = image
+        up_flag = 0
+        down_flag = 0
+        start_to_end = 0
+        # end_to_start = pixel_limit_ets + 1
+        start_point = []
+        for x in range(len(v_projection)):
+            if v_projection[x] > 0 and down_flag == 0:
+                start_to_end += 1
+
+            if v_projection[x] == 0 and up_flag == 1:
+                # print(start_to_end)
+                start_point.append(x)
+                # print(start_point)
+                if start_to_end < pixel_limit_ste:
+                    del(start_point[len(start_point) - 1])
+                    del(start_point[len(start_point) - 1])
+                down_flag = 1
+                up_flag = 0
+                start_to_end = 0
+
+            if v_projection[x] > 0 and up_flag == 0:
+                start_point.append(x)
+                up_flag = 1
+                down_flag = 0
+                # end_to_start = 0
+
+        if len(start_point) % 2 != 0:
+            if v_projection[len(v_projection) - 1] > 0:
+                start_point.append(len(v_projection) - 1)
+        self.start_point_v = start_point
+
+    def find_connectivity(self, x, y, height, width, image):
+        # count = 0
+        x_y = []
+        # Left
+        if x - 1 > 0:
+            if y + 1 < height:
+                if image[y + 1, x - 1] == 0:
+                    x_y.append((y + 1, x - 1))
+            if image[y, x - 1] == 0:
+                x_y.append((y, x - 1))
+            if y - 1 > 0:
+                if image[y - 1, x - 1] == 0:
+                    x_y.append((y - 1, x - 1))
+        # Middle
+        if y + 1 < height:
+            if image[y + 1, x] == 0:
+                x_y.append((y + 1, x))
+        x_y.append((y, x))
+        if y - 1 > 0:
+            if image[y - 1, x] == 0:
+                x_y.append((y - 1, x))
+        # Right
+        if x + 1 < width:
+            if y + 1 < height:
+                if image[y + 1, x + 1] == 0:
+                    x_y.append((y + 1, x + 1))
+            if image[y, x + 1] == 0:
+                x_y.append((y, x + 1))
+            if y - 1 > 0:
+                if image[y - 1, x + 1] == 0:
+                    x_y.append((y - 1, x + 1))
+
+        return x_y
+
+    def eight_connectivity(self, image):
+        height, width = image.shape
+        image_process = image.copy()
+        # For image flag
+        image_process[:] = 255
+        self.conn_pack = {}
+        reg = 1
+        # Doing eight conn on every pixel one by one
+        for x in range(width):
+            for y in range(height):
+                if image_process[y, x] == 0:
+                    continue
+                if image[y, x] == 0:
+                    self.conn_pack['region_{:03d}'.format(reg)] = []
+                    x_y = self.find_connectivity(x, y, height, width, image)
+                    length_ = len(self.conn_pack['region_{:03d}'.format(reg)])
+                    for val in x_y:
+                        self.conn_pack['region_{:03d}'.format(reg)].append(val)
+                    # print(self.conn_pack['region_{:03d}'.format(reg)])
+                    # cv2.waitKey(0)
+                    first = True
+                    sub = False
+                    init = True
+                    while(True):
+                        if first:
+                            length_ = length_
+                            first = False
+                        else:
+                            length_ = l_after_sub
+
+                        if init:
+                            l_after_init = len(self.conn_pack[
+                                'region_{:03d}'.format(reg)])
+                            for k in range(length_, l_after_init):
+                                x_y_sub = self.find_connectivity(
+                                    self.conn_pack[
+                                        'region_{:03d}'.format(reg)][k][1],
+                                    self.conn_pack[
+                                        'region_{:03d}'.format(reg)][k][0],
+                                    height, width, image
+                                )
+                                if len(x_y_sub) > 1:
+                                    sub = True
+                                    for vl in x_y_sub:
+                                        if vl not in self.conn_pack[
+                                                'region_{:03d}'.format(reg)]:
+                                            self.conn_pack[
+                                                'region_{:03d}'.format(reg)
+                                                ].append(vl)
+                        init = False
+                        if sub:
+                            # print(self.conn_pack['region_{:03d}'.format(reg)])
+                            # cv2.waitKey(0)
+                            l_after_sub = len(self.conn_pack[
+                                'region_{:03d}'.format(reg)])
+                            for k in range(l_after_init, l_after_sub):
+                                x_y_sub = self.find_connectivity(
+                                    self.conn_pack[
+                                        'region_{:03d}'.format(reg)][k][1],
+                                    self.conn_pack[
+                                        'region_{:03d}'.format(reg)][k][0],
+                                    height, width, image
+                                )
+                                if len(x_y_sub) > 1:
+                                    init = True
+                                    for vl in x_y_sub:
+                                        if vl not in self.conn_pack[
+                                                'region_{:03d}'.format(reg)]:
+                                            self.conn_pack[
+                                                'region_{:03d}'.format(reg)
+                                                ].append(vl)
+                        sub = False
+
+                        if not sub and not init:
+                            break
+
+                    for val in self.conn_pack['region_{:03d}'.format(reg)]:
+                        image_process[val] = 0
+                    reg += 1
+                    # cv2.imshow('eight conn process', image_process)
+                    # print(self.conn_pack)
                     # cv2.waitKey(0)
 
-                    # If eight conn is overlapped (in more than 1 region)
-                    # then join every next region to first detected region
-                    # and delete who join
-                    if len(connected_list) > 1:
-                        for c_list in range(len(connected_list) - 1):
-                            c_list += 1
-                            for x_join in conn_pack[
-                                    connected_list[c_list]]:
-                                if x_join not in conn_pack[
-                                        connected_list[0]]:
-                                    conn_pack[
-                                        connected_list[0]
-                                    ].append(x_join)
-                        for c_list in range(len(connected_list) - 1):
-                            c_list += 1
-                            print('delete {}'.format(
-                                connected_list[c_list]
-                            ))
-                            del(conn_pack[connected_list[c_list]])
-                            # print(connected_list[c_list])
-
-                    # if not connected then just create a new region
-                    if not connected:
-                        reg += 1
-                        conn_pack['region_' + str(reg)] = []
-                        for x2_join in x_y:
-                            if x2_join not in conn_pack['region_' + str(reg)]:
-                                conn_pack['region_' + str(reg)].append(x2_join)
-    # Get every region length
-    temp_max = 0
-    for key in conn_pack:
-        if len(conn_pack[key]) > temp_max:
-            temp_max = len(conn_pack[key])
-            key_max = key
-    conn_pack_minus_body = copy.deepcopy(conn_pack)
-    # The longest region it's the body
-    for key in conn_pack_minus_body:
-        if key == key_max:
-            continue
-        else:
-            del(conn_pack[key])
-    # Get body only and minus body region
-    del(conn_pack_minus_body[key_max])
-    # Paint body only region
-    image_body = image.copy()
-    image_body[:] = 255
-    for region in conn_pack:
-        value = conn_pack[region]
-        for x in value:
-            image_body[x] = 0
-
-    # cv2.imshow('body', image_body)
-    # cv2.waitKey(0)
-
-    image_marker_sum = image.copy()
-    image_marker_sum[:] = 255
-    print(len(conn_pack_minus_body))
-    for region in conn_pack_minus_body:
-        value = conn_pack_minus_body[region]
-        print(value)
-        image_marker = image.copy()
-        image_marker[:] = 255
-        pixel_count = 0
-        for x in value:
-            pixel_count += 1
-            image_marker[x] = 0
-            image_marker_sum[x] = 0
-        # cv2.imshow('marker only', image_marker_sum)
-        # cv2.waitKey(0)
-
-        process.horizontal_projection(image_marker)
-        process.detect_horizontal_line(image_marker.copy(), 0, 0, False)
-        one_marker = image_marker[process.start_point_h[0]:
-                                  process.start_point_h[1] + 1, :]
-        # cv2.imshow('fin', one_marker)
-        # cv2.waitKey(0)
-        process.vertical_projection(one_marker)
-        process.detect_vertical_line(one_marker.copy(), 0, False)
-        x1 = process.start_point_v[0]
-        x2 = process.start_point_v[1]
-        one_marker = one_marker[:, x1:x2+1]
-        # print(one_marker)
-        # cv2.imshow('fin', one_marker)
-        # cv2.waitKey(0)
-        # cv2.imshow('marker only', image_marker)
-        # cv2.waitKey(0)
-        process.horizontal_projection(one_marker)
-        process.vertical_projection(one_marker)
-        img_h_v_proj = process.v_projection
-        img_h_h_proj = process.h_projection
-
-        # Looking for square skeleton
-        count_v = 0
-        max_v = 0
-        for v_sum in img_h_v_proj:
-            if v_sum > max_v:
-                max_v = v_sum
-                max_ord_v = count_v
-            count_v += 1
-        count_h = 0
-        max_h = 0
-        for h_sum in img_h_h_proj:
-            if h_sum > max_h:
-                max_h = h_sum
-                max_ord_h = count_h
-            count_h += 1
-        # start_x, end_x, start_y, end_y skeleton
-        height, width = one_marker.shape
-        for x_ in range(width):
-            if one_marker[max_ord_h, x_] == 0:
-                start_x = x_
-                break
-        end_x = start_x + int(max_h)
-        for y_ in range(height):
-            if one_marker[y_, max_ord_v] == 0:
-                start_y = y_
-                break
-        end_y = start_y + int(max_v)
-        # x1 = start_x, y1 = start_y
-        # x2 = end_x, y2 = end_y
-        print(start_x, end_x)
-        print(start_y, end_y)
-        print(max_h, max_v)
-        print(max_ord_h, max_ord_v)
-        if max_ord_v in range(start_x, end_x):
-            squareleton = one_marker[start_y:end_y, start_x:end_x]
-            # cv2.imshow('squareleton', squareleton)
-            # print(squareleton)
-            height, width = squareleton.shape
-            scale = 1.55
-            if width < scale * height:
-                if height < scale * width:
-                    print('square')
-                    if pixel_count < height * width:
-                        for x in range(width):
-                            black = False
-                            white = False
-                            false_dot = False
-                            white_val = 0
-                            for y in range(height):
-                                if squareleton[y, x] == 0:
-                                    black = True
-                                if black and squareleton[y, x] > 0:
-                                    if not white:
-                                        white_val = 0
-                                    white = True
-                                if black and white and squareleton[y, x] == 0:
-                                    false_dot = True
-                                    print('white hole')
-                                    break
-                                # If to many whites is not a dot
-                                if squareleton[y, x] > 0:
-                                    white_val += 1
-                                if white_val > round(height/2):
-                                    print('to many white')
-                                    false_dot = True
-                                    break
-                            if false_dot:
-                                print('NOT a dot')
-                                break
-                        if not false_dot:
-                            print('Its a dot :)')
-                            for x in value:
-                                image_body[x] = 0
-                            #     cv2.imshow('body', image_body)
-                            # cv2.waitKey(0)
-                    else:
-                        print('The square is not enough')
-                        print('NOT a dot')
-                else:
-                    print('portrait image')
-                    print('NOT a dot')
+        # Get every region length
+        temp_max = 0
+        for key in self.conn_pack:
+            if len(self.conn_pack[key]) > temp_max:
+                temp_max = len(self.conn_pack[key])
+                key_max = key
+        self.conn_pack_minus_body = copy.deepcopy(self.conn_pack)
+        # The longest region it's the body
+        for key in self.conn_pack_minus_body:
+            if key == key_max:
+                continue
             else:
-                print('landscape')
-                x_l = round(width/2)
-                white_l = False
-                black_l = False
-                dot = False
-                for y_l in range(height):
-                    if squareleton[y_l, x_l] > 0:
-                        white_l = True
-                    if white_l and squareleton[y_l, x_l] == 0:
-                        black_l = True
-                    if white_l and black_l and squareleton[y_l, x_l] > 0:
-                        dot = True
-                if dot:
-                    print('Middle is w -> b -> w')
-                    print('Its a dot :)')
-                    for x in value:
-                        image_body[x] = 0
-                else:
-                    print('middle is wrong')
-                    print('NOT a dot')
+                del(self.conn_pack[key])
+        # Get body only and minus body region
+        del(self.conn_pack_minus_body[key_max])
+        # Paint body only region
+        self.image_body = image.copy()
+        self.image_body[:] = 255
+        for region in self.conn_pack:
+            value = self.conn_pack[region]
+            for x in value:
+                self.image_body[x] = 0
 
+    def dot_checker(self, image_marker):
+        # Dot detection
+        self.horizontal_projection(image_marker)
+        self.detect_horizontal_line(image_marker.copy(), 0, 0, False)
+        one_marker = image_marker[self.start_point_h[0]:
+                                  self.start_point_h[1], :]
+        self.vertical_projection(one_marker)
+        self.detect_vertical_line(one_marker.copy(), 0, False)
+        x1 = self.start_point_v[0]
+        x2 = self.start_point_v[1]
+        one_marker = one_marker[:, x1:x2]
+        height, width = one_marker.shape
+        scale = 1.5
+        # Square, Portrait or Landscape image
+        if width < scale * height:
+            if height < scale * width:
+                print('_square_')
+                black = False
+                white = False
+                middle_hole = False
+                # Possibly sukun
+                for y in range(height):
+                    if one_marker[y, round(width/2)] == 0:
+                        black = True
+                    if black and one_marker[y, round(width/2)] > 0:
+                        white = True
+                    if white and one_marker[y, round(width/2)] == 0:
+                        middle_hole = True
+                if middle_hole:
+                    print('_white hole in the middle_')
+                    return False
+                else:
+                    # Checking all pixel
+                    white_hole = False
+                    for x in range(width):
+                        if white_hole:
+                            break
+                        black = False
+                        white = False
+                        white_val = 0
+                        for y in range(height):
+                            if one_marker[y, x] > 0:
+                                white_val += 1
+                            if one_marker[y, x] == 0:
+                                black = True
+                            if black and one_marker[y, x] > 0:
+                                white = True
+                            if white and one_marker[y, x] == 0:
+                                white_hole = True
+                                break
+                    if white_hole:
+                        print('_there is a hole_')
+                        return False
+                    else:
+                        # Check on 2nd one third region
+                        touch_up = False
+                        touch_down = False
+                        for x in range(round(width/3)-1, 2*round(width/3)):
+                            if one_marker[0, x] == 0:
+                                touch_up = True
+                            if one_marker[height-1, x] == 0:
+                                touch_down = True
+                            if touch_up and touch_down:
+                                break
+                        # Check on after 1/5(mitigate noise) till 1/2
+                        if touch_up and touch_down:
+                            too_many_whites = False
+                            for x in range(round(width/5), round(width/2)):
+                                white_val = 0
+                                for y in range(height):
+                                    if one_marker[y, x] > 0:
+                                        white_val += 1
+                                if white_val > round(height/1.99):
+                                    too_many_whites = True
+                                    break
+                            if too_many_whites:
+                                print('_too many white value in 1/5 till 1/2_')
+                                return False
+                            else:
+                                print('_DOT CONFIRM_')
+                                return True
+            else:
+                print('_portrait image_')
+                return False
         else:
-            print('Just cannot create a square')
-            print('NOT a dot')
+            print('_landscape image_')
+            black = False
+            white = False
+            wbw_confirm = False
+            over_pattern = False
+            # Possibly straight harakat or tasdid
+            for y in range(height):
+                if one_marker[y, round(width/2)] > 0:
+                    white = True
+                if white and one_marker[y, round(width/2)] == 0:
+                    black = True
+                if black and one_marker[y, round(width/2)] > 0:
+                    wbw_confirm = True
+                if wbw_confirm and one_marker[y, round(width/2)] == 0:
+                    over_pattern = True
+                    break
+            if over_pattern:
+                print('_too many wbw + b_')
+                return False
+            elif wbw_confirm:
+                print('_mid is wbw_')
+                too_many_white_val = False
+                # cut in the middle up vertically wether the pixel all white
+                for x in range(round(width/5), round(width/3)):
+                    white_val = 0
+                    for y in range(0, height):
+                        if one_marker[y, x] > 0:
+                            white_val += 1
+                    if white_val > round(height/1.99):
+                        too_many_white_val = True
+                        break
+                if too_many_white_val:
+                    print('_too many white val in 1/5 till 1/3_')
+                    return False
+                else:
+                    half_img = one_marker[:, 0:round(width/2)]
+                    self.horizontal_projection(half_img)
+                    self.detect_horizontal_line(half_img.copy(), 0, 0, True)
+                    half_img = one_marker[
+                        self.start_point_h[0]:self.start_point_h[1],
+                        0:round(width/2)
+                    ]
+                    half_height, half_width = half_img.shape
+                    print(half_height, half_width)
+                    one_3rd = round(half_width/3)
+                    touch_up = False
+                    touch_down = False
+                    for x in range(one_3rd-1, 2*one_3rd):
+                        if half_img[0, x] == 0:
+                            touch_up = True
+                        if half_img[half_height-1, x] == 0:
+                            touch_down = True
+                        if touch_up and touch_down:
+                            break
+                    if touch_up and touch_down:
+                        print('_DOT CONFIRM_')
+                        return True
+                    else:
+                        print('_not touching_')
+                        return False
+            else:
+                print('_middle is not wbw_')
+                return False
+
+
+def body_and_dot_region(image):
+    process = ImageProcessing()
+    process.eight_connectivity(image)
+    image_marker = image.copy()
+    for region in process.conn_pack_minus_body:
+        value = process.conn_pack_minus_body[region]
+        if len(value) < 3:
+            continue
+        image_marker[:] = 255
+        for x in value:
+            image_marker[x] = 0
+        # print(len(value))
+        dot = process.dot_checker(image_marker)
+        if dot:
+            for x in value:
+                process.image_body[x] = 0
+        else:
             continue
 
-    return image_body
-
-
-# for imagePath in sorted(glob.glob("test/dot" + "/*.png")):
-#     image = cv2.imread(imagePath)
-#     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-#     bin_image = cv2.adaptiveThreshold(gray, 255,
-#                                       cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-#                                       cv2.THRESH_BINARY, 11, 2)
-#     height, width = gray.shape
-#     cv2.imshow('sda', eight_conn(bin_image))
-#     cv2.waitKey(0)
+    return process.image_body
