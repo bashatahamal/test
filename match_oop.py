@@ -803,8 +803,10 @@ class ImageProcessing():
 
         temp_marker = []
         temp_delete = []
+        # Noise cancelation
+        k = 3
         for key in self.conn_pack:
-            if len(self.conn_pack[key]) > oneline_height_sorted:
+            if len(self.conn_pack[key]) > k * oneline_height_sorted:
                 temp_marker.append(key)
         self.conn_pack_sorted = {}
         for mark in temp_marker:
@@ -871,33 +873,40 @@ class ImageProcessing():
         len_h = len(self.start_point_v)
         if len_h % 2 != 0:
             del(self.start_point_v[len_h - 1])
-        group_marker_list = {}
+        group_body_by_wall = {}
         for x in range(len(self.start_point_v)):
             if x % 2 == 0:
                 wall = (self.start_point_v[x], self.start_point_v[x+1])
-                group_marker_list[wall] = []
+                group_body_by_wall[wall] = []
                 for region in self.conn_pack_sorted:
                     value = self.conn_pack_sorted[region]
                     for y_x in value:
                         # Grouping image body region by its wall (x value)
                         if self.start_point_v[x] <= y_x[1] \
                                 <= self.start_point_v[x+1]:
-                            group_marker_list[wall].append(region)
+                            group_body_by_wall[wall].append(region)
                             break
-        # print(group_marker_list)
-        for region in group_marker_list.values():
+        # print(group_body_by_wall)
+        for region in group_body_by_wall.values():
             max_length = 0
             if len(region) > 1:
                 for x in region:
                     if len(self.conn_pack_sorted[x]) > max_length:
                         max_length = len(self.conn_pack_sorted[x])
                 for x in region:
+                    # Fixing hamzah dumping out from image body problem
+                    sorted_region_val = sorted(self.conn_pack_sorted[x])
+                    y_up_region = sorted_region_val[0][0]
+                    region_height = oneline_baseline[0] - y_up_region
+                    # Check how long the char from above the baseline
+                    if region_height > 3 * oneline_height_sorted:
+                        continue
                     # If region is not 1/4 of the max length then move it
                     # from image body to marker only
                     # NB. why just not using the longest reg to sort? coz when
                     # it does there's a case where two separate words
                     # overlapping each other by a tiny margin (no white space)
-                    if len(self.conn_pack_sorted[x]) < 1/4*max_length:
+                    elif len(self.conn_pack_sorted[x]) < 1/4*max_length:
                         self.conn_pack_minus_body[x] = self.conn_pack_sorted[x]
                         del(self.conn_pack_sorted[x])
 
@@ -1479,6 +1488,157 @@ class ImageProcessing():
             print('NOT a dot')
             return False
 
+    def dot_checker(self, image_marker):
+        # Dot detection
+        self.horizontal_projection(image_marker)
+        self.detect_horizontal_line(image_marker.copy(), 0, 0, False)
+        one_marker = image_marker[self.start_point_h[0]:
+                                  self.start_point_h[1], :]
+        self.vertical_projection(one_marker)
+        self.detect_vertical_line(one_marker.copy(), 0, False)
+        x1 = self.start_point_v[0]
+        x2 = self.start_point_v[1]
+        one_marker = one_marker[:, x1:x2]
+        height, width = one_marker.shape
+        scale = 1.5
+        # Square, Portrait or Landscape image
+        if width < scale * height:
+            if height < scale * width:
+                print('_square_')
+                black = False
+                white = False
+                middle_hole = False
+                # Possibly sukun
+                for y in range(height):
+                    if one_marker[y, round(width/2)] == 0:
+                        black = True
+                    if black and one_marker[y, round(width/2)] > 0:
+                        white = True
+                    if white and one_marker[y, round(width/2)] == 0:
+                        middle_hole = True
+                if middle_hole:
+                    print('_white hole in the middle_')
+                    return False
+                else:
+                    # Checking all pixel
+                    white_hole = False
+                    for x in range(width):
+                        if white_hole:
+                            break
+                        black = False
+                        white = False
+                        white_val = 0
+                        for y in range(height):
+                            if one_marker[y, x] > 0:
+                                white_val += 1
+                            if one_marker[y, x] == 0:
+                                black = True
+                            if black and one_marker[y, x] > 0:
+                                white = True
+                            if white and one_marker[y, x] == 0:
+                                white_hole = True
+                                break
+                    if white_hole:
+                        print('_there is a hole_')
+                        return False
+                    else:
+                        # Check on 2nd one third region
+                        touch_up = False
+                        touch_down = False
+                        for x in range(round(width/3)-1, 2*round(width/3)):
+                            if one_marker[0, x] == 0:
+                                touch_up = True
+                            if one_marker[height-1, x] == 0:
+                                touch_down = True
+                            if touch_up and touch_down:
+                                break
+                        # Check on after 1/5(mitigate noise) till 1/2
+                        if touch_up and touch_down:
+                            too_many_whites = False
+                            for x in range(round(width/5), round(width/2)):
+                                white_val = 0
+                                for y in range(height):
+                                    if one_marker[y, x] > 0:
+                                        white_val += 1
+                                if white_val > round(height/1.99):
+                                    too_many_whites = True
+                                    break
+                            if too_many_whites:
+                                print('_too many white value in 1/5 till 1/2_')
+                                return False
+                            else:
+                                print('_DOT CONFIRM_')
+                                return True
+            else:
+                print('_portrait image_')
+                return False
+        else:
+            print('_landscape image_')
+            black = False
+            white = False
+            wbw_confirm = False
+            over_pattern = False
+            # Possibly straight harakat or tasdid
+            for y in range(height):
+                if one_marker[y, round(width/2)] > 0:
+                    white = True
+                if white and one_marker[y, round(width/2)] == 0:
+                    black = True
+                if black and one_marker[y, round(width/2)] > 0:
+                    wbw_confirm = True
+                if wbw_confirm and one_marker[y, round(width/2)] == 0:
+                    over_pattern = True
+                    break
+            if over_pattern:
+                print('_too many wbw + b_')
+                return False
+            elif wbw_confirm:
+                print('_mid is wbw_')
+                too_many_white_val = False
+                # cut in the middle up vertically wether the pixel all white
+                for x in range(round(width/5), round(width/3)):
+                    white_val = 0
+                    for y in range(0, height):
+                        if one_marker[y, x] > 0:
+                            white_val += 1
+                    if white_val > round(height/1.99):
+                        too_many_white_val = True
+                        break
+                if too_many_white_val:
+                    print('_too many white val in 1/5 till 1/3_')
+                    return False
+                else:
+                    half_img = one_marker[:, 0:round(width/2)]
+                    self.horizontal_projection(half_img)
+                    self.detect_horizontal_line(half_img.copy(), 0, 0, True)
+                    half_img = one_marker[
+                        self.start_point_h[0]:self.start_point_h[1],
+                        0:round(width/2)
+                    ]
+                    print(half_img)
+                    cv2.waitKey(0)
+                    half_height, half_width = half_img.shape
+                    print(half_height, half_width)
+                    one_3rd = round(half_width/3)
+                    touch_up = False
+                    touch_down = False
+                    for x in range(one_3rd-1, 2*one_3rd):
+                        if half_img[0, x] == 0:
+                            touch_up = True
+                        if half_img[half_height-1, x] == 0:
+                            touch_down = True
+                        if touch_up and touch_down:
+                            break
+                    if touch_up and touch_down:
+                        print('_DOT CONFIRM_')
+                        return True
+                    else:
+                        print('_not touching_')
+                        return False
+            else:
+                print('_middle is not wbw_')
+                return False
+
     def find_final_processed_char(self, wall, oneline_baseline):
         # wall parameter is (x1=true wall, x2=x1_final_char/true wall)
         # depends on wether it's final char inside or beside
@@ -1551,7 +1711,7 @@ class ImageProcessing():
                 print(region)
                 cv2.waitKey(0)
                 pixel_count = len(self.conn_pack_minus_body[region])
-                dot = self.dot_detection(canvas, pixel_count)
+                dot = self.dot_checker(canvas)
                 # print('DOT______')
                 # print(str(dot))
                 # cv2.waitKey(0)
@@ -1591,7 +1751,7 @@ class ImageProcessing():
                 for val in self.conn_pack_minus_body[region]:
                     canvas[val] = 0
                 pixel_count = len(self.conn_pack_minus_body[region])
-                dot = self.dot_detection(canvas, pixel_count)
+                dot = self.dot_checker(canvas)
                 if dot:
                     final_group_dot['char_{:02d}'.format(count)].append(region)
                 if region not in final_group_marker[
@@ -1762,16 +1922,16 @@ class ImageProcessing():
                 # cut at the most consistent diff equal 0
                 cut = 1/2
                 if save_sistent != {}:
+                    # key is coordinat
                     for key in save_sistent:
                         # compare by a/b c/d (is it close enough
                         # to be called consistent)
-                        enough = save_sistent[key] / key
+                        # enough = save_sistent[key] / key
+                        enough = save_sistent[key] / (key-(round(
+                                                      save_sistent[key]/2)))
                         if enough > temp:
                             the_sistent = key
                             temp = enough
-                        # if save_sistent[key] > temp:
-                        #     temp = save_sistent[key]
-                        #     the_sistent = key
                     x1_char = x2_2nd_marker \
                         + (x1_1st_marker - x2_2nd_marker - the_sistent)\
                         + round(cut * save_sistent[the_sistent])
@@ -2456,7 +2616,9 @@ def main():
                     final_segmented_char = temp_image.copy()
                     final_segmented_char[:] = 255
                     if name[1] == 'beside':
-                        final_img = temp_image.copy()[:, x_value[0]:x_value[1]]
+                        # final_img = temp_image.copy()[:, x_value[0]:x_value[1]]
+                        final_img = input_image.image_join.copy()[
+                            :, x_value[0]:x_value[1]]
                         w_height, w_width = final_img.shape
                         cv2.imshow('beside', final_img)
                         final_segmented_char \
@@ -2475,7 +2637,9 @@ def main():
                         x1_ordinat = crop_words['ordinat_' + join][0]
                         print('x1_ordinat = {}'.format(x1_ordinat))
                         cv2.waitKey(0)
-                        final_img = temp_image.copy()[:, x_value[0]:x1_ordinat]
+                        # final_img = temp_image.copy()[:, x_value[0]:x1_ordinat]
+                        final_img = input_image.image_join.copy()[
+                            :, x_value[0]:x1_ordinat]
                         w_height, w_width = final_img.shape
                         cv2.imshow('inside', final_img)
                         final_wall = (x_value[0], x1_ordinat)
