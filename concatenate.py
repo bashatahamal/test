@@ -140,7 +140,7 @@ def make_it_square(image_location):
             (concatenate_a, img_original, concatenate_b), axis=0
         )
 
-    return img_original, concatImage
+    return img_original, concatImage, y1, y2, x1, x2
     # cv2.imshow('concat', concatImage)
     # print(height, width)
     # cv2.waitKey(0)

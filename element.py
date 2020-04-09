@@ -76,7 +76,7 @@ marker_type_full = ['Isolated', 'Begin', 'Middle', 'End']
 marker_type_half = ['Isolated', 'End']
 list_type = []
 empty_image = 'empty_image.png'
-
+table = 'dataset_new'
 
 # def get_base64_str_from_file(filepath):
 #     with open(filepath, "rb") as f:
@@ -109,7 +109,7 @@ def refresh_sql_result_from_DB():
                 char_name = char_list_nameonly[x]
                 marker_type = values['_MARKERTYPE_'][0]
                 image_location = values['_INPUT_']
-                sql_query = "SELECT * FROM dataset WHERE marker_type='" \
+                sql_query = "SELECT * FROM " + table + " WHERE marker_type='" \
                             + marker_type + "' AND dataset_type='original'\
                             AND char_name='" + char_name + "'"
                 # print(sql_query)
@@ -133,7 +133,7 @@ def refresh_sql_result_from_DB():
                 char_name = char_list_nameonly[x]
                 marker_type = values['_MARKERTYPE_'][0]
                 image_location = values['_INPUT_']
-                sql_query = "SELECT * FROM dataset WHERE font_type='"\
+                sql_query = "SELECT * FROM " + table + " WHERE font_type='"\
                             + font_type + "' AND marker_type='" + marker_type\
                             + "' AND dataset_type='original' AND char_name='"\
                             + char_name + "'"
@@ -195,6 +195,8 @@ layout = [
      sg.Image(key='_IMAGE_', filename=empty_image, visible=True,
      pad=((0, 0), (0, 0))),
      sg.Image(key='_IMAGE2_', filename=empty_image, visible=True,
+     pad=((0, 0), (0, 0))),
+     sg.Image(key='_IMAGE3_', filename=empty_image, visible=True,
      pad=((0, 0), (0, 0))),
      sg.Text('', justification='right'),
      sg.Button('Add', size=(7, 1), key='_ADDBUTTON_',
@@ -362,7 +364,7 @@ while True:
             if values['_LISTTYPE_'][0] == list_type[x]:
                 res_id = x
                 break
-        sql_query = "SELECT * FROM dataset WHERE ID='" \
+        sql_query = "SELECT * FROM " + table + " WHERE ID='" \
                     + str(list_id[res_id]) + "'"
         # print(list_id)
         # print(sql_query)
@@ -374,15 +376,21 @@ while True:
         # print(view_image_loc)
         window.Element('_IMAGE_').Update(filename=view_image_loc)
         key = view_image_loc.split('/')
-        key[2] = 'square'
+        key[2] = 'Square'
         view_image_loc = '/'.join(key)
         # print(view_image_loc)
         window.Element('_IMAGE2_').Update(filename=view_image_loc)
+        key = view_image_loc.split('/')
+        key[2] = 'Original'
+        view_image_loc = '/'.join(key)
+        # print(view_image_loc)
+        window.Element('_IMAGE3_').Update(filename=view_image_loc)
         selected_QS = status_bm + '@' + selected_QS
         window.Element('_STATUS_').Update(selected_QS)
     elif values['_LISTTYPE_'] == []:
         window.Element('_IMAGE_').Update(filename=empty_image)
         window.Element('_IMAGE2_').Update(filename=empty_image)
+        window.Element('_IMAGE3_').Update(filename=empty_image)
 
     # ADDING DATASET
     if values['_MARKERTYPE_'] != [] and values['_LISTBOX_'] != [] \
@@ -390,22 +398,31 @@ while True:
             and event == '_ADDBUTTON_':
         if font_type != '' and QS != '' and image_location != '':
             # Check folder
-            store_folder_ori = './collection/original/' \
+            store_folder_ori = './Collection/No_Margin/' \
                                + font_type + '/' + char_name
             if not os.path.exists(store_folder_ori):
                 os.makedirs(store_folder_ori)
-            store_folder_sqr = './collection/square/' \
+            store_folder_sqr = './Collection/Square/' \
                                + font_type + '/' + char_name
             if not os.path.exists(store_folder_sqr):
                 os.makedirs(store_folder_sqr)
+            store_folder_rgb = './Collection/Original/' \
+                               + font_type + '/' + char_name
+            if not os.path.exists(store_folder_rgb):
+                os.makedirs(store_folder_rgb)
+            store_folder_rc = './Collection/Raw_Cut/' \
+                              + font_type + '/' + char_name
+            if not os.path.exists(store_folder_rc):
+                os.makedirs(store_folder_rc)
 
             # cnt = len(list_type) + 1
             # print(cnt)
             # best format has to be *.png
-            img_ori, img_sqr = ct.make_it_square(image_location)
+            img_ori, img_sqr, y1, y2, x1, x2 = ct.make_it_square(image_location)
             # ct.make_it_square(image_location, store_folder + '/'
             #                   + marker_type + '_' + str(cnt) + '.png')
-
+            img_rc = cv2.imread(image_location)
+            img_rgb = img_rc[y1:y2, x1:x2]
             # Write image
             now = datetime.now()
             dt_string = now.strftime("%y%m%d%H%M%S")
@@ -414,22 +431,36 @@ while True:
                 + '_' + dt_string + '.png'
             output_name_sqr = store_folder_sqr + '/' + marker_type \
                 + '_' + dt_string + '.png'
+            output_name_rgb = store_folder_rgb + '/' + marker_type \
+                + '_' + dt_string + '.png'
+            output_name_rc = store_folder_rc + '/' + marker_type \
+                + '_' + dt_string + '.png'
             # print(output_name_ori)
             cv2.imwrite(output_name_ori, img_ori, [cv2.IMWRITE_PNG_BILEVEL])
             cv2.imwrite(output_name_sqr, img_sqr, [cv2.IMWRITE_PNG_BILEVEL])
+            cv2.imwrite(output_name_rgb, img_rgb, [cv2.IMWRITE_PNG_COMPRESSION])
+            cv2.imwrite(output_name_rc, img_rc, [cv2.IMWRITE_PNG_COMPRESSION])
 
-            sql_query = "INSERT INTO dataset (font_type, char_name,\
+            sql_query = "INSERT INTO " + table + " (font_type, char_name,\
                         marker_type, image_location, QS, dataset_type, ID)\
                         VALUES (%s, %s, %s, %s, %s ,%s, NULL)"
             sql_values = (font_type, char_name, marker_type,
-                          output_name_ori, QS, 'original')
+                          output_name_ori, QS, 'No_Margin')
             db_cursor.execute(sql_query, sql_values)
             db.commit()
-            sql_query = "INSERT INTO dataset (font_type, char_name,\
+            sql_query = "INSERT INTO " + table + " (font_type, char_name,\
                         marker_type, image_location, QS, dataset_type, ID)\
                         VALUES (%s, %s, %s, %s, %s ,%s, NULL)"
             sql_values = (font_type, char_name, marker_type,
-                          output_name_sqr, QS, 'square')
+                          output_name_sqr, QS, 'Square')
+            db_cursor.execute(sql_query, sql_values)
+            db.commit()
+
+            sql_query = "INSERT INTO " + table + " (font_type, char_name,\
+                        marker_type, image_location, QS, dataset_type, ID)\
+                        VALUES (%s, %s, %s, %s, %s ,%s, NULL)"
+            sql_values = (font_type, char_name, marker_type,
+                          output_name_rgb, QS, 'Original')
             db_cursor.execute(sql_query, sql_values)
             db.commit()
 
@@ -454,13 +485,13 @@ while True:
             if values['_LISTTYPE_'][0] == list_type[x]:
                 res_id = x
                 break
-        sql_query = "SELECT * FROM dataset WHERE ID='" \
+        sql_query = "SELECT * FROM " + table + " WHERE ID='" \
                     + str(list_id[res_id]) + "'"
         db_cursor.execute(sql_query)
         sql_result_del = db_cursor.fetchall()
         # print(sql_result)
         delete_image_loc = sql_result_del[0][3]
-        sql_query = "DELETE FROM dataset WHERE ID='" \
+        sql_query = "DELETE FROM " + table + " WHERE ID='" \
                     + str(list_id[res_id]) + "'"
         db_cursor.execute(sql_query)
         db.commit()
@@ -469,18 +500,36 @@ while True:
             str(list_id[res_id]), delete_image_loc)
         print('Delete id {} and {}'.format(str(list_id[res_id]),
                                            delete_image_loc))
-        sql_query = "DELETE FROM dataset WHERE ID='" \
+
+        sql_query = "DELETE FROM " + table + " WHERE ID='" \
                     + str(list_id[res_id] + 1) + "'"
         db_cursor.execute(sql_query)
         db.commit()
         key = delete_image_loc.split('/')
-        key[2] = 'square'
+        key[2] = 'Square'
         delete_image_loc = '/'.join(key)
         os.remove(delete_image_loc)
         last_act = last_act + '\n' + 'Delete id {} and {}'.format(
             str(list_id[res_id] + 1), delete_image_loc)
         print('Delete id {} and {}'.format(str(list_id[res_id] + 1),
                                            delete_image_loc))
+
+        sql_query = "DELETE FROM " + table + " WHERE ID='" \
+                    + str(list_id[res_id] + 2) + "'"
+        db_cursor.execute(sql_query)
+        db.commit()
+        key = delete_image_loc.split('/')
+        key[2] = 'Original'
+        delete_image_loc = '/'.join(key)
+        os.remove(delete_image_loc)
+        last_act = last_act + '\n' + 'Delete id {} and {}'.format(
+            str(list_id[res_id] + 1), delete_image_loc)
+        print('Delete id {} and {}'.format(str(list_id[res_id] + 1),
+                                           delete_image_loc))
+        key = delete_image_loc.split('/')
+        key[2] = 'Raw_Cut'
+        delete_image_loc = '/'.join(key)
+        os.remove(delete_image_loc)
 
         refresh_sql_result_from_DB()
         # print(sql_result)
@@ -493,10 +542,10 @@ while True:
             list_id.append(res[6])
         window.Element('_LISTTYPE_').Update(values=list_type)
 
-    sql_query = "SELECT `ID` FROM `dataset`"
+    sql_query = "SELECT `ID` FROM " + table
     db_cursor.execute(sql_query)
     sql_result_id = db_cursor.fetchall()
-    total_char = 'Total char: ' + str(int(len(sql_result_id)/2))
+    total_char = 'Total char: ' + str(int(len(sql_result_id)/3))
     window.Element('_TOTALCHAR_').Update(total_char)
     window.Element('_LASTACT_').Update(last_act)
 
