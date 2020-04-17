@@ -85,6 +85,7 @@ table = 'dataset_new'
 #     # return bytes_64.decode('utf-8') # bytes--->str  (remove `b`)
 #     return bytes_content
 
+
 def refresh_sql_result_from_DB():
     global sql_result
     global font_type
@@ -110,7 +111,7 @@ def refresh_sql_result_from_DB():
                 marker_type = values['_MARKERTYPE_'][0]
                 image_location = values['_INPUT_']
                 sql_query = "SELECT * FROM " + table + " WHERE marker_type='" \
-                            + marker_type + "' AND dataset_type='original'\
+                            + marker_type + "' AND dataset_type='No_Margin'\
                             AND char_name='" + char_name + "'"
                 # print(sql_query)
                 db_cursor.execute(sql_query)
@@ -135,7 +136,7 @@ def refresh_sql_result_from_DB():
                 image_location = values['_INPUT_']
                 sql_query = "SELECT * FROM " + table + " WHERE font_type='"\
                             + font_type + "' AND marker_type='" + marker_type\
-                            + "' AND dataset_type='original' AND char_name='"\
+                            + "' AND dataset_type='No_Margin' AND char_name='"\
                             + char_name + "'"
                 # print(sql_query)
                 db_cursor.execute(sql_query)
@@ -196,9 +197,10 @@ layout = [
      pad=((0, 0), (0, 0))),
      sg.Image(key='_IMAGE2_', filename=empty_image, visible=True,
      pad=((0, 0), (0, 0))),
-     sg.Image(key='_IMAGE3_', filename=empty_image, visible=True,
-     pad=((0, 0), (0, 0))),
+    #  sg.Image(key='_IMAGE3_', filename=empty_image, visible=True,
+    #  pad=((0, 0), (0, 0))),
      sg.Text('', justification='right'),
+     sg.Checkbox('skip', key='_SKIPPROCESS_', enable_events=True),
      sg.Button('Add', size=(7, 1), key='_ADDBUTTON_',
      button_color=('white', 'green'))],
     # [sg.Image(key='_IMAGE1_', filename=empty_image, visible=True,
@@ -260,6 +262,8 @@ while True:
                                              button_color=('white', 'green'))
     if event == '_DELBUTTON_':
         window.Element('_LOCKDEL_').Update(False)
+    if event == '_ADDBUTTON_':
+        window.Element('_SKIPPROCESS_').Update(False)
     if not values['_LOCKDEL_']:
         window.Element('_DELBUTTON_').Update(disabled=True,
                                              button_color=('gray', 'gray'))
@@ -373,6 +377,8 @@ while True:
         # print(sql_result_img)
         view_image_loc = sql_result_img[0][3]
         selected_QS = sql_result_img[0][4]
+        view_image = cv2.imread(view_image_loc)
+        v_height, v_width, _ = view_image.shape 
         # print(view_image_loc)
         window.Element('_IMAGE_').Update(filename=view_image_loc)
         key = view_image_loc.split('/')
@@ -381,16 +387,17 @@ while True:
         # print(view_image_loc)
         window.Element('_IMAGE2_').Update(filename=view_image_loc)
         key = view_image_loc.split('/')
-        key[2] = 'Original'
-        view_image_loc = '/'.join(key)
-        # print(view_image_loc)
-        window.Element('_IMAGE3_').Update(filename=view_image_loc)
-        selected_QS = status_bm + '@' + selected_QS
+        # key[2] = 'No_Margin (rgb)'
+        # view_image_loc = '/'.join(key)
+        # # print(view_image_loc)
+        # window.Element('_IMAGE3_').Update(filename=view_image_loc)
+        selected_QS = status_bm + '@' + selected_QS + '_size=' \
+                      + str(v_width) + 'x' + str(v_height)
         window.Element('_STATUS_').Update(selected_QS)
     elif values['_LISTTYPE_'] == []:
         window.Element('_IMAGE_').Update(filename=empty_image)
         window.Element('_IMAGE2_').Update(filename=empty_image)
-        window.Element('_IMAGE3_').Update(filename=empty_image)
+        # window.Element('_IMAGE3_').Update(filename=empty_image)
 
     # ADDING DATASET
     if values['_MARKERTYPE_'] != [] and values['_LISTBOX_'] != [] \
@@ -406,10 +413,10 @@ while True:
                                + font_type + '/' + char_name
             if not os.path.exists(store_folder_sqr):
                 os.makedirs(store_folder_sqr)
-            store_folder_rgb = './Collection/Original/' \
-                               + font_type + '/' + char_name
-            if not os.path.exists(store_folder_rgb):
-                os.makedirs(store_folder_rgb)
+            # store_folder_rgb = './Collection/No_Margin (rgb)/' \
+            #                    + font_type + '/' + char_name
+            # if not os.path.exists(store_folder_rgb):
+            #     os.makedirs(store_folder_rgb)
             store_folder_rc = './Collection/Raw_Cut/' \
                               + font_type + '/' + char_name
             if not os.path.exists(store_folder_rc):
@@ -418,9 +425,16 @@ while True:
             # cnt = len(list_type) + 1
             # print(cnt)
             # best format has to be *.png
-            img_ori, img_sqr, y1, y2, x1, x2 = ct.make_it_square(image_location)
+            if values['_SKIPPROCESS_']:
+                img_ori, img_sqr, y1, y2, x1, x2 = ct.just_projection(image_location)
+            else:
+                img_ori, img_sqr, y1, y2, x1, x2 = ct.make_it_square(image_location)
             # ct.make_it_square(image_location, store_folder + '/'
             #                   + marker_type + '_' + str(cnt) + '.png')
+            pixel_limit = 32
+            if y2 - y1 < pixel_limit or x2 - x1 < pixel_limit:
+                sg.Popup(title='Warning!', custom_text='Character is below limit',
+                         keep_on_top=True)
             img_rc = cv2.imread(image_location)
             img_rgb = img_rc[y1:y2, x1:x2]
             # Write image
@@ -431,14 +445,14 @@ while True:
                 + '_' + dt_string + '.png'
             output_name_sqr = store_folder_sqr + '/' + marker_type \
                 + '_' + dt_string + '.png'
-            output_name_rgb = store_folder_rgb + '/' + marker_type \
-                + '_' + dt_string + '.png'
+            # output_name_rgb = store_folder_rgb + '/' + marker_type \
+            #     + '_' + dt_string + '.png'
             output_name_rc = store_folder_rc + '/' + marker_type \
                 + '_' + dt_string + '.png'
             # print(output_name_ori)
             cv2.imwrite(output_name_ori, img_ori, [cv2.IMWRITE_PNG_BILEVEL])
             cv2.imwrite(output_name_sqr, img_sqr, [cv2.IMWRITE_PNG_BILEVEL])
-            cv2.imwrite(output_name_rgb, img_rgb, [cv2.IMWRITE_PNG_COMPRESSION])
+            # cv2.imwrite(output_name_rgb, img_rgb, [cv2.IMWRITE_PNG_COMPRESSION])
             cv2.imwrite(output_name_rc, img_rc, [cv2.IMWRITE_PNG_COMPRESSION])
 
             sql_query = "INSERT INTO " + table + " (font_type, char_name,\
@@ -456,13 +470,13 @@ while True:
             db_cursor.execute(sql_query, sql_values)
             db.commit()
 
-            sql_query = "INSERT INTO " + table + " (font_type, char_name,\
-                        marker_type, image_location, QS, dataset_type, ID)\
-                        VALUES (%s, %s, %s, %s, %s ,%s, NULL)"
-            sql_values = (font_type, char_name, marker_type,
-                          output_name_rgb, QS, 'Original')
-            db_cursor.execute(sql_query, sql_values)
-            db.commit()
+            # sql_query = "INSERT INTO " + table + " (font_type, char_name,\
+            #             marker_type, image_location, QS, dataset_type, ID)\
+            #             VALUES (%s, %s, %s, %s, %s ,%s, NULL)"
+            # sql_values = (font_type, char_name, marker_type,
+            #               output_name_rgb, QS, 'No_Margin (rgb)')
+            # db_cursor.execute(sql_query, sql_values)
+            # db.commit()
 
             window.Element('_INPUT_').Update('')
             last_act = ''
@@ -514,18 +528,18 @@ while True:
         print('Delete id {} and {}'.format(str(list_id[res_id] + 1),
                                            delete_image_loc))
 
-        sql_query = "DELETE FROM " + table + " WHERE ID='" \
-                    + str(list_id[res_id] + 2) + "'"
-        db_cursor.execute(sql_query)
-        db.commit()
-        key = delete_image_loc.split('/')
-        key[2] = 'Original'
-        delete_image_loc = '/'.join(key)
-        os.remove(delete_image_loc)
-        last_act = last_act + '\n' + 'Delete id {} and {}'.format(
-            str(list_id[res_id] + 1), delete_image_loc)
-        print('Delete id {} and {}'.format(str(list_id[res_id] + 1),
-                                           delete_image_loc))
+        # sql_query = "DELETE FROM " + table + " WHERE ID='" \
+        #             + str(list_id[res_id] + 2) + "'"
+        # db_cursor.execute(sql_query)
+        # db.commit()
+        # key = delete_image_loc.split('/')
+        # key[2] = 'No_Margin (rgb)'
+        # delete_image_loc = '/'.join(key)
+        # os.remove(delete_image_loc)
+        # last_act = last_act + '\n' + 'Delete id {} and {}'.format(
+        #     str(list_id[res_id] + 2), delete_image_loc)
+        # print('Delete id {} and {}'.format(str(list_id[res_id] + 2),
+        #                                    delete_image_loc))
         key = delete_image_loc.split('/')
         key[2] = 'Raw_Cut'
         delete_image_loc = '/'.join(key)
@@ -545,7 +559,7 @@ while True:
     sql_query = "SELECT `ID` FROM " + table
     db_cursor.execute(sql_query)
     sql_result_id = db_cursor.fetchall()
-    total_char = 'Total char: ' + str(int(len(sql_result_id)/3))
+    total_char = 'Total char: ' + str(int(len(sql_result_id)/2))
     window.Element('_TOTALCHAR_').Update(total_char)
     window.Element('_LASTACT_').Update(last_act)
 

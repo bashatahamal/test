@@ -47,15 +47,76 @@ def horizontal_projection(image_h):
 
 #     return base_start, base_end
 
+def just_projection(image_location):
+    originalImage = cv2.imread(image_location)
+    grayImage = cv2.cvtColor(originalImage, cv2.COLOR_BGR2GRAY)
+    ret_img, bw_image = cv2.threshold(grayImage, 127, 255, cv2.THRESH_BINARY)
+    height, width = bw_image.shape
+    image_body = bw_image
+    v_proj = vertical_projection(image_body)
+    h_proj = horizontal_projection(image_body)
+
+    # Get cropped coordinat
+    y1 = 0
+    for x in h_proj:
+        if x > 0:
+            break
+        y1 += 1
+    y2 = 0
+    for x in h_proj[::-1]:
+        if x > 0:
+            break
+        y2 += 1
+    y2 = height - y2
+    x1 = 0
+    for x in v_proj:
+        if x > 0:
+            break
+        x1 += 1
+    x2 = 0
+    for x in v_proj[::-1]:
+        if x > 0:
+            break
+        x2 += 1
+    x2 = width - x2
+
+    # Get original image
+    img_original = image_body[y1:y2, x1:x2]
+    # Get concat image to square
+    height, width = img_original.shape
+    if height > width:
+        concatenate_a = int(round(height - width)/2)
+        concatenate_b = height - width - concatenate_a
+        beside = True
+    else:
+        concatenate_a = int(round(width - height)/2)
+        concatenate_b = width - height - concatenate_a
+        beside = False
+
+    if beside:
+        concatenate_a = np.full((height, concatenate_a), 255, dtype=np.uint8)
+        concatenate_b = np.full((height, concatenate_b), 255, dtype=np.uint8)
+        concatImage = np.concatenate(
+            (concatenate_a, img_original, concatenate_b), axis=1
+        )
+    else:
+        concatenate_a = np.full((concatenate_a, width), 255, dtype=np.uint8)
+        concatenate_b = np.full((concatenate_b, width), 255, dtype=np.uint8)
+        concatImage = np.concatenate(
+            (concatenate_a, img_original, concatenate_b), axis=0
+        )
+
+    return img_original, concatImage, y1, y2, x1, x2
+
 
 def make_it_square(image_location):
     # targeted_size = 70
     originalImage = cv2.imread(image_location)
     grayImage = cv2.cvtColor(originalImage, cv2.COLOR_BGR2GRAY)
-    # ret_img, bw_image = cv2.threshold(grayImage, 127, 255, cv2.THRESH_BINARY)
-    bw_image = cv2.adaptiveThreshold(grayImage, 255,
-                                     cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                     cv2.THRESH_BINARY, 11, 2)
+    ret_img, bw_image = cv2.threshold(grayImage, 127, 255, cv2.THRESH_BINARY)
+    # bw_image = cv2.adaptiveThreshold(grayImage, 255,
+    #                                  cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+    #                                  cv2.THRESH_BINARY, 11, 2)
     height, width = bw_image.shape
     image_body = dot.body_and_dot_region(bw_image)
     v_proj = vertical_projection(image_body)

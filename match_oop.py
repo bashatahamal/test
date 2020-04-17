@@ -1502,6 +1502,7 @@ class ImageProcessing():
         one_marker = one_marker[:, x1:x2]
         height, width = one_marker.shape
         scale = 1.5
+        write_canvas = False
         # Square, Portrait or Landscape image
         if width < scale * height:
             if height < scale * width:
@@ -1519,7 +1520,7 @@ class ImageProcessing():
                         middle_hole = True
                 if middle_hole:
                     print('_white hole in the middle_')
-                    return False
+                    write_canvas = False
                 else:
                     # Checking all pixel
                     white_hole = False
@@ -1541,12 +1542,12 @@ class ImageProcessing():
                                 break
                     if white_hole:
                         print('_there is a hole_')
-                        return False
+                        write_canvas = False
                     else:
-                        # Check on 2nd one third region
+                        # Check on 1/4 till 3/4 region
                         touch_up = False
                         touch_down = False
-                        for x in range(round(width/3)-1, 2*round(width/3)):
+                        for x in range(round(width/4)-1, 3*round(width/4)):
                             if one_marker[0, x] == 0:
                                 touch_up = True
                             if one_marker[height-1, x] == 0:
@@ -1561,18 +1562,110 @@ class ImageProcessing():
                                 for y in range(height):
                                     if one_marker[y, x] > 0:
                                         white_val += 1
-                                if white_val > round(height/1.99):
+                                if white_val > round(height/1.65):
                                     too_many_whites = True
                                     break
                             if too_many_whites:
                                 print('_too many white value in 1/5 till 1/2_')
-                                return False
+                                write_canvas = False
                             else:
                                 print('_DOT CONFIRM_')
-                                return True
+                                write_canvas = True
+                        else:
+                            print('not touching')
+
+                if not write_canvas:
+                    # Split image into two vertically and looking for bwb
+                    # (Kaf Hamzah)
+                    bwb_up = False
+                    bwb_down = False
+                    for x in range(width):
+                        if bwb_up:
+                            break
+                        black = False
+                        white = False
+                        for y in range(0, round(height/2)):
+                            if one_marker[y, x] == 0:
+                                black = True
+                            if black and one_marker[y, x] > 0:
+                                white = True
+                            if white and one_marker[y, x] == 0:
+                                bwb_up = True
+                                break
+                    for x in range(width):
+                        if bwb_down:
+                            break
+                        black = False
+                        white = False
+                        for y in range(round(height/2), height):
+                            if one_marker[y, x] == 0:
+                                black = True
+                            if black and one_marker[y, x] > 0:
+                                white = True
+                            if white and one_marker[y, x] == 0:
+                                bwb_down = True
+                                break
+                    # Check for possible dammahtanwin on last 1/4 region
+                    bw_max = 0
+                    for x in range(3*round(width/4) + 1, width):
+                        black = False
+                        bw = False
+                        bw_count = 0
+                        for y in range(height):
+                            if one_marker[y, x] == 0:
+                                black = True
+                            if black and one_marker[y, x] > 0:
+                                bw = True
+                            if bw:
+                                bw_count += 1
+                                black = False
+                                bw = False
+                        if bw_count > bw_max:
+                            bw_max = bw_count
+                    print(str(bw_max))
+                    if bwb_up and bwb_down and bw_max < 3:
+                        print('_KAF HAMZAH CONFIRM_')
+                        write_canvas = True
+                    else:
+                        print('_also not kaf hamzah_')
+                        write_canvas = False
             else:
                 print('_portrait image_')
-                return False
+                # Split image into two vertically and looking for bwb
+                # (Kaf Hamzah)
+                bwb_up = False
+                bwb_down = False
+                for x in range(width):
+                    if bwb_up:
+                        break
+                    black = False
+                    white = False
+                    for y in range(0, round(height/2)):
+                        if one_marker[y, x] == 0:
+                            black = True
+                        if black and one_marker[y, x] > 0:
+                            white = True
+                        if white and one_marker[y, x] == 0:
+                            bwb_up = True
+                            break
+                for x in range(width):
+                    if bwb_down:
+                        break
+                    black = False
+                    white = False
+                    for y in range(round(height/2), height):
+                        if one_marker[y, x] == 0:
+                            black = True
+                        if black and one_marker[y, x] > 0:
+                            white = True
+                        if white and one_marker[y, x] == 0:
+                            bwb_down = True
+                            break
+                if bwb_up and bwb_down:
+                    print('_KAF HAMZAH CONFIRM_')
+                    write_canvas = True
+                else:
+                    write_canvas = False
         else:
             print('_landscape image_')
             black = False
@@ -1592,7 +1685,7 @@ class ImageProcessing():
                     break
             if over_pattern:
                 print('_too many wbw + b_')
-                return False
+                write_canvas = False
             elif wbw_confirm:
                 print('_mid is wbw_')
                 too_many_white_val = False
@@ -1602,12 +1695,12 @@ class ImageProcessing():
                     for y in range(0, height):
                         if one_marker[y, x] > 0:
                             white_val += 1
-                    if white_val > round(height/1.99):
+                    if white_val > round(height/1.9):
                         too_many_white_val = True
                         break
                 if too_many_white_val:
                     print('_too many white val in 1/5 till 1/3_')
-                    return False
+                    write_canvas = False
                 else:
                     half_img = one_marker[:, 0:round(width/2)]
                     self.horizontal_projection(half_img)
@@ -1616,10 +1709,8 @@ class ImageProcessing():
                         self.start_point_h[0]:self.start_point_h[1],
                         0:round(width/2)
                     ]
-                    print(half_img)
-                    cv2.waitKey(0)
                     half_height, half_width = half_img.shape
-                    print(half_height, half_width)
+                    # print(half_height, half_width)
                     one_3rd = round(half_width/3)
                     touch_up = False
                     touch_down = False
@@ -1632,13 +1723,50 @@ class ImageProcessing():
                             break
                     if touch_up and touch_down:
                         print('_DOT CONFIRM_')
-                        return True
+                        write_canvas = True
                     else:
                         print('_not touching_')
-                        return False
+                        write_canvas = False
             else:
                 print('_middle is not wbw_')
-                return False
+                write_canvas = False
+                # Split image into two vertically and looking for bwb
+                # (Kaf Hamzah)
+                bwb_up = False
+                bwb_down = False
+                for x in range(width):
+                    if bwb_up:
+                        break
+                    black = False
+                    white = False
+                    for y in range(0, round(height/2)):
+                        if one_marker[y, x] == 0:
+                            black = True
+                        if black and one_marker[y, x] > 0:
+                            white = True
+                        if white and one_marker[y, x] == 0:
+                            bwb_up = True
+                            break
+                for x in range(width):
+                    if bwb_down:
+                        break
+                    black = False
+                    white = False
+                    for y in range(round(height/2), height):
+                        if one_marker[y, x] == 0:
+                            black = True
+                        if black and one_marker[y, x] > 0:
+                            white = True
+                        if white and one_marker[y, x] == 0:
+                            bwb_down = True
+                            break
+                if bwb_up and bwb_down:
+                    print('_KAF HAMZAH CONFIRM_')
+                    write_canvas = True
+                else:
+                    write_canvas = False
+
+        return write_canvas
 
     def find_final_processed_char(self, wall, oneline_baseline):
         # wall parameter is (x1=true wall, x2=x1_final_char/true wall)
