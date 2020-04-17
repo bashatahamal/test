@@ -1,6 +1,9 @@
 {
     "python.pythonPath": "/usr/bin/python3",
-    "python.analysis.cacheFolderPath": ".",
-    "python.terminal.activateEnvironment": true,
-    "python.terminal.activateEnvInCurrentTerminal": true
+    "python.analysis.memory.keepLibraryLocalVariables": true,
+    "python.dataScience.disableJupyterAutoStart": true,
+    "python.dataScience.sendSelectionToInteractiveWindow": true,
+    "python.linting.flake8Enabled": true,
+    "python.terminal.activateEnvInCurrentTerminal": true,
+    "python.terminal.executeInFileDir": true
 }
