@@ -336,35 +336,43 @@ class ImageProcessing():
                 if not write_canvas:
                     # Split image into two vertically and looking for bwb
                     # (Kaf Hamzah)
-                    bwb_up = False
+                    # bwb_up = False
                     bwb_down = False
+                    bwb_count = 0
+                    bwb_thresh = round(height/2.1)
+                    addition = round(height/8)
+                    up_limit = round(height/2)
+                    down_limit = round(height/2) - addition
                     for x in range(width):
-                        if bwb_up:
+                        if bwb_count > bwb_thresh:
                             break
                         black = False
                         white = False
-                        for y in range(0, round(height/2)):
+                        for y in range(0, up_limit):
                             if one_marker[y, x] == 0:
                                 black = True
                             if black and one_marker[y, x] > 0:
                                 white = True
                             if white and one_marker[y, x] == 0:
-                                bwb_up = True
+                                # bwb_up = True
+                                bwb_count += 1
                                 break
                     for x in range(width):
-                        if bwb_down:
+                        if bwb_count > bwb_thresh and bwb_down:
                             break
                         black = False
                         white = False
-                        for y in range(round(height/2), height):
+                        for y in range(down_limit, height):
                             if one_marker[y, x] == 0:
                                 black = True
                             if black and one_marker[y, x] > 0:
                                 white = True
                             if white and one_marker[y, x] == 0:
                                 bwb_down = True
+                                bwb_count += 1
                                 break
                     # Check for possible dammahtanwin on last 1/4 region
+                    # if to many repeated bw then it's dammahtanwin
                     bw_max = 0
                     for x in range(3*round(width/4) + 1, width):
                         black = False
@@ -381,8 +389,7 @@ class ImageProcessing():
                                 bw = False
                         if bw_count > bw_max:
                             bw_max = bw_count
-                    print(str(bw_max))
-                    if bwb_up and bwb_down and bw_max < 3:
+                    if bwb_count >= bwb_thresh and bwb_down and bw_max < 3:
                         print('_KAF HAMZAH CONFIRM_')
                         write_canvas = True
                     else:
