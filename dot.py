@@ -321,7 +321,7 @@ class ImageProcessing():
                                 for y in range(height):
                                     if one_marker[y, x] > 0:
                                         white_val += 1
-                                if white_val > round(height/1.65):
+                                if white_val > round(height/1.5):
                                     too_many_whites = True
                                     break
                             if too_many_whites:
@@ -342,7 +342,7 @@ class ImageProcessing():
                     bwb_thresh = round(height/2.1)
                     addition = round(height/8)
                     up_limit = round(height/2)
-                    down_limit = round(height/2) - addition
+                    down_limit = round(height/2)
                     for x in range(width):
                         if bwb_count > bwb_thresh:
                             break

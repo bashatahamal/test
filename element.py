@@ -76,7 +76,7 @@ marker_type_full = ['Isolated', 'Begin', 'Middle', 'End']
 marker_type_half = ['Isolated', 'End']
 list_type = []
 empty_image = 'empty_image.png'
-table = 'dataset_new'
+table = 'dataset_auto'
 
 # def get_base64_str_from_file(filepath):
 #     with open(filepath, "rb") as f:
@@ -374,7 +374,7 @@ while True:
         # print(sql_query)
         db_cursor.execute(sql_query)
         sql_result_img = db_cursor.fetchall()
-        # print(sql_result_img)
+        print(sql_result_img)
         view_image_loc = sql_result_img[0][3]
         selected_QS = sql_result_img[0][4]
         view_image = cv2.imread(view_image_loc)

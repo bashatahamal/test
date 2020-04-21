@@ -607,7 +607,7 @@ class ImageProcessing():
             cv2.waitKey(0)
             # print(self.start_point_v)
 
-    def crop_image(self, input_image, h_point=False, v_point=False):
+    def crop_image(self, input_image, h_point=False, v_point=False, view=True):
         if h_point:
             start_point = h_point
             original_image = input_image
@@ -622,11 +622,12 @@ class ImageProcessing():
                     bag_of_h_crop[x] = original_image[
                                         start_point[x]:start_point[x+1] + 1, :]
             # print(bag_of_h_crop)
-            for image in bag_of_h_crop:
-                cv2.imshow('bag_h'+str(image), bag_of_h_crop[image])
-                print('>')
-                cv2.waitKey(0)
-                cv2.destroyWindow('bag_h'+str(image))
+            if view:
+                for image in bag_of_h_crop:
+                    cv2.imshow('bag_h'+str(image), bag_of_h_crop[image])
+                    print('>')
+                    cv2.waitKey(0)
+                    cv2.destroyWindow('bag_h'+str(image))
             self.bag_of_h_crop = bag_of_h_crop
 
         if v_point:
@@ -646,11 +647,12 @@ class ImageProcessing():
                         bag_of_v_crop[count] = original_image[x1:x2, y1:y2]
                     # print(x1,'_', x2,'_', y1,'_', y2)
 
-            for image in bag_of_v_crop:
-                cv2.imshow('Crop Result', bag_of_v_crop[image])
-                print('>')
-                cv2.waitKey(0)
-                # cv2.destroyAllWindows()
+            if view:
+                for image in bag_of_v_crop:
+                    cv2.imshow('Crop Result', bag_of_v_crop[image])
+                    print('>')
+                    cv2.waitKey(0)
+                    # cv2.destroyAllWindows()
             self.bag_of_v_crop = bag_of_v_crop
 
     def find_connectivity(self, x, y, height, width, image):
@@ -1562,7 +1564,7 @@ class ImageProcessing():
                                 for y in range(height):
                                     if one_marker[y, x] > 0:
                                         white_val += 1
-                                if white_val > round(height/1.65):
+                                if white_val > round(height/1.5):
                                     too_many_whites = True
                                     break
                             if too_many_whites:
@@ -1583,7 +1585,7 @@ class ImageProcessing():
                     bwb_thresh = round(height/2.1)
                     addition = round(height/8)
                     up_limit = round(height/2)
-                    down_limit = round(height/2) - addition
+                    down_limit = round(height/2)
                     for x in range(width):
                         if bwb_count > bwb_thresh:
                             break

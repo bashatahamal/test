@@ -47,8 +47,11 @@ def horizontal_projection(image_h):
 
 #     return base_start, base_end
 
-def just_projection(image_location):
-    originalImage = cv2.imread(image_location)
+def just_projection(image_location, skip=False):
+    if skip:
+        originalImage = image_location
+    else:
+        originalImage = cv2.imread(image_location)
     grayImage = cv2.cvtColor(originalImage, cv2.COLOR_BGR2GRAY)
     ret_img, bw_image = cv2.threshold(grayImage, 127, 255, cv2.THRESH_BINARY)
     height, width = bw_image.shape
@@ -109,9 +112,12 @@ def just_projection(image_location):
     return img_original, concatImage, y1, y2, x1, x2
 
 
-def make_it_square(image_location):
+def make_it_square(image_location, skip=False):
     # targeted_size = 70
-    originalImage = cv2.imread(image_location)
+    if skip:
+        originalImage = image_location
+    else:
+        originalImage = cv2.imread(image_location)
     grayImage = cv2.cvtColor(originalImage, cv2.COLOR_BGR2GRAY)
     ret_img, bw_image = cv2.threshold(grayImage, 127, 255, cv2.THRESH_BINARY)
     # bw_image = cv2.adaptiveThreshold(grayImage, 255,
