@@ -12,13 +12,18 @@ import argparse
 ap = argparse.ArgumentParser()
 ap.add_argument("-f", "--pdf", required=True,
 	            help="PDF File Location")
+ap.add_argument("-c", "--count", help="Number of character in PDF")
 args = vars(ap.parse_args())
 pdf_location = args["pdf"]
+if args["count"] != None:
+    count_arg = args["count"]
+else:
+    count_arg = None
 
 # Get font type
 slash = pdf_location.split('/')
 for k in slash:
-    file_name = k.split('_')
+    file_name = k.split('^')
     if len(file_name) > 1:
         for name in file_name:
             font_name = name.split('.')
@@ -129,8 +134,10 @@ char_list_nameonly = [
     'kāf‬', 'lām‬', 'mīm‬', 'nūn‬', 'hā’‬', 'wāw‬', 'yā’‬'
 ]
 
-def char_109(count):
-    up = 7
+
+def char_name_and_type(rep, count):
+    para = 0
+    up = rep[para]
     if count <= up:
         char_name = char_list_nameonly[0]
         if count <= 4:
@@ -138,12 +145,13 @@ def char_109(count):
         else:
             marker_type = 'end'
     down = up
-    up = down + 4
+    para += 2
+    up = down + rep[para]
     if down < count <= up:
         char_name = char_list_nameonly[1]
-        i = down + 1
-        b = i + 1 
-        m = b + 1
+        i = down + rep[para+1]
+        b = i + rep[para+2]
+        m = b + rep[para+3]
         if count <= i:
             marker_type = 'isolated'
         if i < count <= b:
@@ -153,12 +161,13 @@ def char_109(count):
         if m < count <= up:
             marker_type = 'end'
     down = up
-    up = down + 6
+    para += 4
+    up = down + rep[para]
     if down < count <= up:
         char_name = char_list_nameonly[2]
-        i = down + 2
-        b = i + 1
-        m = b + 1
+        i = down + rep[para+1]
+        b = i + rep[para+2]
+        m = b + rep[para+3]
         if count <= i:
             marker_type = 'isolated'
         if i < count <= b:
@@ -168,12 +177,13 @@ def char_109(count):
         if m < count <= up:
             marker_type = 'end'
     down = up
-    up = down + 4
+    para += 4
+    up = down + rep[para]
     if down < count <= up:
         char_name = char_list_nameonly[3]
-        i = down + 1
-        b = i + 1
-        m = b + 1
+        i = down + rep[para+1]
+        b = i + rep[para+2]
+        m = b + rep[para+3]
         if count <= i:
             marker_type = 'isolated'
         if i < count <= b:
@@ -183,12 +193,13 @@ def char_109(count):
         if m < count <= up:
             marker_type = 'end'
     down = up
-    up = down + 4
+    para += 4
+    up = down + rep[para]
     if down < count <= up:
         char_name = char_list_nameonly[4]
-        i = down + 1
-        b = i + 1
-        m = b + 1
+        i = down + rep[para+1]
+        b = i + rep[para+2]
+        m = b + rep[para+3]
         if count <= i:
             marker_type = 'isolated'
         if i < count <= b:
@@ -198,12 +209,13 @@ def char_109(count):
         if m < count <= up:
             marker_type = 'end'
     down = up
-    up = down + 4
+    para += 4
+    up = down + rep[para]
     if down < count <= up:
         char_name = char_list_nameonly[5]
-        i = down + 1
-        b = i + 1
-        m = b + 1
+        i = down + rep[para+1]
+        b = i + rep[para+2]
+        m = b + rep[para+3]
         if count <= i:
             marker_type = 'isolated'
         if i < count <= b:
@@ -213,12 +225,13 @@ def char_109(count):
         if m < count <= up:
             marker_type = 'end'
     down = up
-    up = down + 4
+    para += 4
+    up = down + rep[para]
     if down < count <= up:
         char_name = char_list_nameonly[6]
-        i = down + 1
-        b = i + 1
-        m = b + 1
+        i = down + rep[para+1]
+        b = i + rep[para+2]
+        m = b + rep[para+3]
         if count <= i:
             marker_type = 'isolated'
         if i < count <= b:
@@ -228,48 +241,53 @@ def char_109(count):
         if m < count <= up:
             marker_type = 'end'
     down = up
-    up = down + 2
+    para += 4
+    up = down + rep[para]
     if down < count <= up:
         char_name = char_list_nameonly[7]
-        i = down + 1
+        i = down + rep[para+1]
         if count <= i:
             marker_type = 'isolated'
         if i < count <= up:
             marker_type = 'end'
     down = up
-    up = down + 2
+    para += 2
+    up = down + rep[para]
     if down < count <= up:
         char_name = char_list_nameonly[8]
-        i = down + 1
+        i = down + rep[para+1]
         if count <= i:
             marker_type = 'isolated'
         if i < count <= up:
             marker_type = 'end'
     down = up
-    up = down + 2
+    para += 2
+    up = down + rep[para]
     if down < count <= up:
         char_name = char_list_nameonly[9]
-        i = down + 1
+        i = down + rep[para+1]
         if count <= i:
             marker_type = 'isolated'
         if i < count <= up:
             marker_type = 'end'
     down = up
-    up = down + 2
+    para += 2
+    up = down + rep[para]
     if down < count <= up:
         char_name = char_list_nameonly[10]
-        i = down + 1
+        i = down + rep[para+1]
         if count <= i:
             marker_type = 'isolated'
         if i < count <= up:
             marker_type = 'end'
     down = up
-    up = down + 4
+    para += 2
+    up = down + rep[para]
     if down < count <= up:
         char_name = char_list_nameonly[11]
-        i = down + 1
-        b = i + 1
-        m = b + 1
+        i = down + rep[para+1]
+        b = i + rep[para+2]
+        m = b + rep[para+3]
         if count <= i:
             marker_type = 'isolated'
         if i < count <= b:
@@ -279,12 +297,13 @@ def char_109(count):
         if m < count <= up:
             marker_type = 'end'
     down = up
-    up = down + 4
+    para += 4
+    up = down + rep[para]
     if down < count <= up:
         char_name = char_list_nameonly[12]
-        i = down + 1
-        b = i + 1
-        m = b + 1
+        i = down + rep[para+1]
+        b = i + rep[para+2]
+        m = b + rep[para+3]
         if count <= i:
             marker_type = 'isolated'
         if i < count <= b:
@@ -294,12 +313,13 @@ def char_109(count):
         if m < count <= up:
             marker_type = 'end'
     down = up
-    up = down + 4
+    para += 4
+    up = down + rep[para]
     if down < count <= up:
         char_name = char_list_nameonly[13]
-        i = down + 1
-        b = i + 1
-        m = b + 1
+        i = down + rep[para+1]
+        b = i + rep[para+2]
+        m = b + rep[para+3]
         if count <= i:
             marker_type = 'isolated'
         if i < count <= b:
@@ -309,12 +329,13 @@ def char_109(count):
         if m < count <= up:
             marker_type = 'end'
     down = up
-    up = down + 4
+    para += 4
+    up = down + rep[para]
     if down < count <= up:
         char_name = char_list_nameonly[14]
-        i = down + 1
-        b = i + 1
-        m = b + 1
+        i = down + rep[para+1]
+        b = i + rep[para+2]
+        m = b + rep[para+3]
         if count <= i:
             marker_type = 'isolated'
         if i < count <= b:
@@ -324,12 +345,13 @@ def char_109(count):
         if m < count <= up:
             marker_type = 'end'
     down = up
-    up = down + 4
+    para += 4
+    up = down + rep[para]
     if down < count <= up:
         char_name = char_list_nameonly[15]
-        i = down + 1
-        b = i + 1
-        m = b + 1
+        i = down + rep[para+1]
+        b = i + rep[para+2]
+        m = b + rep[para+3]
         if count <= i:
             marker_type = 'isolated'
         if i < count <= b:
@@ -339,12 +361,13 @@ def char_109(count):
         if m < count <= up:
             marker_type = 'end'
     down = up
-    up = down + 4
+    para += 4
+    up = down + rep[para]
     if down < count <= up:
         char_name = char_list_nameonly[16]
-        i = down + 1
-        b = i + 1
-        m = b + 1
+        i = down + rep[para+1]
+        b = i + rep[para+2]
+        m = b + rep[para+3]
         if count <= i:
             marker_type = 'isolated'
         if i < count <= b:
@@ -354,12 +377,13 @@ def char_109(count):
         if m < count <= up:
             marker_type = 'end'
     down = up
-    up = down + 4
+    para += 4
+    up = down + rep[para]
     if down < count <= up:
         char_name = char_list_nameonly[17]
-        i = down + 1
-        b = i + 1
-        m = b + 1
+        i = down + rep[para+1]
+        b = i + rep[para+2]
+        m = b + rep[para+3]
         if count <= i:
             marker_type = 'isolated'
         if i < count <= b:
@@ -369,12 +393,13 @@ def char_109(count):
         if m < count <= up:
             marker_type = 'end'
     down = up
-    up = down + 4
+    para += 4
+    up = down + rep[para]
     if down < count <= up:
         char_name = char_list_nameonly[18]
-        i = down + 1
-        b = i + 1
-        m = b + 1
+        i = down + rep[para+1]
+        b = i + rep[para+2]
+        m = b + rep[para+3]
         if count <= i:
             marker_type = 'isolated'
         if i < count <= b:
@@ -384,12 +409,13 @@ def char_109(count):
         if m < count <= up:
             marker_type = 'end'
     down = up
-    up = down + 4
+    para += 4
+    up = down + rep[para]
     if down < count <= up:
         char_name = char_list_nameonly[19]
-        i = down + 1
-        b = i + 1
-        m = b + 1
+        i = down + rep[para+1]
+        b = i + rep[para+2]
+        m = b + rep[para+3]
         if count <= i:
             marker_type = 'isolated'
         if i < count <= b:
@@ -399,12 +425,13 @@ def char_109(count):
         if m < count <= up:
             marker_type = 'end'
     down = up
-    up = down + 4
+    para += 4
+    up = down + rep[para]
     if down < count <= up:
         char_name = char_list_nameonly[20]
-        i = down + 1
-        b = i + 1
-        m = b + 1
+        i = down + rep[para+1]
+        b = i + rep[para+2]
+        m = b + rep[para+3]
         if count <= i:
             marker_type = 'isolated'
         if i < count <= b:
@@ -414,12 +441,13 @@ def char_109(count):
         if m < count <= up:
             marker_type = 'end'
     down = up
-    up = down + 4
+    para += 4
+    up = down + rep[para]
     if down < count <= up:
         char_name = char_list_nameonly[21]
-        i = down + 1
-        b = i + 1
-        m = b + 1
+        i = down + rep[para+1]
+        b = i + rep[para+2]
+        m = b + rep[para+3]
         if count <= i:
             marker_type = 'isolated'
         if i < count <= b:
@@ -429,12 +457,13 @@ def char_109(count):
         if m < count <= up:
             marker_type = 'end'
     down = up
-    up = down + 6
+    para += 4
+    up = down + rep[para]
     if down < count <= up:
         char_name = char_list_nameonly[22]
-        i = down + 2
-        b = i + 1
-        m = b + 1
+        i = down + rep[para+1]
+        b = i + rep[para+2]
+        m = b + rep[para+3]
         if count <= i:
             marker_type = 'isolated'
         if i < count <= b:
@@ -444,12 +473,13 @@ def char_109(count):
         if m < count <= up:
             marker_type = 'end'
     down = up
-    up = down + 4
+    para += 4
+    up = down + rep[para]
     if down < count <= up:
         char_name = char_list_nameonly[23]
-        i = down + 1
-        b = i + 1
-        m = b + 1
+        i = down + rep[para+1]
+        b = i + rep[para+2]
+        m = b + rep[para+3]
         if count <= i:
             marker_type = 'isolated'
         if i < count <= b:
@@ -459,12 +489,13 @@ def char_109(count):
         if m < count <= up:
             marker_type = 'end'
     down = up
-    up = down + 4
+    para += 4
+    up = down + rep[para]
     if down < count <= up:
         char_name = char_list_nameonly[24]
-        i = down + 1
-        b = i + 1
-        m = b + 1
+        i = down + rep[para+1]
+        b = i + rep[para+2]
+        m = b + rep[para+3]
         if count <= i:
             marker_type = 'isolated'
         if i < count <= b:
@@ -474,12 +505,13 @@ def char_109(count):
         if m < count <= up:
             marker_type = 'end'
     down = up
-    up = down + 4
+    para += 4
+    up = down + rep[para]
     if down < count <= up:
         char_name = char_list_nameonly[25]
-        i = down + 1
-        b = i + 1
-        m = b + 1
+        i = down + rep[para+1]
+        b = i + rep[para+2]
+        m = b + rep[para+3]
         if count <= i:
             marker_type = 'isolated'
         if i < count <= b:
@@ -489,21 +521,23 @@ def char_109(count):
         if m < count <= up:
             marker_type = 'end'
     down = up
-    up = down + 2
+    para += 4
+    up = down + rep[para]
     if down < count <= up:
         char_name = char_list_nameonly[26]
-        i = down + 1
+        i = down + rep[para+1]
         if count <= i:
             marker_type = 'isolated'
         if i < count <= up:
             marker_type = 'end'
     down = up
-    up = down + 4
+    para += 2
+    up = down + rep[para]
     if down < count <= up:
         char_name = char_list_nameonly[27]
-        i = down + 1
-        b = i + 1
-        m = b + 1
+        i = down + rep[para+1]
+        b = i + rep[para+2]
+        m = b + rep[para+3]
         if count <= i:
             marker_type = 'isolated'
         if i < count <= b:
@@ -512,13 +546,110 @@ def char_109(count):
             marker_type = 'middle'
         if m < count <= up:
             marker_type = 'end'
-    
+
     return char_name, marker_type
 
+
+def repetition(count_arg):
+    if count_arg == '109':
+        rep = [7, 4,        # Aleef
+               4, 1, 1, 1,  # Beh
+               6, 2, 1, 1,  # Teh
+               4, 1, 1, 1,  # Theh
+               4, 1, 1, 1,  # Jeem
+               4, 1, 1, 1,  # Hah
+               4, 1, 1, 1,  # Khah
+               2, 1,        # Dal
+               2, 1,        # Thal
+               2, 1,        # Reh
+               2, 1,        # Zain
+               4, 1, 1, 1,  # Seen
+               4, 1, 1, 1,  # Sheen
+               4, 1, 1, 1,  # Sad
+               4, 1, 1, 1,  # Dad
+               4, 1, 1, 1,  # Tah
+               4, 1, 1, 1,  # Zah
+               4, 1, 1, 1,  # Ain
+               4, 1, 1, 1,  # Ghain
+               4, 1, 1, 1,  # Feh
+               4, 1, 1, 1,  # Qaf
+               4, 1, 1, 1,  # Kaf
+               6, 2, 1, 1,  # Lam
+               4, 1, 1, 1,  # Meem
+               4, 1, 1, 1,  # Noon
+               4, 1, 1, 1,  # Heh
+               2, 1,        # Waw
+               4, 1, 1, 1,  # Yeh
+               ]
+        return rep
+    # elif count_arg == '107_a':
+    #     rep = [7, 4,        # Aleef
+    #            4, 1, 1, 1,  # Beh
+    #            6, 2, 1, 1,  # Teh
+    #            4, 1, 1, 1,  # Theh
+    #            4, 1, 1, 1,  # Jeem
+    #            4, 1, 1, 1,  # Hah
+    #            4, 1, 1, 1,  # Khah
+    #            2, 1,        # Dal
+    #            2, 1,        # Thal
+    #            2, 1,        # Reh
+    #            2, 1,        # Zain
+    #            4, 1, 1, 1,  # Seen
+    #            4, 1, 1, 1,  # Sheen
+    #            4, 1, 1, 1,  # Sad
+    #            4, 1, 1, 1,  # Dad
+    #            4, 1, 1, 1,  # Tah
+    #            4, 1, 1, 1,  # Zah
+    #            4, 1, 1, 1,  # Ain
+    #            4, 1, 1, 1,  # Ghain
+    #            4, 1, 1, 1,  # Feh
+    #            4, 1, 1, 1,  # Qaf
+    #            4, 1, 1, 1,  # Kaf
+    #            6, 2, 1, 1,  # Lam
+    #            4, 1, 1, 1,  # Meem
+    #            4, 1, 1, 1,  # Noon
+    #            4, 1, 1, 1,  # Heh
+    #            2, 1,        # Waw
+    #            4, 1, 1, 1,  # Yeh
+    #            ]
+    #     return rep
+    else:
+        return False
+
+
 count = 1
+print('Character count = ', str(len(char_dict)))
+process = False
+check = False
 for x in char_dict:
-    if len(char_dict) == 109:
-        char_name, marker_type = char_109(count)
+    # if len(char_dict) == 109:
+    #     char_name, marker_type = char_109(count)
+    # else:
+    #     prompt = input('Character count = ', str(len(char_dict)) + 'Continue?')
+    #     if prompt == 'n' or prompt == 'N':
+    #         print('Aborted')
+    #         break
+    if count_arg is None:
+        print('Aborted')
+        break
+    elif not check:
+        check = True
+        rep = repetition(count_arg)
+        if rep is not False:
+            process = True
+            key = count_arg.split('_')
+            if len(key) > 1:
+                cc = int(key[0])
+            else:
+                cc = int(count_arg)
+            if cc != len(char_dict):
+                print('Aborted. Character count does not match')
+                break
+        else:
+            print('Mode is not available')
+            break
+    if process:
+        char_name, marker_type = char_name_and_type(rep, count)
     # cv2.imshow('test', char_dict[x])
     print(char_name, marker_type)
     # cv2.waitKey(0)
