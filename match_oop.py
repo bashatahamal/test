@@ -1503,7 +1503,7 @@ class ImageProcessing():
         x2 = self.start_point_v[1]
         one_marker = one_marker[:, x1:x2]
         height, width = one_marker.shape
-        scale = 1.5
+        scale = 1.3
         write_canvas = False
         # Square, Portrait or Landscape image
         if width < scale * height:
@@ -1720,10 +1720,14 @@ class ImageProcessing():
                     ]
                     half_height, half_width = half_img.shape
                     # print(half_height, half_width)
-                    one_3rd = round(half_width/3)
+                    # one_3rd = round(half_width/3)
+                    # one_4th = round(half_width/4)
+                    one_8th = round(half_width/8)
                     touch_up = False
                     touch_down = False
-                    for x in range(one_3rd-1, 2*one_3rd):
+                    # for x in range(one_3rd-1, 2*one_3rd):
+                    # for x in range(one_4th-1, 3*one_4th):
+                    for x in range(one_8th-1, 7*one_8th):
                         if half_img[0, x] == 0:
                             touch_up = True
                         if half_img[half_height-1, x] == 0:
