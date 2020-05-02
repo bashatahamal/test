@@ -1360,136 +1360,136 @@ class ImageProcessing():
     #         print('marker only')
     #         cv2.waitKey(0)
 
-    def dot_detection(self, image_marker, pixel_count):
-        # Dot detection
-        self.horizontal_projection(image_marker)
-        self.detect_horizontal_line(image_marker.copy(), 0, 0, False)
-        one_marker = image_marker[self.start_point_h[0]:
-                                  self.start_point_h[1], :]
-        self.vertical_projection(one_marker)
-        self.detect_vertical_line(one_marker.copy(), 0, False)
-        x1 = self.start_point_v[0]
-        x2 = self.start_point_v[1]
-        one_marker = one_marker[:, x1:x2]
-        # print(one_marker)
-        # cv2.imshow('fin', one_marker)
-        # cv2.waitKey(0)
-        # cv2.imshow('marker only', image_marker)
-        # cv2.waitKey(0)
-        self.horizontal_projection(one_marker)
-        self.vertical_projection(one_marker)
-        img_h_v_proj = self.v_projection
-        img_h_h_proj = self.h_projection
+    # def dot_detection(self, image_marker, pixel_count):
+    #     # Dot detection
+    #     self.horizontal_projection(image_marker)
+    #     self.detect_horizontal_line(image_marker.copy(), 0, 0, False)
+    #     one_marker = image_marker[self.start_point_h[0]:
+    #                               self.start_point_h[1], :]
+    #     self.vertical_projection(one_marker)
+    #     self.detect_vertical_line(one_marker.copy(), 0, False)
+    #     x1 = self.start_point_v[0]
+    #     x2 = self.start_point_v[1]
+    #     one_marker = one_marker[:, x1:x2]
+    #     # print(one_marker)
+    #     # cv2.imshow('fin', one_marker)
+    #     # cv2.waitKey(0)
+    #     # cv2.imshow('marker only', image_marker)
+    #     # cv2.waitKey(0)
+    #     self.horizontal_projection(one_marker)
+    #     self.vertical_projection(one_marker)
+    #     img_h_v_proj = self.v_projection
+    #     img_h_h_proj = self.h_projection
 
-        # Looking for square skeleton
-        count_v = 0
-        max_v = 0
-        for v_sum in img_h_v_proj:
-            if v_sum > max_v:
-                max_v = v_sum
-                max_ord_v = count_v
-            count_v += 1
-        count_h = 0
-        max_h = 0
-        for h_sum in img_h_h_proj:
-            if h_sum > max_h:
-                max_h = h_sum
-                max_ord_h = count_h
-            count_h += 1
-        # start_x, end_x, start_y, end_y skeleton
-        height, width = one_marker.shape
-        for x_ in range(width):
-            if one_marker[max_ord_h, x_] == 0:
-                start_x = x_
-                break
-        end_x = start_x + int(max_h)
-        for y_ in range(height):
-            if one_marker[y_, max_ord_v] == 0:
-                start_y = y_
-                break
-        end_y = start_y + int(max_v)
-        # x1 = start_x, y1 = start_y
-        # x2 = end_x, y2 = end_y
-        print(start_x, end_x)
-        print(start_y, end_y)
-        print(max_h, max_v)
-        print(max_ord_h, max_ord_v)
-        if max_ord_v in range(start_x, end_x):
-            squareleton = one_marker[start_y:end_y, start_x:end_x]
-            cv2.imshow('squareleton', squareleton)
-            print(squareleton)
-            height, width = squareleton.shape
-            scale = 1.55
-            if width < scale * height:
-                if height < scale * width:
-                    print('square')
-                    if pixel_count < height * width:
-                        for x in range(width):
-                            black = False
-                            white = False
-                            false_dot = False
-                            white_val = 0
-                            for y in range(height):
-                                if squareleton[y, x] == 0:
-                                    black = True
-                                    white_val = 0
-                                if black and squareleton[y, x] > 0:
-                                    # if not white:
-                                    #     white_val = 0
-                                    white = True
-                                if black and white \
-                                        and squareleton[y, x] == 0:
-                                    false_dot = True
-                                    print('white hole')
-                                    break
-                                # If to many whites is not a dot
-                                if squareleton[y, x] > 0:
-                                    white_val += 1
-                                if white_val > round(height/1.9):
-                                    print('to many white')
-                                    false_dot = True
-                                    break
-                            if false_dot:
-                                print('NOT a dot')
-                                return False
-                                break
-                        if not false_dot:
-                            print('Its a dot :)')
-                            return True
+    #     # Looking for square skeleton
+    #     count_v = 0
+    #     max_v = 0
+    #     for v_sum in img_h_v_proj:
+    #         if v_sum > max_v:
+    #             max_v = v_sum
+    #             max_ord_v = count_v
+    #         count_v += 1
+    #     count_h = 0
+    #     max_h = 0
+    #     for h_sum in img_h_h_proj:
+    #         if h_sum > max_h:
+    #             max_h = h_sum
+    #             max_ord_h = count_h
+    #         count_h += 1
+    #     # start_x, end_x, start_y, end_y skeleton
+    #     height, width = one_marker.shape
+    #     for x_ in range(width):
+    #         if one_marker[max_ord_h, x_] == 0:
+    #             start_x = x_
+    #             break
+    #     end_x = start_x + int(max_h)
+    #     for y_ in range(height):
+    #         if one_marker[y_, max_ord_v] == 0:
+    #             start_y = y_
+    #             break
+    #     end_y = start_y + int(max_v)
+    #     # x1 = start_x, y1 = start_y
+    #     # x2 = end_x, y2 = end_y
+    #     print(start_x, end_x)
+    #     print(start_y, end_y)
+    #     print(max_h, max_v)
+    #     print(max_ord_h, max_ord_v)
+    #     if max_ord_v in range(start_x, end_x):
+    #         squareleton = one_marker[start_y:end_y, start_x:end_x]
+    #         cv2.imshow('squareleton', squareleton)
+    #         print(squareleton)
+    #         height, width = squareleton.shape
+    #         scale = 1.55
+    #         if width < scale * height:
+    #             if height < scale * width:
+    #                 print('square')
+    #                 if pixel_count < height * width:
+    #                     for x in range(width):
+    #                         black = False
+    #                         white = False
+    #                         false_dot = False
+    #                         white_val = 0
+    #                         for y in range(height):
+    #                             if squareleton[y, x] == 0:
+    #                                 black = True
+    #                                 white_val = 0
+    #                             if black and squareleton[y, x] > 0:
+    #                                 # if not white:
+    #                                 #     white_val = 0
+    #                                 white = True
+    #                             if black and white \
+    #                                     and squareleton[y, x] == 0:
+    #                                 false_dot = True
+    #                                 print('white hole')
+    #                                 break
+    #                             # If to many whites is not a dot
+    #                             if squareleton[y, x] > 0:
+    #                                 white_val += 1
+    #                             if white_val > round(height/1.9):
+    #                                 print('to many white')
+    #                                 false_dot = True
+    #                                 break
+    #                         if false_dot:
+    #                             print('NOT a dot')
+    #                             return False
+    #                             break
+    #                     if not false_dot:
+    #                         print('Its a dot :)')
+    #                         return True
 
-                    else:
-                        print('The square is not enough')
-                        print('NOT a dot')
-                        return False
-                else:
-                    print('portrait image')
-                    print('NOT a dot')
-                    return False
-            else:
-                print('landscape')
-                x_l = round(width/2)
-                white_l = False
-                black_l = False
-                dot = False
-                for y_l in range(height):
-                    if squareleton[y_l, x_l] > 0:
-                        white_l = True
-                    if white_l and squareleton[y_l, x_l] == 0:
-                        black_l = True
-                    if white_l and black_l and squareleton[y_l, x_l] > 0:
-                        dot = True
-                if dot:
-                    print('Middle is w -> b -> w')
-                    print('Its a dot :)')
-                    return True
-                else:
-                    print('middle is wrong')
-                    print('NOT a dot')
-                    return False
-        else:
-            print('Just cannot create a square')
-            print('NOT a dot')
-            return False
+    #                 else:
+    #                     print('The square is not enough')
+    #                     print('NOT a dot')
+    #                     return False
+    #             else:
+    #                 print('portrait image')
+    #                 print('NOT a dot')
+    #                 return False
+    #         else:
+    #             print('landscape')
+    #             x_l = round(width/2)
+    #             white_l = False
+    #             black_l = False
+    #             dot = False
+    #             for y_l in range(height):
+    #                 if squareleton[y_l, x_l] > 0:
+    #                     white_l = True
+    #                 if white_l and squareleton[y_l, x_l] == 0:
+    #                     black_l = True
+    #                 if white_l and black_l and squareleton[y_l, x_l] > 0:
+    #                     dot = True
+    #             if dot:
+    #                 print('Middle is w -> b -> w')
+    #                 print('Its a dot :)')
+    #                 return True
+    #             else:
+    #                 print('middle is wrong')
+    #                 print('NOT a dot')
+    #                 return False
+    #     else:
+    #         print('Just cannot create a square')
+    #         print('NOT a dot')
+    #         return False
 
     def dot_checker(self, image_marker):
         # Dot detection
@@ -1852,7 +1852,7 @@ class ImageProcessing():
                 print('region__')
                 print(region)
                 cv2.waitKey(0)
-                pixel_count = len(self.conn_pack_minus_body[region])
+                # pixel_count = len(self.conn_pack_minus_body[region])
                 dot = self.dot_checker(canvas)
                 # print('DOT______')
                 # print(str(dot))
@@ -1860,7 +1860,7 @@ class ImageProcessing():
                 if dot:
                     final_group_dot['char_{:02d}'.format(count)].append(region)
 
-                # Append next_marker in one char if overlapped and count=same
+                # Append next_marker in one char if overlapped
                 if (x1_now <= x1_next <= x2_now
                     or x1_next <= x2_now <= x2_next)\
                         or (x1_now <= x2_next <= x2_now
@@ -1892,7 +1892,7 @@ class ImageProcessing():
                 print(region)
                 for val in self.conn_pack_minus_body[region]:
                     canvas[val] = 0
-                pixel_count = len(self.conn_pack_minus_body[region])
+                # pixel_count = len(self.conn_pack_minus_body[region])
                 dot = self.dot_checker(canvas)
                 if dot:
                     final_group_dot['char_{:02d}'.format(count)].append(region)
