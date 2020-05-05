@@ -4,7 +4,7 @@ import sys
 import glob
 import match_oop
 import cv2
-import concatenate as ct
+import concatenate_gray as ct
 from datetime import datetime
 import mysql.connector
 import argparse
