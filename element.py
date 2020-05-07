@@ -76,7 +76,7 @@ marker_type_full = ['Isolated', 'Begin', 'Middle', 'End']
 marker_type_half = ['Isolated', 'End']
 list_type = []
 empty_image = 'empty_image.png'
-table = 'dataset_new'
+table = 'dataset_auto'
 
 # def get_base64_str_from_file(filepath):
 #     with open(filepath, "rb") as f:
@@ -172,10 +172,10 @@ layout = [
     [sg.Button('Refresh'), sg.Exit()],
     [sg.Listbox(values=char_list_symbol, size=(15, 5.5), key='_LISTBOX_',
                 enable_events=True, select_mode='single', auto_size_text=True),
-     sg.Listbox(values=[], size=(12, 5.5), key='_MARKERTYPE_',
+     sg.Listbox(values=[], size=(8, 5.5), key='_MARKERTYPE_',
                 enable_events=True, default_values=None,
                 select_mode='single'),
-     sg.Listbox(values=list_type, size=(11, 5.5), key='_LISTTYPE_',
+     sg.Listbox(values=list_type, size=(20, 5.5), key='_LISTTYPE_',
                 enable_events=True, default_values=None,
                 select_mode='single')],
     # [sg.Combo(values=char_list, default_value='Alif', key='_COMBOBOX_',
@@ -382,12 +382,12 @@ while True:
         # print(view_image_loc)
         window.Element('_IMAGE_').Update(filename=view_image_loc)
         key = view_image_loc.split('/')
-        key[2] = 'Square'
+        key[7] = 'Square'
         view_image_loc = '/'.join(key)
         # print(view_image_loc)
         window.Element('_IMAGE2_').Update(filename=view_image_loc)
         key = view_image_loc.split('/')
-        # key[2] = 'No_Margin (rgb)'
+        # key[7] = 'No_Margin (rgb)'
         # view_image_loc = '/'.join(key)
         # # print(view_image_loc)
         # window.Element('_IMAGE3_').Update(filename=view_image_loc)
@@ -405,11 +405,15 @@ while True:
             and event == '_ADDBUTTON_':
         if font_type != '' and QS != '' and image_location != '':
             # Check folder
-            store_folder_ori = './Collection/No_Margin/' \
+            # store_folder_ori = './Collection/No_Margin/' \
+            #                    + font_type + '/' + char_name
+            store_folder_ori = '/home/mhbrt/Desktop/Wind/Multiscale/Auto_Collection/No_Margin/' \
                                + font_type + '/' + char_name
             if not os.path.exists(store_folder_ori):
                 os.makedirs(store_folder_ori)
-            store_folder_sqr = './Collection/Square/' \
+            # store_folder_sqr = './Collection/Square/' \
+            #                    + font_type + '/' + char_name
+            store_folder_sqr = '/home/mhbrt/Desktop/Wind/Multiscale/Auto_Collection/Square/' \
                                + font_type + '/' + char_name
             if not os.path.exists(store_folder_sqr):
                 os.makedirs(store_folder_sqr)
@@ -417,7 +421,7 @@ while True:
             #                    + font_type + '/' + char_name
             # if not os.path.exists(store_folder_rgb):
             #     os.makedirs(store_folder_rgb)
-            store_folder_rc = './Collection/Raw_Cut/' \
+            store_folder_rc = '/home/mhbrt/Desktop/Wind/Multiscale/Auto_Collection/Raw_Cut/' \
                               + font_type + '/' + char_name
             if not os.path.exists(store_folder_rc):
                 os.makedirs(store_folder_rc)
@@ -520,7 +524,7 @@ while True:
         db_cursor.execute(sql_query)
         db.commit()
         key = delete_image_loc.split('/')
-        key[2] = 'Square'
+        key[7] = 'Square'
         delete_image_loc = '/'.join(key)
         os.remove(delete_image_loc)
         last_act = last_act + '\n' + 'Delete id {} and {}'.format(
@@ -533,7 +537,7 @@ while True:
         # db_cursor.execute(sql_query)
         # db.commit()
         # key = delete_image_loc.split('/')
-        # key[2] = 'No_Margin (rgb)'
+        # key[7] = 'No_Margin (rgb)'
         # delete_image_loc = '/'.join(key)
         # os.remove(delete_image_loc)
         # last_act = last_act + '\n' + 'Delete id {} and {}'.format(
@@ -541,7 +545,7 @@ while True:
         # print('Delete id {} and {}'.format(str(list_id[res_id] + 2),
         #                                    delete_image_loc))
         key = delete_image_loc.split('/')
-        key[2] = 'Raw_Cut'
+        key[7] = 'Raw_Cut'
         delete_image_loc = '/'.join(key)
         os.remove(delete_image_loc)
 
