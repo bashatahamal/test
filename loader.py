@@ -2,7 +2,7 @@ import cv2
 import os
 import numpy as np
 
-loc_collection = 'Auto_Collection/'
+loc_collection = 'Auto_Collection_Gray/'
 # shape = 'Square'
 shape = 'No_Margin'
 
@@ -26,6 +26,9 @@ for x in range(len(_lst_path_font)):
                 if _dict_path_char.get(char_num) is None:
                     _dict_path_char[char_num] = []
                 for loc in _lst_temp:
+                    split_loc = loc.split('.')
+                    if split_loc[1] != 'png':
+                        continue
                     # Modify here to append only png extension format
                     _dict_path_char[char_num].append(loc)
 
@@ -96,8 +99,8 @@ def padding_square_to_size(image_square, size):
         concatenate_b = size - height - concatenate_a
         concatenate_up = np.full((concatenate_a, width + concatenate_a + concatenate_b), 255, dtype=np.uint8)
         concatenate_down = np.full((concatenate_b, width + concatenate_a + concatenate_b), 255, dtype=np.uint8)
-        concatenate_left = np.full((height , concatenate_a), 255, dtype=np.uint8)
-        concatenate_right = np.full((height , concatenate_b), 255, dtype=np.uint8)
+        concatenate_left = np.full((height, concatenate_a), 255, dtype=np.uint8)
+        concatenate_right = np.full((height, concatenate_b), 255, dtype=np.uint8)
         concatImage = np.concatenate(
             (concatenate_left, image_square, concatenate_right), axis=1
         )
@@ -190,8 +193,7 @@ f. Original square langsung dimasukin ke CNN (beda2 ukurannya)
     sameratio_keepform_32_bw = {}
     sameratio_keepform_sibh = {}
     sameratio_keepform_sibw = {}
-    sameratio_keepform_libh = {}
-    sameratio_keepform_libw = {}
+    sameratio_keepform_largest = {}
     # b.
     diffratio_keepform_32 = {}
     diffratio_keepform_sibh = {}
@@ -241,30 +243,34 @@ f. Original square langsung dimasukin ke CNN (beda2 ukurannya)
             gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
             _, bw_img = cv2.threshold(gray_img, 127, 255,
                                       cv2.THRESH_BINARY)
-            square_img = concat_image(bw_img)
+            # square_img = concat_image(bw_img)
+            square_img = concat_image(gray_img)
             # Smallest Image by Height
             if add_sibh:
                 gray_img = cv2.cvtColor(image_sibh, cv2.COLOR_BGR2GRAY)
                 _, bw_img_sibh = cv2.threshold(gray_img, 127, 255,
                                                cv2.THRESH_BINARY)
-                square_img_sibh = concat_image(bw_img_sibh)
+                # square_img_sibh = concat_image(bw_img_sibh)
+                square_img_sibh = concat_image(gray_img)
             # Smallest Image by Width
             if add_sibw:
                 gray_img = cv2.cvtColor(image_sibw, cv2.COLOR_BGR2GRAY)
                 _, bw_img_sibw = cv2.threshold(gray_img, 127, 255,
                                                cv2.THRESH_BINARY)
-            square_img_sibw = concat_image(bw_img_sibw)
+                # square_img_sibw = concat_image(bw_img_sibw)
+                square_img_sibw = concat_image(gray_img)
             # 32 by Height
             gray_img = cv2.cvtColor(image_32_bh, cv2.COLOR_BGR2GRAY)
             _, bw_img_32_bh = cv2.threshold(gray_img, 127, 255,
                                             cv2.THRESH_BINARY)
-            square_img_32_bh = concat_image(bw_img_32_bh)
+            # square_img_32_bh = concat_image(bw_img_32_bh)
+            square_img_32_bh = concat_image(gray_img)
             # 32 by Width
             gray_img = cv2.cvtColor(image_32_bw, cv2.COLOR_BGR2GRAY)
             _, bw_img_32_bw = cv2.threshold(gray_img, 127, 255,
                                             cv2.THRESH_BINARY)
-            square_img_32_bw = concat_image(bw_img_32_bw)
-
+            # square_img_32_bw = concat_image(bw_img_32_bw)
+            square_img_32_bw = concat_image(gray_img)
             # a.
             if sameratio_keepform_32_bh.get(char_num) is None:
                 sameratio_keepform_32_bh[char_num] = []
@@ -274,10 +280,8 @@ f. Original square langsung dimasukin ke CNN (beda2 ukurannya)
                 sameratio_keepform_sibh[char_num] = []
             if sameratio_keepform_sibw.get(char_num) is None:
                 sameratio_keepform_sibw[char_num] = []
-            if sameratio_keepform_libh.get(char_num) is None:
-                sameratio_keepform_libh[char_num] = []
-            if sameratio_keepform_libw.get(char_num) is None:
-                sameratio_keepform_libw[char_num] = []
+            if sameratio_keepform_largest.get(char_num) is None:
+                sameratio_keepform_largest[char_num] = []
             sameratio_keepform_32_bh[char_num].append(
                 padding_square_to_size(square_img_32_bh, 32)
             )
@@ -296,11 +300,8 @@ f. Original square langsung dimasukin ke CNN (beda2 ukurannya)
                 )
             else:
                 sameratio_keepform_sibw = {}
-            sameratio_keepform_libh[char_num].append(
-                padding_square_to_size(square_img, height_libh)
-            )
-            sameratio_keepform_libw[char_num].append(
-                padding_square_to_size(square_img, height_libw)
+            sameratio_keepform_largest[char_num].append(
+                padding_square_to_size(square_img, largest_of_all)
             )
 
             # b.
@@ -337,25 +338,31 @@ f. Original square langsung dimasukin ke CNN (beda2 ukurannya)
             image_32_sd = cv2.resize(image_sts,
                                      (int(img_width*32/largest_of_all),
                                       int(img_width*32/largest_of_all)))
-            # image_largest_sd = image_sts
+
             # Original/Largest
             gray_img = cv2.cvtColor(image_sts, cv2.COLOR_BGR2GRAY)
             _, bw_img_sts = cv2.threshold(gray_img, 127, 255,
                                           cv2.THRESH_BINARY)
-            image_largest_sd = padding_square_to_size(bw_img_sts,
+            # image_largest_sd = padding_square_to_size(bw_img_sts,
+            #                                           largest_of_all)
+            image_largest_sd = padding_square_to_size(gray_img,
                                                       largest_of_all)
+            
             # Smallest Image
             if add_sibh or add_sibw:
                 gray_img = cv2.cvtColor(image_smallest_sd, cv2.COLOR_BGR2GRAY)
                 _, bw_img_sts_smallest = cv2.threshold(gray_img, 127, 255,
                                                        cv2.THRESH_BINARY)
-                image_smallest_sd = padding_square_to_size(bw_img_sts_smallest,
+                # image_smallest_sd = padding_square_to_size(bw_img_sts_smallest,
+                #                                            smallest_of_all)
+                image_smallest_sd = padding_square_to_size(gray_img,
                                                            smallest_of_all)
             # 32 Image
             gray_img = cv2.cvtColor(image_32_sd, cv2.COLOR_BGR2GRAY)
             _, bw_img_sts_32 = cv2.threshold(gray_img, 127, 255,
                                              cv2.THRESH_BINARY)
-            image_32_sd = padding_square_to_size(bw_img_sts_32, 32)
+            # image_32_sd = padding_square_to_size(bw_img_sts_32, 32)
+            image_32_sd = padding_square_to_size(gray_img, 32)
             if sameratio_diffform_32.get(char_num) is None:
                 sameratio_diffform_32[char_num] = []
             if sameratio_diffform_smallest.get(char_num) is None:
@@ -373,20 +380,25 @@ f. Original square langsung dimasukin ke CNN (beda2 ukurannya)
             image_libh_dd = cv2.resize(img, (height_libh, height_libh))
             image_libw_dd = cv2.resize(img, (width_libw, width_libw))
             gray_img = cv2.cvtColor(image_32_dd, cv2.COLOR_BGR2GRAY)
-            _, bw_img_32_dd = cv2.threshold(gray_img, 127, 255,
-                                            cv2.THRESH_BINARY)
+            # _, bw_img_32_dd = cv2.threshold(gray_img, 127, 255,
+            #                                 cv2.THRESH_BINARY)
+            bw_img_32_dd = gray_img
             gray_img = cv2.cvtColor(image_sibh_dd, cv2.COLOR_BGR2GRAY)
-            _, bw_img_sibh_dd = cv2.threshold(gray_img, 127, 255,
-                                              cv2.THRESH_BINARY)
+            # _, bw_img_sibh_dd = cv2.threshold(gray_img, 127, 255,
+            #                                   cv2.THRESH_BINARY)
+            bw_img_sibh_dd = gray_img
             gray_img = cv2.cvtColor(image_sibw_dd, cv2.COLOR_BGR2GRAY)
-            _, bw_img_sibw_dd = cv2.threshold(gray_img, 127, 255,
-                                              cv2.THRESH_BINARY)
+            # _, bw_img_sibw_dd = cv2.threshold(gray_img, 127, 255,
+            #                                   cv2.THRESH_BINARY)
+            bw_img_sibw_dd = gray_img
             gray_img = cv2.cvtColor(image_libh_dd, cv2.COLOR_BGR2GRAY)
-            _, bw_img_libh_dd = cv2.threshold(gray_img, 127, 255,
-                                              cv2.THRESH_BINARY)
+            # _, bw_img_libh_dd = cv2.threshold(gray_img, 127, 255,
+            #                                   cv2.THRESH_BINARY)
+            bw_img_libh_dd = gray_img
             gray_img = cv2.cvtColor(image_libw_dd, cv2.COLOR_BGR2GRAY)
-            _, bw_img_libw_dd = cv2.threshold(gray_img, 127, 255,
-                                              cv2.THRESH_BINARY)
+            # _, bw_img_libw_dd = cv2.threshold(gray_img, 127, 255,
+            #                                   cv2.THRESH_BINARY)
+            bw_img_libw_dd = gray_img
             if diffratio_diffform_32.get(char_num) is None:
                 diffratio_diffform_32[char_num] = []
             if diffratio_diffform_sibh.get(char_num) is None:
@@ -405,18 +417,17 @@ f. Original square langsung dimasukin ke CNN (beda2 ukurannya)
 
     for char_num in sameratio_keepform_32_bh:
         for variation in range(len(sameratio_keepform_32_bh[char_num])):
-            cv2.imshow('sk32bh', sameratio_keepform_32_bh[char_num][variation])
-            cv2.imshow('sk32bw', sameratio_keepform_32_bw[char_num][variation])
-            cv2.imshow('sksibh', sameratio_keepform_sibh[char_num][variation])
+            # cv2.imshow('sk32bh', sameratio_keepform_32_bh[char_num][variation])
+            # cv2.imshow('sk32bw', sameratio_keepform_32_bw[char_num][variation])
+            # cv2.imshow('sksibh', sameratio_keepform_sibh[char_num][variation])
             # cv2.imshow('sksibw', sameratio_keepform_sibw[char_num][variation])
-            cv2.imshow('sklibh', sameratio_keepform_libh[char_num][variation])
-            cv2.imshow('sklibw', sameratio_keepform_libw[char_num][variation])
+            # cv2.imshow('sklibh', sameratio_keepform_largest[char_num][variation])
 
-            # cv2.imshow('dk32', diffratio_keepform_32[char_num][variation])
-            # cv2.imshow('dksibh', diffratio_keepform_sibh[char_num][variation])
-            # cv2.imshow('dksibw', diffratio_keepform_sibw[char_num][variation])
-            # cv2.imshow('dklibh', diffratio_keepform_libh[char_num][variation])
-            # cv2.imshow('dklibw', diffratio_keepform_libw[char_num][variation])
+            cv2.imshow('dk32', diffratio_keepform_32[char_num][variation])
+            cv2.imshow('dksibh', diffratio_keepform_sibh[char_num][variation])
+            cv2.imshow('dksibw', diffratio_keepform_sibw[char_num][variation])
+            cv2.imshow('dklibh', diffratio_keepform_libh[char_num][variation])
+            cv2.imshow('dklibw', diffratio_keepform_libw[char_num][variation])
 
             # cv2.imshow('sd32', sameratio_diffform_32[char_num][variation])
             # cv2.imshow('sdst', sameratio_diffform_smallest[char_num][variation])
