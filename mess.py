@@ -1,0 +1,1061 @@
+import matplotlib.pyplot as plt
+import numpy as np
+import imutils
+import glob
+import cv2
+import copy
+
+
+class Marker:
+    def __init__(self, **kwargs):
+        self._Data = kwargs
+
+    def get_template_location(self):
+        return self._Data["template_loc"]
+    # def get_image_location(self):
+    #     return self._Data["image_loc"]
+
+    def get_template_thresh(self):
+        return self._Data["template_thresh"]
+
+    def get_nms_thresh(self):
+        return self._Data["nms_thresh"]
+
+    def get_image(self):
+        return self._Data["image"]
+
+    def non_max_suppression_slow(self, boxes, overlapThresh):
+        # if there are no boxes, return an empty list
+        if len(boxes) == 0:
+            return []
+
+        # initialize the list of picked indexes
+        pick = []
+
+        # grab the coordinates of the bounding boxes
+        x1 = boxes[:, 0]
+        y1 = boxes[:, 1]
+        x2 = boxes[:, 2]
+        y2 = boxes[:, 3]
+
+        # compute the area of the bounding boxes and sort the bounding
+        # boxes by the bottom-right y-coordinate of the bounding box
+        area = (x2 - x1 + 1) * (y2 - y1 + 1)
+        idxs = np.argsort(y2)
+
+        # keep looping while some indexes still remain in the indexes
+        # list
+        while len(idxs) > 0:
+            # grab the last index in the indexes list, add the index
+            # value to the list of picked indexes, then initialize
+            # the suppression list (i.e. indexes that will be deleted)
+            # using the last index
+            last = len(idxs) - 1
+            i = idxs[last]
+            pick.append(i)
+            suppress = [last]
+
+            # loop over all indexes in the indexes list
+            for pos in range(0, last):
+                # grab the current index
+                j = idxs[pos]
+
+                # find the largest (x, y) coordinates for the start of
+                # the bounding box and the smallest (x, y) coordinates
+                # for the end of the bounding box
+                xx1 = max(x1[i], x1[j])
+                yy1 = max(y1[i], y1[j])
+                xx2 = min(x2[i], x2[j])
+                yy2 = min(y2[i], y2[j])
+
+                # compute the width and height of the bounding box
+                w = max(0, xx2 - xx1 + 1)
+                h = max(0, yy2 - yy1 + 1)
+
+                # compute the ratio of overlap between the computed
+                # bounding box and the bounding box in the area list
+                overlap = float(w * h) / area[j]
+
+                # if there is sufficient overlap, suppress the
+                # current bounding box
+                if overlap > overlapThresh:
+                    suppress.append(pos)
+
+            # delete all indexes from the index list that are in the
+            # suppression list
+            idxs = np.delete(idxs, suppress)
+
+        # return only the bounding boxes that were picked
+        return boxes[pick]
+
+    def match_template(self, visualize=False, numstep=100):
+        # Get template
+        # print('.')
+        template = cv2.imread(self.get_template_location())
+        template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
+        # Canny edge
+        # template = cv2.Canny(template, 50, 200)
+        # Otsu threshold
+        ret_temp, template = cv2.threshold(template, 0, 255,
+                                           cv2.THRESH_BINARY
+                                           + cv2.THRESH_OTSU)
+        # Simple threshold
+        # ret_temp, template = cv2.threshold(template, 127, 255,
+        #                                    cv2.THRESH_BINARY)
+        # Adaptive threshold value is the mean of neighbourhood area
+        # template = cv2.adaptiveThreshold(template, 255,
+        #                                  cv2.ADAPTIVE_THRESH_MEAN_C,
+        #                                  cv2.THRESH_BINARY,
+        #                                  11, 2)
+
+        # Adaptive threshold value is the weighted sum of neighbourhood values
+        # where weights are a gaussian window
+        # template = cv2.adaptiveThreshold(template, 255,
+        #                                  cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        #                                  cv2.THRESH_BINARY,
+        #                                  11, 2)
+        # cv2.imshow("Template", template)
+        # plt.imshow(template)
+
+        (tH, tW) = template.shape[:2]
+
+        # Get image
+        # image = cv2.imread(self.get_image_location())
+        # print(self.get_image_location())
+        # self.image=image
+        # gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        # cv2.imshow('gray', gray)
+        image = self.get_image()
+        # boundingBoxes = np.ones((1,4), dtype=int)
+        boundingBoxes = []
+        max_value_list = []
+        # print(numstep)
+        # Loop over scaled image (start stop numstep) from the back
+        for scale in np.linspace(0.2, 2.0, numstep)[::-1]:
+            resized = imutils.resize(image, width=int(image.shape[1] * scale))
+            r = image.shape[1] / float(resized.shape[1])
+            # If resized image smaller than template, then break the loop
+            if resized.shape[0] < tH or resized.shape[1] < tW:
+                break
+
+            # Preprocessing resized image and then apply template matching
+            # Cannyedge
+            # edged = cv2.Canny(resized, 50, 200)
+            # Otsu threshold
+            ret_img, resized = cv2.threshold(resized, 0, 255,
+                                             cv2.THRESH_BINARY
+                                             + cv2.THRESH_OTSU)
+            # Simple threshold
+            # ret_img, resized = cv2.threshold(resized, 127, 255,
+            #                                  cv2.THRESH_BINARY)
+            # Adaptive threshold value is the mean of neighbourhood area
+            # resized = cv2.adaptiveThreshold(resized, 255,
+            #                                 cv2.ADAPTIVE_THRESH_MEAN_C,
+            #                                 cv2.THRESH_BINARY, 11, 2)
+            # Adaptive threshold value is the weighted sum of neighbourhood
+            # values where weights are a gaussian window
+            # resized = cv2.adaptiveThreshold(resized, 255,
+            #                                 cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+            #                                 cv2.THRESH_BINARY, 11, 2)
+            result = cv2.matchTemplate(resized, template, cv2.TM_CCOEFF_NORMED)
+            (_, maxVal, _, maxLoc) = cv2.minMaxLoc(result)
+            if visualize:
+                # clone = np.dstack([edged, edged, edged])
+                clone = np.dstack([resized, resized, resized])
+                print(self.get_template_location())
+                print(maxVal)
+                cv2.rectangle(clone, (maxLoc[0], maxLoc[1]),
+                              (maxLoc[0] + tW, maxLoc[1] + tH), (0, 0, 255), 2)
+                # cv2.imshow("Visualizing", clone)
+                # cv2.waitKey(0)
+                # plt.imshow(clone)
+
+            if maxVal > self.get_template_thresh():
+                (startX, startY) = (int(maxLoc[0] * r), int(maxLoc[1] * r))
+                (endX, endY) = (int((maxLoc[0] + tW) * r),
+                                int((maxLoc[1] + tH) * r))
+                temp = [startX, startY, endX, endY]
+                # boundingBoxes = np.append(boundingBoxes, [temp], axis=0)
+                # max_value_list = np.append(max_value_list, [maxVal], axis=0)
+                boundingBoxes.append(temp)
+                max_value_list.append(maxVal)
+                # print("Max val = {} location {}".format(maxVal, temp))
+                cv2.rectangle(image, (startX, startY), (endX, endY),
+                              (255, 255, 255), -1)
+                cv2.rectangle(resized, (int(maxLoc[0]), int(maxLoc[1])),
+                              (int(maxLoc[0] + tW), int(maxLoc[1] + tH)),
+                              (255, 255, 255), -1)
+                while(maxVal > self.get_template_thresh()):
+                    result = cv2.matchTemplate(resized, template,
+                                               cv2.TM_CCOEFF_NORMED)
+                    (_, maxVal, _, maxLoc) = cv2.minMaxLoc(result)
+                    cv2.rectangle(resized, (int(maxLoc[0]), int(maxLoc[1])),
+                                  (int(maxLoc[0] + tW), int(maxLoc[1] + tH)),
+                                  (255, 255, 255), -1)
+                    (startX, startY) = (int(maxLoc[0] * r), int(maxLoc[1] * r))
+                    (endX, endY) = (int((maxLoc[0] + tW) * r),
+                                    int((maxLoc[1] + tH) * r))
+                    temp = [startX, startY, endX, endY]
+                    boundingBoxes.append(temp)
+#                     print(boundingBoxes)
+
+        # If detected on this scale size
+        # if len(boundingBoxes) > 1:
+        #     boundingBoxes = np.delete(boundingBoxes, 0, axis=0)
+            # print("{} {}".format(len(pick), self.get_template_location()))
+            # print(pick)
+            # for (startX, startY, endX, endY) in pick:
+            #     cv2.rectangle(image, (startX, startY),(endX, endY),
+            #     (0, 255, 0), 2)
+        boundingBoxes = np.array(boundingBoxes)
+        pick = self.non_max_suppression_slow(boundingBoxes,
+                                             self.get_nms_thresh())
+
+        if len(max_value_list) >= 1:
+            max_local_value = max(max_value_list)
+        # if len(max_value_list) == 1:
+        #     max_local_value = max_value_list
+        if max_value_list == []:
+            pick = 0
+            max_local_value = 0
+        # cv2.imshow('IMAGE MATCH ()',image)
+        return pick, max_local_value
+
+class FontWrapper(Marker):
+    def __init__(self, nms_thresh=0.3, visualize=False, **kwargs):
+        # print("INIT!")
+        self._Data = kwargs
+        self.nms_thresh = nms_thresh
+        self.visualize = visualize
+
+        self.image_location = self._Data["image_loc"]
+        self.marker_location = self._Data["loc_list"]
+        self.marker_thresh = self._Data["thresh_list"]
+        self.image = self._Data["image"]
+
+        for data in self._Data:
+            if data == 'numstep':
+                self.numstep = self._Data["numstep"]
+            else:
+                self.numstep = 0
+
+        self.pocket = {}
+        # super().__init__()
+        colour_tanwin = [
+            (255, 0, 255), (0, 0, 255), (128, 0, 128),
+            (0, 0, 128)
+        ]
+        colour_nun = [
+            (255, 0, 0), (128, 0, 0), (255, 99, 71),
+            (220, 20, 60), (139, 0, 0)
+        ]
+        colour_mim = [
+            (154, 205, 50), (107, 142, 35), (85, 107, 47),
+            (0, 128, 0), (34, 139, 34)
+        ]
+        t = 0
+        m = 0
+        n = 0
+        self.temp_colour = self.get_marker_thresh().copy()
+        for key in self.get_marker_thresh().keys():
+            # print(key)
+            x = key.split('_')
+            if x[0] == 'tanwin':
+                self.temp_colour[key] = colour_tanwin[t]
+                if t+1 > len(colour_tanwin) - 1:
+                    t = 0
+                else:
+                    t += 1
+            if x[0] == 'nun':
+                self.temp_colour[key] = colour_nun[n]
+                if n+1 > len(colour_nun) - 1:
+                    n = 0
+                else:
+                    n += 1
+            if x[0] == 'mim':
+                self.temp_colour[key] = colour_mim[m]
+                if m+1 > len(colour_mim) - 1:
+                    m = 0
+                else:
+                    m += 1
+
+    def get_marker_thresh(self):
+        return self.marker_thresh
+
+    def get_marker_location(self):
+        return self.marker_location
+
+    # def get_image_location(self):
+    #     return self.image_location
+
+    # def get_original_image(self):
+    #     original_image = cv2.imread(self.get_image_location())
+    #     return original_image
+
+    def get_object_result(self):
+        return self.pocket
+
+    def get_image(self):
+        return self.image
+
+    def get_object_name(self):
+        return self.get_marker_location()[0].split('/')[2]
+
+    def display_marker_result(self, input_image):
+        # rectangle_image = self.get_original_image()
+        rectangle_image = input_image.copy()
+        found = False
+        for key in self.get_marker_thresh().keys():
+            if isinstance(self.get_object_result()['box_' + key],
+                          type(np.array([]))):
+                for (startX, startY, endX, endY) in \
+                        self.get_object_result()['box_' + key]:
+                    cv2.rectangle(rectangle_image, (startX, startY),
+                                  (endX, endY), self.temp_colour[key], 2)
+                # print(self.pick_colour[x])
+                found = True
+        if found:
+            print('<<<<<<<< View Result >>>>>>>>')
+            cv2.imshow("Detected Image_" + self.get_object_name(),
+                       rectangle_image)
+        else:
+            cv2.imshow("Original Image", rectangle_image)
+            print('not found')
+        print('>')
+        cv2.waitKey(0)
+        # cv2.destroyWindow("Detected Image_" + self.get_object_name())
+
+    def run(self, view=False, numstep=100):
+        # Tanwin
+        # print(self.get_marker_thresh())
+        print('run() Marker Font')
+
+        # gray = cv2.cvtColor(self.get_original_image(), cv2.COLOR_BGR2GRAY)
+        if self.numstep == 0:
+            numstep = numstep
+        else:
+            numstep = self.numstep
+        print("numstep = ", numstep)
+        pocketData = {}
+        for x in range(len(self.get_marker_thresh())):
+            # print(len(template_thresh))
+            # print(list(template_thresh.values())[x])
+            super().__init__(image=self.get_image,
+                             template_thresh=list(
+                                 self.get_marker_thresh().values())[x],
+                             template_loc=self.get_marker_location()[x],
+                             nms_thresh=self.nms_thresh)
+            (pocketData[x], pocketData[x+len(self.get_marker_thresh())]) \
+                = super().match_template(visualize=self.visualize,
+                                         numstep=numstep)
+            # print(type(pocketData[x]))
+
+        # Change the name by +id
+        for x in range(len(self.get_marker_thresh())):
+            temp = list(self.get_marker_thresh().keys())[x]
+            # box = 'box_'+ temp
+            self.get_object_result()[temp] = pocketData[
+                x+len(self.get_marker_thresh())]
+            self.get_object_result()['box_' + temp] = pocketData[x]
+
+        if view:
+            self.display_marker_result()
+
+        # return pocket
+
+    def find_connectivity(self, x, y, height, width, image):
+        # count = 0
+        x_y = []
+        # Left
+        if x - 1 > 0:
+            if y + 1 < height:
+                if image[y + 1, x - 1] == 0:
+                    x_y.append((y + 1, x - 1))
+                    # x_y.append((x - 1, y + 1))
+                    # count += 1
+                    # print('l1')
+            if image[y, x - 1] == 0:
+                x_y.append((y, x - 1))
+                # x_y.append((x - 1, y))
+                # count += 1
+                # print('l2')
+            if y - 1 > 0:
+                if image[y - 1, x - 1] == 0:
+                    x_y.append((y - 1, x - 1))
+                    # x_y.append((x - 1, y - 1))
+                    # count += 1
+                    # print('l3')
+        # Middle
+        if y + 1 < height:
+            if image[y + 1, x] == 0:
+                x_y.append((y + 1, x))
+                # x_y.append((x, y + 1))
+                # count += 1
+            # print('m1')
+        x_y.append((y, x))
+        # x_y.append((x, y))
+        # count += 1
+        # print('m2')
+        if y - 1 > 0:
+            if image[y - 1, x] == 0:
+                x_y.append((y - 1, x))
+                # x_y.append((x, y - 1))
+                # count += 1
+                # print('m3')
+        # Right
+        if x + 1 < width:
+            if y + 1 < height:
+                if image[y + 1, x + 1] == 0:
+                    x_y.append((y + 1, x + 1))
+                    # x_y.append((x + 1, y + 1))
+                    # count += 1
+                    # print('r1')
+            if image[y, x + 1] == 0:
+                x_y.append((y, x + 1))
+                # x_y.append((x + 1, y))
+                # count += 1
+                # print('r2')
+            if y - 1 > 0:
+                if image[y - 1, x + 1] == 0:
+                    x_y.append((y - 1, x + 1))
+                    # x_y.append((x + 1, y - 1))
+                    # count += 1
+                    # print('r3')
+
+        return x_y
+
+
+    def eight_connectivity(self, image, seed, left=False, right=False,
+                           y1_limit=0, y2_limit=10000, view=False):
+        height, width = image.shape
+#         print('image eight con width: ', width)
+        image_process = image.copy()
+        # For image flag
+        image_process[:] = 255
+        # oneline_height = oneline_baseline[1] - oneline_baseline[0]
+        # if oneline_height <= 1:
+        #     oneline_height_sorted = 3
+        # else:
+        #     oneline_height_sorted = oneline_height
+        self.conn_pack = {}
+        final_conn_pack = {}
+        reg = 1
+        # Doing eight conn on every pixel one by one
+        for x in range(seed[0], seed[2]):
+            w_count = -1
+            for y in range(seed[1], seed[3]):
+                if image_process[y, x] == 0:
+                    continue
+                min_x_region = 11111
+                max_x_region = 0
+                if image[y, x] == 0:
+                    self.conn_pack['region_{:03d}'.format(reg)] = []
+                    x_y = self.find_connectivity(x, y, height, width, image)
+                    length_ = len(self.conn_pack['region_{:03d}'.format(reg)])
+                    for val in x_y:
+                        self.conn_pack['region_{:03d}'.format(reg)].append(val)
+                    # print(self.conn_pack['region_{:03d}'.format(reg)])
+                    # cv2.waitKey(0)
+                    first = True
+                    sub = False
+                    init = True
+#                     print('wcount_o:', w_count)
+#                     if w_count > width:
+#                         continue
+                    while(True):
+#                         w_count += 1
+#                         print('wcount:', w_count)
+                        if w_count > width:  # stop if it's to large
+#                             print('_more than width_')
+                            break
+                        if first:
+                            length_ = length_
+                            first = False
+                        else:
+                            length_ = l_after_sub
+
+                        if init:
+                            l_after_init = len(self.conn_pack[
+                                'region_{:03d}'.format(reg)])
+                            for k in range(length_, l_after_init):
+                                w_count += 1
+                                x_y_sub = self.find_connectivity(
+                                    self.conn_pack[
+                                        'region_{:03d}'.format(reg)][k][1],
+                                    self.conn_pack[
+                                        'region_{:03d}'.format(reg)][k][0],
+                                    height, width, image
+                                )
+                                if len(x_y_sub) > 1 \
+                                        and x_y_sub[0][0] > y1_limit \
+                                        and x_y_sub[0][0] < y2_limit:
+                                    sub = True
+                                    for vl in x_y_sub:
+                                        if vl[0] < y1_limit or vl[0] > y2_limit:
+                                            continue
+                                        if vl[1] > max_x_region:
+                                            max_x_region = vl[1]
+                                        if vl[1] < min_x_region:
+                                            min_x_region = vl[1]
+                                        if vl not in self.conn_pack[
+                                                'region_{:03d}'.format(reg)]:
+                                            self.conn_pack[
+                                                'region_{:03d}'.format(reg)
+                                                ].append(vl)
+                        init = False
+                        if sub:
+                            # print(self.conn_pack['region_{:03d}'.format(reg)])
+                            # cv2.waitKey(0)
+                            l_after_sub = len(self.conn_pack[
+                                'region_{:03d}'.format(reg)])
+                            for k in range(l_after_init, l_after_sub):
+                                w_count += 1
+                                x_y_sub = self.find_connectivity(
+                                    self.conn_pack[
+                                        'region_{:03d}'.format(reg)][k][1],
+                                    self.conn_pack[
+                                        'region_{:03d}'.format(reg)][k][0],
+                                    height, width, image
+                                )
+                                if len(x_y_sub) > 1 \
+                                        and x_y_sub[0][0] > y1_limit \
+                                        and x_y_sub[0][0] < y2_limit:
+                                    init = True
+                                    for vl in x_y_sub:
+                                        if vl[0] < y1_limit or vl[0] > y2_limit:
+                                            continue
+                                        if vl[1] > max_x_region:
+                                            max_x_region = vl[1]
+                                        if vl[1] < min_x_region:
+                                            min_x_region = vl[1]
+                                        if vl not in self.conn_pack[
+                                                'region_{:03d}'.format(reg)]:
+                                            self.conn_pack[
+                                                'region_{:03d}'.format(reg)
+                                                ].append(vl)
+                        sub = False
+
+                        if not sub and not init:
+                            break
+
+                    for val in self.conn_pack['region_{:03d}'.format(reg)]:
+                        image_process[val] = 0
+                    if left:
+                        if max_x_region < seed[2]:
+                            final_conn_pack['region_{:03d}'.format(reg)] \
+                                = self.conn_pack['region_{:03d}'.format(reg)]
+                    if right:
+                        if min_x_region > seed[0]:
+                            final_conn_pack['region_{:03d}'.format(reg)] \
+                                = self.conn_pack['region_{:03d}'.format(reg)]
+                    if not right and not left:
+                        final_conn_pack['region_{:03d}'.format(reg)] \
+                                = self.conn_pack['region_{:03d}'.format(reg)]
+                    reg += 1
+                    if view:
+                        cv2.imshow('eight conn process', image_process)
+#                         print(self.conn_pack)
+                        cv2.waitKey(0)
+
+        return final_conn_pack
+    
+    
+    def vertical_projection(self, image_v):
+        image = image_v.copy()
+        image[image < 127] = 1
+        image[image >= 127] = 0
+        self.v_projection = np.sum(image, axis=0)
+
+        return self.v_projection
+
+    def horizontal_projection(self, image_h):
+        image = image_h.copy()
+        image[image < 127] = 1
+        image[image >= 127] = 0
+        self.h_projection = np.sum(image, axis=1)
+
+        return self.h_projection
+
+#     def detect_horizontal_line(self, image, pixel_limit_ste, pixel_limit_ets,
+#                                view=True):
+#         # Detect line horizontal
+#         if len(image.shape) == 3:
+#             height, width, _ = image.shape
+#             # color_temp = image.copy()
+#         else:
+#             height, width = image.shape
+#         h_projection = self.h_projection
+#         up_flag = 0
+#         down_flag = 0
+#         # pixel_limit = 5
+#         start_to_end = 0
+#         end_to_start = pixel_limit_ets + 1
+#         start_point = []
+#         for x in range(len(h_projection)):
+#             if h_projection[x] > 0 and up_flag == 1:
+#                 start_to_end += 1
+
+#             if h_projection[x] == 0 and up_flag == 1:
+# #                 print(start_to_end)
+#                 start_point.append(x)
+# #                 print(start_point)
+#                 if start_to_end < pixel_limit_ste:
+#                     del(start_point[len(start_point) - 1])
+# #                     print('delete ste')
+#                     down_flag = 0
+#                     up_flag = 1
+#                 else:
+#                     down_flag = 1
+#                     up_flag = 0
+#                     start_to_end = 0
+
+#             if h_projection[x] == 0 and down_flag == 1:
+#                 end_to_start += 1
+
+#             if h_projection[x] > 0 and up_flag == 0:
+#                 start_point.append(x)
+# #                 print(start_point)
+#                 if end_to_start < pixel_limit_ets:
+# #                     print('ff')
+#                     del(start_point[len(start_point)-1])
+#                     del(start_point[len(start_point)-1])
+#                 up_flag = 1
+#                 down_flag = 0
+#                 end_to_start = 0
+
+#         if len(start_point) % 2 != 0:
+#             if h_projection[len(h_projection) - 1] > 0 or len(start_point)==1:
+#                 start_point.append(len(h_projection) - 1)
+#         print('start point from mess:', start_point)
+#         self.start_point_h = [start_point[0], start_point[1]]
+
+#         # Even is begining of line and Odd is end of line
+#         if view:
+#             for x in range(0, 2):
+#                 if x % 2 == 0:     # Start_point
+#                     cv2.line(image, (0, start_point[x]),
+#                              (width, start_point[x]), (100, 150, 0), 2)
+#                     # print(x)
+#                 else:         # End_point
+#                     cv2.line(image, (0, start_point[x]),
+#                              (width, start_point[x]), (100, 150, 0), 2)
+# #             cv2.imshow('horizontal line', image)
+# #             cv2.waitKey(0)
+        
+#         return image
+    
+#     def detect_horizontal_line(self, image, pixel_limit_ste, pixel_limit_ets,
+#                                view=True):
+#         # Detect line horizontal
+#         if len(image.shape) == 3:
+#             height, width, _ = image.shape
+#             # color_temp = image.copy()
+#         else:
+#             height, width = image.shape
+#         h_projection = self.h_projection
+#         up_flag = 0
+#         down_flag = 0
+#         # pixel_limit = 5
+#         start_to_end = 0
+#         end_to_start = pixel_limit_ets + 1
+#         start_point = []
+#         for x in range(len(h_projection)):
+#             if up_flag == 1:
+#                 start_to_end += 1
+
+#             if h_projection[x] == 0 and up_flag == 1:
+# #                 print(start_to_end)
+#                 start_point.append(x)
+# #                 print(start_point)
+#                 if start_to_end < pixel_limit_ste:
+#                     del(start_point[len(start_point) - 1])
+# #                     print('delete ste')
+#                     down_flag = 0
+#                     up_flag = 1
+#                 else:
+#                     down_flag = 1
+#                     up_flag = 0
+#                     start_to_end = 0
+
+#             if down_flag == 1:
+#                 end_to_start += 1
+
+#             if h_projection[x] > 0 and up_flag == 0:
+#                 start_point.append(x)
+# #                 print(start_point)
+#                 up_flag = 1
+#                 down_flag = 0
+#                 end_to_start = 0
+
+#         if len(start_point) % 2 != 0:
+#             if h_projection[len(h_projection) - 1] > 0 or len(start_point)==1:
+#                 start_point.append(len(h_projection) - 1)
+#         print('start point from mess:', start_point)
+#         if len(start_point) > 0:
+#             self.start_point_h = [start_point[0], start_point[1]]
+#         else:
+#             self.start_point_h = []
+
+#         # Even is begining of line and Odd is end of line
+#         if view and len(start_point) > 0:
+#             for x in range(0, 2):
+#                 if x % 2 == 0:     # Start_point
+#                     cv2.line(image, (0, start_point[x]),
+#                              (width, start_point[x]), (100, 150, 0), 2)
+#                     # print(x)
+#                 else:         # End_point
+#                     cv2.line(image, (0, start_point[x]),
+#                              (width, start_point[x]), (100, 150, 0), 2)
+# #             cv2.imshow('horizontal line', image)
+# #             cv2.waitKey(0)
+        
+#         return image
+
+    def detect_horizontal_line(self, image, pixel_limit_ste, pixel_limit_ets,
+                               view=True):
+        # Detect line horizontal
+        if len(image.shape) == 3:
+            height, width, _ = image.shape
+            # color_temp = image.copy()
+        else:
+            height, width = image.shape
+        h_projection = self.h_projection
+        up_flag = 0
+        down_flag = 0
+        # pixel_limit = 5
+        start_to_end = 0
+        end_to_start = pixel_limit_ets + 1
+        start_point = []
+        for x in range(len(h_projection)):
+            if h_projection[x] > 0:
+                start_point.append(x)
+                break
+        for x in range(len(h_projection))[::-1]:
+            if h_projection[x] > 0:
+                start_point.append(x)
+                break
+
+        if len(start_point) % 2 != 0:
+            if h_projection[len(h_projection) - 1] > 0 or len(start_point)==1:
+                start_point.append(len(h_projection) - 1)
+#         print('start point from mess:', start_point)
+        if len(start_point) > 0:
+            self.start_point_h = [start_point[0], start_point[1]]
+        else:
+            self.start_point_h = []
+
+        # Even is begining of line and Odd is end of line
+        if view and len(start_point) > 0:
+            for x in range(0, 2):
+                if x % 2 == 0:     # Start_point
+                    cv2.line(image, (0, start_point[x]),
+                             (width, start_point[x]), (100, 150, 0), 2)
+                    # print(x)
+                else:         # End_point
+                    cv2.line(image, (0, start_point[x]),
+                             (width, start_point[x]), (100, 150, 0), 2)
+#             cv2.imshow('horizontal line', image)
+#             cv2.waitKey(0)
+        
+        return image
+    
+    def base_line(self, one_line_image, view=True):
+        # Got self.base_start, self.base_end, self.one_line_image
+        h_projection = self.h_projection
+        # print(h_projection)
+        # original_image = one_line_image
+        self.one_line_image = one_line_image
+        h, self.width = one_line_image.shape
+        diff = [0]
+        for x in range(len(h_projection)):
+            if x > 0:
+                temp_diff = abs(int(h_projection[x]) - int(h_projection[x-1]))
+                diff.append(temp_diff)
+
+        temp = 0
+        for x in range(len(diff)):
+            if diff[x] > temp:
+                temp = diff[x]
+                self.base_end = x
+        # Get the 2nd greatest to base_start
+        temp = 0
+        for x in range(len(diff)):
+            if x == self.base_end:
+                continue
+            if diff[x] > temp:
+                temp = diff[x]
+                self.base_start = x
+
+        if view:
+            cv2.line(self.one_line_image, (0, self.base_start),
+                    (self.width, self.base_start), (0, 255, 0), 2)
+            cv2.line(self.one_line_image, (0, self.base_end),
+                    (self.width, self.base_end), (0, 255, 0), 2)
+
+    def detect_vertical_line(self, image, pixel_limit_ste, view=True):
+        # Detect line vertical
+        v_projection = self.v_projection
+        # print(v_projection)
+        original_image = image
+        up_flag = 0
+        down_flag = 0
+        start_to_end = 0
+        # end_to_start = pixel_limit_ets + 1
+        start_point = []
+        for x in range(len(v_projection)):
+            if v_projection[x] > 0 and down_flag == 0:
+                start_to_end += 1
+
+            if v_projection[x] == 0 and up_flag == 1:
+                # print(start_to_end)
+                start_point.append(x)
+                # print(start_point)
+                if start_to_end < pixel_limit_ste:
+                    del(start_point[len(start_point) - 1])
+                    del(start_point[len(start_point) - 1])
+                down_flag = 1
+                up_flag = 0
+                start_to_end = 0
+
+            if v_projection[x] > 0 and up_flag == 0:
+                start_point.append(x)
+                up_flag = 1
+                down_flag = 0
+                # end_to_start = 0
+
+        if len(start_point) % 2 != 0:
+            if v_projection[len(v_projection) - 1] > 0:
+                start_point.append(len(v_projection) - 1)
+        self.start_point_v = start_point
+        # Even is begining of line and Odd is end of line
+#         if view:
+#             for x in range(len(start_point)):
+#                 if x % 2 == 0:
+#                     cv2.line(original_image, (start_point[x], 0),
+#                              (start_point[x], self.height), (0, 0, 0), 2)
+#                 else:
+#                     cv2.line(original_image, (start_point[x], 0),
+#                              (start_point[x], self.height), (100, 100, 100), 2)
+
+#             cv2.imshow('line', original_image)
+#             print('>')
+#             cv2.waitKey(0)
+#             # print(self.start_point_v)
+
+    def crop_image(self, input_image, h_point=False, v_point=False, view=True):
+        if h_point:
+            start_point = h_point
+            original_image = input_image
+#             print('>')
+#             cv2.waitKey(0)
+            bag_of_h_crop = {}
+            for x in range(len(start_point)):
+                if x + 2 > len(start_point):
+                    # print('x')
+                    continue
+                if x % 2 == 0:
+                    bag_of_h_crop[x] = original_image[
+                                        start_point[x]:start_point[x+1] + 1, :]
+            # print(bag_of_h_crop)
+#             if view:
+#                 for image in bag_of_h_crop:
+#                     cv2.imshow('bag_h'+str(image), bag_of_h_crop[image])
+#                     print('>')
+#                     cv2.waitKey(0)
+#                     cv2.destroyWindow('bag_h'+str(image))
+            self.bag_of_h_crop = bag_of_h_crop
+
+        if v_point:
+            start_point_v = v_point
+            # if input_image!=False:
+            original_image = input_image
+            bag_of_v_crop = {}
+            count = 0
+            for image in bag_of_h_crop:
+                for x in range(len(start_point_v)):
+                    count += 1
+                    if x % 2 == 0:
+                        x1 = start_point[image]
+                        x2 = start_point[image+1]
+                        y1 = start_point_v[x]
+                        y2 = start_point_v[x+1]
+                        bag_of_v_crop[count] = original_image[x1:x2, y1:y2]
+                    # print(x1,'_', x2,'_', y1,'_', y2)
+
+#             if view:
+#                 for image in bag_of_v_crop:
+#                     cv2.imshow('Crop Result', bag_of_v_crop[image])
+#                     print('>')
+#                     cv2.waitKey(0)
+                    # cv2.destroyAllWindows()
+            self.bag_of_v_crop = bag_of_v_crop
+
+def font(imagePath, image):
+    # LPMQ_Font
+    # print("LPMQ")
+    loc_list_LPMQ = sorted(glob.glob('./marker/LPMQ/*.png'))
+    font_LPMQ = FontWrapper(thresh_list={'tanwin_1': 0.7,
+                                         'tanwin_2': 0.7,
+                                         'nun_stand': 0.7,
+                                         'nun_beg_1': 0.7,
+                                         'nun_beg_2': 0.7,
+                                         'nun_mid': 0.7,
+                                         'nun_end': 0.6,
+                                         'mim_stand': 0.7,
+                                         'mim_beg': 0.8,
+                                         'mim_mid': 0.7,
+                                         'mim_end_1': 0.7,
+                                         'mim_end_2': 0.7},
+                            loc_list=loc_list_LPMQ, image_loc=imagePath,
+                            image=image, visualize=False, nms_thresh=0.3,
+                            numstep=30)
+    # AlQalam_Font
+    # print("AlQalam")
+    loc_list_AlQalam = sorted(glob.glob('./marker/AlQalam/*.png'))
+    font_AlQalam = FontWrapper(thresh_list={'tanwin_1': 0.7,
+                                            'tanwin_2': 0.7,
+                                            'nun_stand': 0.7,
+                                            'nun_beg': 0.7,
+                                            'nun_mid': 0.7,
+                                            'nun_end': 0.7,
+                                            'mim_stand': 0.7,
+                                            'mim_beg': 0.7,
+                                            'mim_mid': 0.7,
+                                            'mim_end': 0.7},
+                               loc_list=loc_list_AlQalam, image_loc=imagePath,
+                               image=image, visualize=False, nms_thresh=0.3)
+    # meQuran_Font
+    # print("meQuran")
+    loc_list_meQuran = sorted(glob.glob('./marker/meQuran/*.png'))
+    font_meQuran = FontWrapper(thresh_list={'tanwin_1': 0.7,
+                                            'tanwin_2': 0.65,
+                                            'nun_stand': 0.7,
+                                            'nun_beg_1': 0.7,
+                                            'nun_beg_2': 0.7,
+                                            'nun_mid': 0.7,
+                                            'nun_end': 0.7,
+                                            'mim_stand': 0.7,
+                                            'mim_beg': 0.7,
+                                            'mim_mid': 0.7,
+                                            'mim_end_1': 0.7,
+                                            'mim_end_2': 0.68},
+                               loc_list=loc_list_meQuran, image_loc=imagePath,
+                               image=image, visualize=False, nms_thresh=0.3)
+    # PDMS_Font
+    # print("PDMS")
+    loc_list_PDMS = sorted(glob.glob('./marker/PDMS/*.png'))
+    font_PDMS = FontWrapper(thresh_list={'tanwin_1': 0.7,
+                                         'tanwin_2': 0.7,
+                                         'nun_stand': 0.7,
+                                         'nun_beg': 0.65,
+                                         'nun_mid': 0.7,
+                                         'nun_end': 0.7,
+                                         'mim_stand': 0.7,
+                                         'mim_beg': 0.7,
+                                         'mim_mid': 0.7,
+                                         'mim_end': 0.65},
+                            loc_list=loc_list_PDMS, image_loc=imagePath,
+                            image=image, visualize=False, nms_thresh=0.3)
+    
+    # AlKareem_Font
+    loc_list_AlKareem = sorted(glob.glob('./marker/AlKareem/*.png'))
+    font_AlKareem = FontWrapper(thresh_list={'tanwin_1': 0.7,
+                                         'tanwin_2': 0.7,
+                                         'nun_stand': 0.7,
+                                         'nun_beg': 0.65,
+                                         'nun_mid': 0.7,
+                                         'nun_end': 0.7,
+                                         'mim_stand': 0.7,
+                                         'mim_beg': 0.7,
+                                         'mim_mid': 0.7,
+                                         'mim_end': 0.65,
+                                         'mim_end': 0.65},
+                            loc_list=loc_list_AlKareem, image_loc=imagePath,
+                            image=image, visualize=False, nms_thresh=0.3)
+
+    # KFGQPC_Font
+    loc_list_KFGQPC = sorted(glob.glob('./marker/KFGQPC/*.png'))
+    font_KFGQPC = FontWrapper(thresh_list={'tanwin_1': 0.7,
+                                         'tanwin_2': 0.7,
+                                         'nun_stand': 0.7,
+                                         'nun_beg': 0.65,
+                                         'nun_beg': 0.65,
+                                         'nun_mid': 0.7,
+                                         'nun_end': 0.7,
+                                         'mim_stand': 0.7,
+                                         'mim_beg': 0.7,
+                                         'mim_mid': 0.7,
+                                         'mim_end': 0.65},
+                            loc_list=loc_list_KFGQPC, image_loc=imagePath,
+                            image=image, visualize=False, nms_thresh=0.3)
+
+    # Amiri_Font
+    loc_list_Amiri = sorted(glob.glob('./marker/amiri/*.png'))
+    font_Amiri = FontWrapper(thresh_list={'tanwin_1': 0.7,
+                                         'tanwin_2': 0.7,
+                                         'nun_stand': 0.7,
+                                         'nun_beg': 0.65,
+                                         'nun_beg': 0.65,
+                                         'nun_beg': 0.65,
+                                         'nun_mid': 0.7,
+                                         'nun_end': 0.7,
+                                         'mim_stand': 0.7,
+                                         'mim_beg': 0.7,
+                                         'mim_mid': 0.7,
+                                         'mim_end': 0.8,
+                                         'mim_end': 0.8},
+                            loc_list=loc_list_Amiri, image_loc=imagePath,
+                            image=image, visualize=False, nms_thresh=0.3)
+    
+    # Norehidayat_Font
+    loc_list_Norehidayat = sorted(glob.glob('./marker/norehidayat/*.png'))
+    font_Norehidayat = FontWrapper(thresh_list={'tanwin_1': 0.7,
+                                         'tanwin_2': 0.7,
+                                         'nun_stand': 0.7,
+                                         'nun_beg': 0.65,
+                                         'nun_beg': 0.65,
+                                         'nun_end': 0.7,
+                                         'mim_stand': 0.7,
+                                         'mim_beg': 0.7,
+                                         'mim_mid': 0.7,
+                                         'mim_end': 0.65},
+                            loc_list=loc_list_Norehidayat, image_loc=imagePath,
+                            image=image, visualize=False, nms_thresh=0.3)
+    
+    # Norehira_Font
+    loc_list_Norehira = sorted(glob.glob('./marker/norehira/*.png'))
+    font_Norehira = FontWrapper(thresh_list={'tanwin_1': 0.9,
+                                         'tanwin_2': 0.7,
+                                         'nun_stand': 0.7,
+                                         'nun_beg': 0.65,
+                                         'nun_mid': 0.7,
+                                         'nun_end': 0.65,
+                                         'mim_stand': 0.7,
+                                         'mim_beg': 0.7,
+                                         'mim_mid': 0.7,
+                                         'mim_end': 0.65,
+                                         'mim_end': 0.65},
+                            loc_list=loc_list_Norehira, image_loc=imagePath,
+                            image=image, visualize=False, nms_thresh=0.3)
+    
+    # Norehuda_Font
+    loc_list_Norehuda = sorted(glob.glob('./marker/norehuda/*.png'))
+    font_Norehuda = FontWrapper(thresh_list={'tanwin_1': 0.9,
+                                         'tanwin_2': 0.7,
+                                         'nun_stand': 0.7,
+                                         'nun_beg': 0.65,
+                                         'nun_mid': 0.7,
+                                         'nun_end': 0.7,
+                                         'mim_stand': 0.7,
+                                         'mim_beg': 0.7,
+                                         'mim_mid': 0.7,
+                                         'mim_end': 0.65},
+                            loc_list=loc_list_Norehuda, image_loc=imagePath,
+                            image=image, visualize=False, nms_thresh=0.3)
+
+    # list_object_font = [font_LPMQ, font_AlQalam, font_meQuran, font_PDMS]
+    list_object_font = [font_LPMQ, font_AlQalam, font_meQuran, font_PDMS,
+                        font_AlKareem, font_KFGQPC, font_Amiri, font_Norehidayat,
+                        font_Norehira, font_Norehuda]
+
+    return list_object_font

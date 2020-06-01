@@ -1615,7 +1615,7 @@ class ImageProcessing():
                                 bwb_count += 1
                                 break
                     # Check for possible dammahtanwin on last 1/4 region
-                    # if to many repeated bw then it's dammahtanwin
+                    # if too many repeated bw then it's dammahtanwin
                     bw_max = 0
                     for x in range(3*round(width/4) + 1, width):
                         black = False
