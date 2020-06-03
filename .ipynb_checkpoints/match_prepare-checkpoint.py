@@ -827,7 +827,7 @@ class ImageProcessing():
             for x in value:
                 self.image_final_marker[x] = 0
 #         cv2.imshow('image final marker', self.image_final_marker)
-#         cv2.waitKey(0)
+        cv2.waitKey(0)
 
     def grouping_marker(self):
         img_body_v_proj = self.start_point_v

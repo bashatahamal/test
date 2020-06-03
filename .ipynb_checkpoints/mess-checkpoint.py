@@ -889,6 +889,736 @@ class FontWrapper(Marker):
 #                     cv2.waitKey(0)
                     # cv2.destroyAllWindows()
             self.bag_of_v_crop = bag_of_v_crop
+        
+    def match_normal_eight_connectivity(self, image, oneline_baseline):
+        height, width = image.shape
+        image_process = image.copy()
+        # For image flag
+        image_process[:] = 255
+        oneline_height = oneline_baseline[1] - oneline_baseline[0]
+        if oneline_height <= 1:
+            oneline_height_sorted = 3
+        else:
+            oneline_height_sorted = oneline_height
+        self.conn_pack = {}
+        reg = 1
+        # Doing eight conn on every pixel one by one
+        for x in range(width):
+            for y in range(height):
+                if image_process[y, x] == 0:
+                    continue
+                if image[y, x] == 0:
+                    self.conn_pack['region_{:03d}'.format(reg)] = []
+                    x_y = self.find_connectivity(x, y, height, width, image)
+                    length_ = len(self.conn_pack['region_{:03d}'.format(reg)])
+                    for val in x_y:
+                        self.conn_pack['region_{:03d}'.format(reg)].append(val)
+                    # print(self.conn_pack['region_{:03d}'.format(reg)])
+                    # cv2.waitKey(0)
+                    first = True
+                    sub = False
+                    init = True
+                    while(True):
+                        if first:
+                            length_ = length_
+                            first = False
+                        else:
+                            length_ = l_after_sub
+
+                        if init:
+                            l_after_init = len(self.conn_pack[
+                                'region_{:03d}'.format(reg)])
+                            for k in range(length_, l_after_init):
+                                x_y_sub = self.find_connectivity(
+                                    self.conn_pack[
+                                        'region_{:03d}'.format(reg)][k][1],
+                                    self.conn_pack[
+                                        'region_{:03d}'.format(reg)][k][0],
+                                    height, width, image
+                                )
+                                if len(x_y_sub) > 1:
+                                    sub = True
+                                    for vl in x_y_sub:
+                                        if vl not in self.conn_pack[
+                                                'region_{:03d}'.format(reg)]:
+                                            self.conn_pack[
+                                                'region_{:03d}'.format(reg)
+                                                ].append(vl)
+                        init = False
+                        if sub:
+                            # print(self.conn_pack['region_{:03d}'.format(reg)])
+                            # cv2.waitKey(0)
+                            l_after_sub = len(self.conn_pack[
+                                'region_{:03d}'.format(reg)])
+                            for k in range(l_after_init, l_after_sub):
+                                x_y_sub = self.find_connectivity(
+                                    self.conn_pack[
+                                        'region_{:03d}'.format(reg)][k][1],
+                                    self.conn_pack[
+                                        'region_{:03d}'.format(reg)][k][0],
+                                    height, width, image
+                                )
+                                if len(x_y_sub) > 1:
+                                    init = True
+                                    for vl in x_y_sub:
+                                        if vl not in self.conn_pack[
+                                                'region_{:03d}'.format(reg)]:
+                                            self.conn_pack[
+                                                'region_{:03d}'.format(reg)
+                                                ].append(vl)
+                        sub = False
+
+                        if not sub and not init:
+                            break
+
+                    for val in self.conn_pack['region_{:03d}'.format(reg)]:
+                        image_process[val] = 0
+                    reg += 1
+                    # cv2.imshow('eight conn process', image_process)
+                    # print(self.conn_pack)
+                    # cv2.waitKey(0)
+
+        temp_marker = []
+        temp_delete = []
+        # Noise cancelation
+        k = 3
+        for key in self.conn_pack:
+            if len(self.conn_pack[key]) > k * oneline_height_sorted:
+                temp_marker.append(key)
+        self.conn_pack_sorted = {}
+        for mark in temp_marker:
+            self.conn_pack_sorted[mark] = (self.conn_pack[mark])
+        # If region is not in the baseline then it's not a body image
+        for key in self.conn_pack_sorted:
+            found = False
+            for reg in self.conn_pack_sorted[key]:
+                if found:
+                    break
+                # Catch region in range 2x the oneline baseline height
+                # for a better image body detection
+                for base in range(oneline_baseline[0] - oneline_height_sorted,
+                                  oneline_baseline[1]+1):
+                    if reg[0] == base:
+                        found = True
+                        break
+            if found is False:
+                temp_delete.append(key)
+        self.conn_pack_minus_body = {}
+        # Get body only and minus body region
+        for delt in temp_delete:
+            self.conn_pack_minus_body[delt] = self.conn_pack_sorted[delt]
+            del(self.conn_pack_sorted[delt])
+        # Paint body only region
+        self.image_body = image.copy()
+        self.image_body[:] = 255
+        for region in self.conn_pack_sorted:
+            value = self.conn_pack_sorted[region]  # imagebody region dict
+            for x in value:
+                self.image_body[x] = 0
+
+        self.image_join = self.image_body.copy()
+        for region in self.conn_pack_minus_body:
+            value = self.conn_pack_minus_body[region]
+            for x in value:
+                self.image_join[x] = 0
+
+        self.vertical_projection(self.image_body)
+        self.detect_vertical_line(
+            image=self.image_body.copy(),
+            pixel_limit_ste=0,
+            view=True
+        )
+        # print(self.start_point_v)
+        # Make sure every start point has an end
+        len_h = len(self.start_point_v)
+        if len_h % 2 != 0:
+            del(self.start_point_v[len_h - 1])
+        group_body_by_wall = {}
+        for x in range(len(self.start_point_v)):
+            if x % 2 == 0:
+                wall = (self.start_point_v[x], self.start_point_v[x+1])
+                group_body_by_wall[wall] = []
+                for region in self.conn_pack_sorted:
+                    value = self.conn_pack_sorted[region]
+                    for y_x in value:
+                        # Grouping image body region by its wall (x value)
+                        if self.start_point_v[x] <= y_x[1] \
+                                <= self.start_point_v[x+1]:
+                            group_body_by_wall[wall].append(region)
+                            break
+        # print(group_body_by_wall)
+        for region in group_body_by_wall.values():
+            max_length = 0
+            if len(region) > 1:
+                for x in region:
+                    if len(self.conn_pack_sorted[x]) > max_length:
+                        max_length = len(self.conn_pack_sorted[x])
+                for x in region:
+                    # Fixing hamzah dumping out from image body problem
+                    sorted_region_val = sorted(self.conn_pack_sorted[x])
+                    y_up_region = sorted_region_val[0][0]
+                    region_height = oneline_baseline[0] - y_up_region
+                    # Check how long the char from above the baseline
+                    if region_height > 3 * oneline_height_sorted:
+                        continue
+                    # If region is not 1/4 of the max length then move it
+                    # from image body to marker only
+                    # NB. why just not using the longest reg to sort? coz when
+                    # it does there's a case where two separate words
+                    # overlapping each other by a tiny margin (no white space)
+                    elif len(self.conn_pack_sorted[x]) < 1/4*max_length:
+                        self.conn_pack_minus_body[x] = self.conn_pack_sorted[x]
+                        del(self.conn_pack_sorted[x])
+
+        self.image_final_sorted = image.copy()
+        self.image_final_sorted[:] = 255
+        for region in self.conn_pack_sorted:
+            value = self.conn_pack_sorted[region]
+            for x in value:
+                self.image_final_sorted[x] = 0
+#         cv2.imshow('image final sorted', self.image_final_sorted)
+        self.image_final_marker = image.copy()
+        self.image_final_marker[:] = 255
+        for region in self.conn_pack_minus_body:
+            value = self.conn_pack_minus_body[region]
+            for x in value:
+                self.image_final_marker[x] = 0
+#         cv2.imshow('image final marker', self.image_final_marker)
+#         cv2.waitKey(0)
+
+    def grouping_marker(self):
+        img_body_v_proj = self.start_point_v
+        # Make sure every start point has an end
+        len_h = len(img_body_v_proj)
+        if len_h % 2 != 0:
+            del(img_body_v_proj[len_h - 1])
+        self.group_marker_by_wall = {}
+        for x_x in range(len(img_body_v_proj)):
+            if x_x % 2 == 0:
+                wall = (img_body_v_proj[x_x], img_body_v_proj[x_x+1])
+                self.group_marker_by_wall[wall] = []
+        for region in self.conn_pack_minus_body:
+            value = self.conn_pack_minus_body[region]
+            x_y_value = []
+            # Flip (y,x) to (x,y) and sort
+            for x in value:
+                x_y_value.append(x[::-1])
+            x_y_value = sorted(x_y_value)
+            # print(x_y_value)
+            x_y_value_l = []
+            for val in range(round(len(x_y_value)/2)):
+                x_y_value_l.append(x_y_value[0])
+                del(x_y_value[0])
+            x_y_value_l = x_y_value_l[::-1]
+            # print(x_y_value_l)
+            # print('_________________')
+            # print(x_y_value)
+            x_y_value_from_mid = []
+            count = -1
+            for x_1 in x_y_value:
+                count += 1
+                x_y_value_from_mid.append(x_1)
+                for x_2 in x_y_value_l:
+                    if count < len(x_y_value_l):
+                        x_y_value_from_mid.append(x_y_value_l[count])
+                    break
+
+            for x_x in range(len(img_body_v_proj)):
+                if x_x % 2 == 0:
+                    wall = (img_body_v_proj[x_x], img_body_v_proj[x_x+1])
+                    for x in x_y_value_from_mid:
+                        if wall[0] <= x[0] <= wall[1]:
+                            self.group_marker_by_wall[wall].append(region)
+                            break
+#         print('Group marker by wall')
+#         print(self.group_marker_by_wall)
+
+    def modified_eight_connectivity(self, image, oneline_baseline):
+        height, width = image.shape
+        image_process = image.copy()
+        # For image flag
+        image_process[:] = 255
+        oneline_height = oneline_baseline[1] - oneline_baseline[0]
+        if oneline_height <= 1:
+            oneline_height_sorted = 3
+        else:
+            oneline_height_sorted = oneline_height
+        self.conn_pack = {}
+        reg = 1
+        # Doing eight conn on every pixel one by one
+        for x in range(width):
+            for y in range(height):
+                if image_process[y, x] == 0:
+                    continue
+                if image[y, x] == 0:
+                    self.conn_pack['region_{:03d}'.format(reg)] = []
+                    x_y = self.find_connectivity(x, y, height, width, image)
+                    length_ = len(self.conn_pack['region_{:03d}'.format(reg)])
+                    for val in x_y:
+                        self.conn_pack['region_{:03d}'.format(reg)].append(val)
+                    # print(self.conn_pack['region_{:03d}'.format(reg)])
+                    # cv2.waitKey(0)
+                    first = True
+                    sub = False
+                    init = True
+                    while(True):
+                        if first:
+                            length_ = length_
+                            first = False
+                        else:
+                            length_ = l_after_sub
+
+                        if init:
+                            l_after_init = len(self.conn_pack[
+                                'region_{:03d}'.format(reg)])
+                            for k in range(length_, l_after_init):
+                                x_y_sub = self.find_connectivity(
+                                    self.conn_pack[
+                                        'region_{:03d}'.format(reg)][k][1],
+                                    self.conn_pack[
+                                        'region_{:03d}'.format(reg)][k][0],
+                                    height, width, image
+                                )
+                                if len(x_y_sub) > 1:
+                                    sub = True
+                                    for vl in x_y_sub:
+                                        if vl not in self.conn_pack[
+                                                'region_{:03d}'.format(reg)]:
+                                            self.conn_pack[
+                                                'region_{:03d}'.format(reg)
+                                                ].append(vl)
+                        init = False
+                        if sub:
+                            # print(self.conn_pack['region_{:03d}'.format(reg)])
+                            # cv2.waitKey(0)
+                            l_after_sub = len(self.conn_pack[
+                                'region_{:03d}'.format(reg)])
+                            for k in range(l_after_init, l_after_sub):
+                                x_y_sub = self.find_connectivity(
+                                    self.conn_pack[
+                                        'region_{:03d}'.format(reg)][k][1],
+                                    self.conn_pack[
+                                        'region_{:03d}'.format(reg)][k][0],
+                                    height, width, image
+                                )
+                                if len(x_y_sub) > 1:
+                                    init = True
+                                    for vl in x_y_sub:
+                                        if vl not in self.conn_pack[
+                                                'region_{:03d}'.format(reg)]:
+                                            self.conn_pack[
+                                                'region_{:03d}'.format(reg)
+                                                ].append(vl)
+                        sub = False
+
+                        if not sub and not init:
+                            break
+
+                    for val in self.conn_pack['region_{:03d}'.format(reg)]:
+                        image_process[val] = 0
+                    reg += 1
+                    # cv2.imshow('eight conn process', image_process)
+                    # print(self.conn_pack)
+                    # cv2.waitKey(0)
+
+        temp_marker = []
+        temp_delete = []
+        # Noise cancelation
+        k = 3
+        for key in self.conn_pack:
+            if len(self.conn_pack[key]) > k * oneline_height_sorted:
+                temp_marker.append(key)
+        self.conn_pack_sorted = {}
+        for mark in temp_marker:
+            self.conn_pack_sorted[mark] = (self.conn_pack[mark])
+        # If region is not in the baseline then it's not a body image
+        for key in self.conn_pack_sorted:
+            found = False
+            for reg in self.conn_pack_sorted[key]:
+                if found:
+                    break
+                # Catch region in range 2x the oneline baseline height
+                # for a better image body detection
+                for base in range(oneline_baseline[0],
+                                  oneline_baseline[1]+1):
+                    if reg[0] == base:
+                        found = True
+                        break
+            if found is False:
+                temp_delete.append(key)
+        self.conn_pack_minus_body = {}
+        # Get body only and minus body region
+        for delt in temp_delete:
+            self.conn_pack_minus_body[delt] = self.conn_pack_sorted[delt]
+            del(self.conn_pack_sorted[delt])
+        # Paint body only region
+        self.image_body = image.copy()
+        self.image_body[:] = 255
+        for region in self.conn_pack_sorted:
+            value = self.conn_pack_sorted[region]  # imagebody region dict
+            for x in value:
+                self.image_body[x] = 0
+
+        self.image_join = self.image_body.copy()
+        for region in self.conn_pack_minus_body:
+            value = self.conn_pack_minus_body[region]
+            for x in value:
+                self.image_join[x] = 0
+
+        self.vertical_projection(self.image_body)
+        self.detect_vertical_line(
+            image=self.image_body.copy(),
+            pixel_limit_ste=0,
+            view=True
+        )
+        # print(self.start_point_v)
+        # Make sure every start point has an end
+        len_h = len(self.start_point_v)
+        if len_h % 2 != 0:
+            del(self.start_point_v[len_h - 1])
+        group_body_by_wall = {}
+        for x in range(len(self.start_point_v)):
+            if x % 2 == 0:
+                wall = (self.start_point_v[x], self.start_point_v[x+1])
+                group_body_by_wall[wall] = []
+                for region in self.conn_pack_sorted:
+                    value = self.conn_pack_sorted[region]
+                    for y_x in value:
+                        # Grouping image body region by its wall (x value)
+                        if self.start_point_v[x] <= y_x[1] \
+                                <= self.start_point_v[x+1]:
+                            group_body_by_wall[wall].append(region)
+                            break
+        # print(group_body_by_wall)
+        for region in group_body_by_wall.values():
+            max_length = 0
+            if len(region) > 1:
+                for x in region:
+                    if len(self.conn_pack_sorted[x]) > max_length:
+                        max_length = len(self.conn_pack_sorted[x])
+                for x in region:
+                    # Fixing hamzah dumping out from image body problem
+                    sorted_region_val = sorted(self.conn_pack_sorted[x])
+                    y_up_region = sorted_region_val[0][0]
+                    region_height = oneline_baseline[0] - y_up_region
+                    # Check how long the char from above the baseline
+                    if region_height > 3 * oneline_height_sorted:
+                        continue
+                    # If region is not 1/4 of the max length then move it
+                    # from image body to marker only
+                    # NB. why just not using the longest reg to sort? coz when
+                    # it does there's a case where two separate words
+                    # overlapping each other by a tiny margin (no white space)
+                    elif len(self.conn_pack_sorted[x]) < 1/4*max_length:
+                        self.conn_pack_minus_body[x] = self.conn_pack_sorted[x]
+                        del(self.conn_pack_sorted[x])
+
+        self.image_final_sorted = image.copy()
+        self.image_final_sorted[:] = 255
+        for region in self.conn_pack_sorted:
+            value = self.conn_pack_sorted[region]
+            for x in value:
+                self.image_final_sorted[x] = 0
+#         cv2.imshow('image final sorted', self.image_final_sorted)
+        self.image_final_marker = image.copy()
+        self.image_final_marker[:] = 255
+        for region in self.conn_pack_minus_body:
+            value = self.conn_pack_minus_body[region]
+            for x in value:
+                self.image_final_marker[x] = 0
+#         cv2.imshow('image final marker', self.image_final_marker)
+#         cv2.waitKey(0)
+
+    def dot_checker(self, image_marker):
+        # Dot detection
+        self.horizontal_projection(image_marker)
+        self.detect_horizontal_line(image_marker.copy(), 0, 0, False)
+        one_marker = image_marker[self.start_point_h[0]:
+                                  self.start_point_h[1], :]
+        self.vertical_projection(one_marker)
+        self.detect_vertical_line(one_marker.copy(), 0, False)
+        x1 = self.start_point_v[0]
+        x2 = self.start_point_v[1]
+        one_marker = one_marker[:, x1:x2]
+        height, width = one_marker.shape
+        scale = 1.3
+        write_canvas = False
+        # Square, Portrait or Landscape image
+        if width < scale * height:
+            if height < scale * width:
+#                 print('_square_')
+                black = False
+                white = False
+                middle_hole = False
+                # Possibly sukun
+                for y in range(height):
+                    if one_marker[y, round(width/2)] == 0:
+                        black = True
+                    if black and one_marker[y, round(width/2)] > 0:
+                        white = True
+                    if white and one_marker[y, round(width/2)] == 0:
+                        middle_hole = True
+                if middle_hole:
+#                     print('_white hole in the middle_')
+                    write_canvas = False
+                else:
+                    # Checking all pixel
+                    white_hole = False
+                    for x in range(width):
+                        if white_hole:
+                            break
+                        black = False
+                        white = False
+                        white_val = 0
+                        for y in range(height):
+                            if one_marker[y, x] > 0:
+                                white_val += 1
+                            if one_marker[y, x] == 0:
+                                black = True
+                            if black and one_marker[y, x] > 0:
+                                white = True
+                            if white and one_marker[y, x] == 0:
+                                white_hole = True
+                                break
+                    if white_hole:
+#                         print('_there is a hole_')
+                        write_canvas = False
+                    else:
+                        # Check on 1/4 till 3/4 region
+                        touch_up = False
+                        touch_down = False
+                        for x in range(round(width/4)-1, 3*round(width/4)):
+                            if one_marker[0, x] == 0:
+                                touch_up = True
+                            if one_marker[height-1, x] == 0:
+                                touch_down = True
+                            if touch_up and touch_down:
+                                break
+                        # Check on after 1/5(mitigate noise) till 1/2
+                        if touch_up and touch_down:
+                            too_many_whites = False
+                            for x in range(round(width/5), round(width/2)):
+                                white_val = 0
+                                for y in range(height):
+                                    if one_marker[y, x] > 0:
+                                        white_val += 1
+                                if white_val > round(height/1.5):
+                                    too_many_whites = True
+                                    break
+                            if too_many_whites:
+#                                 print('_too many white value in 1/5 till 1/2_')
+                                write_canvas = False
+                            else:
+#                                 print('_DOT CONFIRM_')
+                                write_canvas = True
+#                         else:
+#                             print('not touching')
+
+                if not write_canvas:
+                    # Split image into two vertically and looking for bwb
+                    # (Kaf Hamzah)
+                    # bwb_up = False
+                    bwb_down = False
+                    bwb_count = 0
+                    bwb_thresh = round(height/2.1)
+                    addition = round(height/8)
+                    up_limit = round(height/2)
+                    down_limit = round(height/2)
+                    for x in range(width):
+                        if bwb_count > bwb_thresh:
+                            break
+                        black = False
+                        white = False
+                        for y in range(0, up_limit):
+                            if one_marker[y, x] == 0:
+                                black = True
+                            if black and one_marker[y, x] > 0:
+                                white = True
+                            if white and one_marker[y, x] == 0:
+                                # bwb_up = True
+                                bwb_count += 1
+                                break
+                    for x in range(width):
+                        if bwb_count > bwb_thresh and bwb_down:
+                            break
+                        black = False
+                        white = False
+                        for y in range(down_limit, height):
+                            if one_marker[y, x] == 0:
+                                black = True
+                            if black and one_marker[y, x] > 0:
+                                white = True
+                            if white and one_marker[y, x] == 0:
+                                bwb_down = True
+                                bwb_count += 1
+                                break
+                    # Check for possible dammahtanwin on last 1/4 region
+                    # if to many repeated bw then it's dammahtanwin
+                    bw_max = 0
+                    for x in range(3*round(width/4) + 1, width):
+                        black = False
+                        bw = False
+                        bw_count = 0
+                        for y in range(height):
+                            if one_marker[y, x] == 0:
+                                black = True
+                            if black and one_marker[y, x] > 0:
+                                bw = True
+                            if bw:
+                                bw_count += 1
+                                black = False
+                                bw = False
+                        if bw_count > bw_max:
+                            bw_max = bw_count
+                    if bwb_count >= bwb_thresh and bwb_down and bw_max < 3:
+#                         print('_KAF HAMZAH CONFIRM_')
+                        write_canvas = True
+                    else:
+#                         print('_also not kaf hamzah_')
+                        write_canvas = False
+            else:
+#                 print('_portrait image_')
+                # Split image into two vertically and looking for bwb
+                # (Kaf Hamzah)
+                bwb_up = False
+                bwb_down = False
+                for x in range(width):
+                    if bwb_up:
+                        break
+                    black = False
+                    white = False
+                    for y in range(0, round(height/2)):
+                        if one_marker[y, x] == 0:
+                            black = True
+                        if black and one_marker[y, x] > 0:
+                            white = True
+                        if white and one_marker[y, x] == 0:
+                            bwb_up = True
+                            break
+                for x in range(width):
+                    if bwb_down:
+                        break
+                    black = False
+                    white = False
+                    for y in range(round(height/2), height):
+                        if one_marker[y, x] == 0:
+                            black = True
+                        if black and one_marker[y, x] > 0:
+                            white = True
+                        if white and one_marker[y, x] == 0:
+                            bwb_down = True
+                            break
+                if bwb_up and bwb_down:
+#                     print('_KAF HAMZAH CONFIRM_')
+                    write_canvas = True
+                else:
+                    write_canvas = False
+        else:
+#             print('_landscape image_')
+            black = False
+            white = False
+            wbw_confirm = False
+            over_pattern = False
+            # Possibly straight harakat or tasdid
+            for y in range(height):
+                if one_marker[y, round(width/2)] > 0:
+                    white = True
+                if white and one_marker[y, round(width/2)] == 0:
+                    black = True
+                if black and one_marker[y, round(width/2)] > 0:
+                    wbw_confirm = True
+                if wbw_confirm and one_marker[y, round(width/2)] == 0:
+                    over_pattern = True
+                    break
+            if over_pattern:
+#                 print('_too many wbw + b_')
+                write_canvas = False
+            elif wbw_confirm:
+#                 print('_mid is wbw_')
+                too_many_white_val = False
+                # cut in the middle up vertically wether the pixel all white
+                for x in range(round(width/5), round(width/3)):
+                    white_val = 0
+                    for y in range(0, height):
+                        if one_marker[y, x] > 0:
+                            white_val += 1
+                    if white_val > round(height/1.9):
+                        too_many_white_val = True
+                        break
+                if too_many_white_val:
+#                     print('_too many white val in 1/5 till 1/3_')
+                    write_canvas = False
+                else:
+                    half_img = one_marker[:, 0:round(width/2)]
+                    self.horizontal_projection(half_img)
+                    self.detect_horizontal_line(half_img.copy(), 0, 0, True)
+                    half_img = one_marker[
+                        self.start_point_h[0]:self.start_point_h[1],
+                        0:round(width/2)
+                    ]
+                    half_height, half_width = half_img.shape
+                    # print(half_height, half_width)
+                    # one_3rd = round(half_width/3)
+                    # one_4th = round(half_width/4)
+                    one_8th = round(half_width/8)
+                    touch_up = False
+                    touch_down = False
+                    # for x in range(one_3rd-1, 2*one_3rd):
+                    # for x in range(one_4th-1, 3*one_4th):
+                    for x in range(one_8th-1, 7*one_8th):
+                        if half_img[0, x] == 0:
+                            touch_up = True
+                        if half_img[half_height-1, x] == 0:
+                            touch_down = True
+                        if touch_up and touch_down:
+                            break
+                    if touch_up and touch_down:
+#                         print('_DOT CONFIRM_')
+                        write_canvas = True
+                    else:
+#                         print('_not touching_')
+                        write_canvas = False
+            else:
+#                 print('_middle is not wbw_')
+                write_canvas = False
+                # Split image into two vertically and looking for bwb
+                # (Kaf Hamzah)
+                bwb_up = False
+                bwb_down = False
+                for x in range(width):
+                    if bwb_up:
+                        break
+                    black = False
+                    white = False
+                    for y in range(0, round(height/2)):
+                        if one_marker[y, x] == 0:
+                            black = True
+                        if black and one_marker[y, x] > 0:
+                            white = True
+                        if white and one_marker[y, x] == 0:
+                            bwb_up = True
+                            break
+                for x in range(width):
+                    if bwb_down:
+                        break
+                    black = False
+                    white = False
+                    for y in range(round(height/2), height):
+                        if one_marker[y, x] == 0:
+                            black = True
+                        if black and one_marker[y, x] > 0:
+                            white = True
+                        if white and one_marker[y, x] == 0:
+                            bwb_down = True
+                            break
+                if bwb_up and bwb_down:
+#                     print('_KAF HAMZAH CONFIRM_')
+                    write_canvas = True
+                else:
+                    write_canvas = False
+
+        return write_canvas
+
 
 def font(imagePath, image):
     # LPMQ_Font
