@@ -5,7 +5,6 @@ from flask import render_template, request, redirect, url_for
 import os
 
 
-
 @app.after_request
 def add_header(r):
     """
@@ -47,7 +46,7 @@ def create_entry():
 def jinja():
 
     req = request.get_json()
-    print(app.config["MARKER"])
+    # print(app.config["MARKER"])
     print('hhh', req)
 
     test_list = ['2323', 'fdfd', '23123']
@@ -71,7 +70,6 @@ def jinja():
     return render_template('public/jinja.html', test_list=test_list)
 
 
-
 @app.route("/upload-image", methods=["GET", "POST"])
 def upload_image():
 
@@ -81,7 +79,8 @@ def upload_image():
 
             image = request.files["image"]
 
-            image.save(os.path.join(app.config["IMAGE_UPLOADS"], image.filename))
+            image.save(os.path.join(
+                app.config["IMAGE_UPLOADS"], image.filename))
 
             print("Image saved")
 
@@ -92,32 +91,47 @@ def upload_image():
 
 from_sketch_button = False
 
+list_image_files = []
 @app.route('/sketch', methods=["GET", "POST"])
 def sketch():
     global from_sketch_button
     global l
     global req
-    global marker_type
+    global list_image_files
     if request.method == "POST":
-        l = 3
-        req = {}
-        res = request.get_json()
-        print(res)
-        # res = make_response(jsonify(req), 200)
-        # print(type(res))
-        # time.sleep(2)
-        # return res
-        from_sketch_button = True
-        # req['add message from python']= 'This is the message'
-        # res = make_response(jsonify(req), 200)
-        # time.sleep(1)
-        return redirect(request.url)
-        # return redirect(url_for('sketch_'))
-    # json_marker_type = jsonify(marker_type)
-    # print(json_marker_type)
+        if request.is_json:
+            req = {}
+            res = request.get_json()
+            print(res)
+            from_sketch_button = True
+            # res = make_response(jsonify(req), 200)
+            # print(type(res))
+            # time.sleep(2)
+            # return res
+            if res == 'start':
+                res = make_response(jsonify('processing'), 200)
+                return res
+
+            return redirect(request.url)
+
+        if request.files:
+            # files = request.files.getlist("files")
+            # print(files)
+
+            image = request.files["image"]
+            print(image)
+            saved_path = os.path.join(app.config["IMAGE_UPLOADS"], image.filename)
+            list_image_files.append(saved_path)
+            image.save(saved_path)
+            print("Image saved")
+            res = make_response(jsonify(saved_path), 200)
+            # return render_template('public/sketch.html', marker_type=app.config['MARKER'])
+            # return redirect(request.url)
+            return res
+
     print('outside if')
 
-    return render_template('public/sketch.html', marker_type=marker_type)
+    return render_template('public/sketch.html', marker_type=app.config['MARKER'])
 
 
 # @app.route('/sketch1', methods=["GET", "POST"])
@@ -128,21 +142,11 @@ def sketch():
 #     return render_template('public/sketch1.html')
 
 
-first = False
-second = False
-third = False
-end = False
 req = {}
-l = 5
-
 # from_sketch_button = True
 @app.route('/sketch_')
 def sketch_():
     global from_sketch_button
-    global first
-    global second
-    global end
-    global l
     global req
 
     # from_sketch_button = True
@@ -150,14 +154,8 @@ def sketch_():
     req['A message from python'] = 'Initialiation'
     if from_sketch_button:
         # resetting all global variable
-        from_sketch_button = False
-        first = False
-        second = False
-        third = False
-        end = False
+        from_sketch_button = True
         req = {}
-        l = 5
-        first = True
         req['A message from python'] = 'Doing the number1'
         print('button________________')
         # res = make_response(jsonify(req), 200)
@@ -168,12 +166,14 @@ def sketch_():
     # return render_template('public/sketch.html')
     return redirect('/sketch')
 
+
 @app.route('/number1')
 def do_something():
     print(from_sketch_button)
     time.sleep(5)
     req['A message from python'] = 'number 1 done and prepare for number 2'
     return render_template('public/sketch_.html', next='/number2', req=req)
+
 
 @app.route('/number2')
 def do_something_again():
@@ -182,12 +182,14 @@ def do_something_again():
     req['A message from python'] = 'number 2 done and prepare for number 3'
     return render_template('public/sketch_.html', next='/number3', req=req)
 
+
 @app.route('/number3')
 def do_something_and_again():
     print(from_sketch_button)
     time.sleep(4)
     req['A message from python'] = 'number 3 done and prepare for number 4'
     return render_template('public/sketch_.html', next='/number4', req=req)
+
 
 @app.route('/number4')
 def do_something_and_again_and_again_and_again():
@@ -196,13 +198,14 @@ def do_something_and_again_and_again_and_again():
     req['A message from python'] = 'number 4 done and prepare for number 5'
     return render_template('public/sketch_.html', next='/result', req=req)
 
+
 @app.route('/result')
 def do_something_and_again_final():
     print(from_sketch_button)
     time.sleep(3)
     req['A message from python'] = 'number 4 done and back to sketch'
     # return render_template('public/sketch_.html', next='/sketch', req=req)
-    return render_template('public/sketch.html', marker_type=marker_type)
+    return render_template('public/sketch.html', marker_type=app.config['MARKER'])
 
 # @app.route('/test')
 # def test():
