@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="static/css/style.css">
+    <title>Document</title>
+</head>
+
+<!-- <div class="loader-wrapper">
+    <div class="loader_text">
+        <h1>
+            {{ req }}
+        </h1>
+    </div>
+    <span class="loader"><span class="loader-inner"></span></span>
+</div> -->
+
+<body>
+    <script>
+        var up= "<div class='loader-wrapper'><div class='loader_text'><h1>"
+        var text = "THIS IS VARIABLE TEXT"
+        var down = "</h1></div><span class='loader'><span class='loader-inner'></span></span></div> "
+        document.write(up + text + down)
+        let a = new Promise(function(resolve, reject){});
+        a.then(function (response) {
+            if (response.status !== 200) {
+                console.log(`Looks like there was a problem. Status code: ${response.status}`);
+                return;
+            }
+            response.json().then(function (data) {
+                console.log(data);
+                // location.replace('test')
+            });
+        })
+        a.catch(function (error) {
+            console.log("Fetch error: " + error);
+        });
+    </script>
+</body>
+
+</html>
