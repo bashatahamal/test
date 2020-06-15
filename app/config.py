@@ -52,6 +52,16 @@ def set_marker_type():
     
     return marker_type
 
+def get_marker_path():
+    import glob
+    marker_root = '/home/mhbrt/Desktop/Wind/Multiscale/marker/'
+    font_folder = ['AlKareem', 'AlQalam', 'KFGQPC', 'LPMQ', 'PDMS',
+            'amiri', 'meQuran', 'norehidayat', 'norehira', 'norehuda']
+    marker_path = {}
+    for name in font_folder:
+        marker_path[name] = sorted(glob.glob(marker_root + name + '/*.png'))
+    
+    return marker_path
 
 class Config(object):
     DEBUG = False
@@ -77,7 +87,8 @@ class DevelopmentConfig(Config):
     # DB_USERNAME = "admin"
     # DB_PASSWORD = "example"
     # print('dev')
-    MARKER = set_marker_type()
+    MARKER_TYPE= set_marker_type()
+    MARKER_FOLDER = get_marker_path()
     IMAGE_UPLOADS = "/home/mhbrt/Desktop/Wind/Multiscale/app/app/static/img/uploads"
 
     SESSION_COOKIE_SECURE = False

@@ -430,17 +430,18 @@ class ImageProcessing():
         self.start_point_h = start_point
 
         # Even is begining of line and Odd is end of line
-#         if view:
-#             for x in range(len(start_point)):
-#                 if x % 2 == 0:     # Start_point
-#                     cv2.line(image, (0, start_point[x]),
-#                              (width, start_point[x]), (0, 0, 255), 2)
-#                     # print(x)
-#                 else:         # End_point
-#                     cv2.line(image, (0, start_point[x]),
-#                              (width, start_point[x]), (100, 100, 255), 2)
+        if view:
+            for x in range(len(start_point)):
+                if x % 2 == 0:     # Start_point
+                    cv2.line(image, (0, start_point[x]),
+                             (width, start_point[x]), (0, 0, 255), 2)
+                    # print(x)
+                else:         # End_point
+                    cv2.line(image, (0, start_point[x]),
+                             (width, start_point[x]), (100, 100, 255), 2)
 #             cv2.imshow('horizontal line', image)
 #             cv2.waitKey(0)
+        return image
 
     def base_line(self, one_line_image, view=True):
         # Got self.base_start, self.base_end, self.one_line_image
@@ -1324,6 +1325,16 @@ class ImageProcessing():
 #         print(final_group_marker)
 #         print('group dot')
 #         print(final_group_dot)
+        self.imagelist_perchar_marker = []
+        for char in final_group_marker:
+            perchar_img = self.image_final_sorted.copy()
+            perchar_img[:] = 255
+            for region in final_group_marker[char]:
+                value = self.conn_pack_minus_body[region]
+                for x in value:
+                    perchar_img[x] = 0
+            perchar_img = perchar_img[:, wall[0]:wall[1]]
+            self.imagelist_perchar_marker.append(perchar_img)
 
         # Paint dot on selected wall
         for char in final_group_dot:

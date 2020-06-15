@@ -1,8 +1,19 @@
+from flask import Response
+import subprocess
+import pickle
 from flask import jsonify, make_response
 import time
 from app import app
 from flask import render_template, request, redirect, url_for
 import os
+import cv2
+import sys
+sys.path.insert(1, '/home/mhbrt/Desktop/Wind/Multiscale/')
+import complete_flow as flow
+
+# model_name = '/home/mhbrt/Desktop/Wind/Multiscale/Colab/best_model_DenseNet_DD.pkl'
+# model = pickle.load(open(model_name, 'rb'))
+# print('_LOAD MODEL DONE_')
 
 
 @app.after_request
@@ -25,6 +36,31 @@ def index():
 # @app.route('/about')
 # def about():
 #     return "<h1 style = 'color: red'> ABOUT!! </h1>"
+
+
+@app.route('/stream')
+def yieldd():
+    def inner():
+        proc = subprocess.Popen(
+            # call something with a lot of output so we can see it
+            ["python", "-u", "count_timer.py"],
+            stdout=subprocess.PIPE,
+            # universal_newlines=True
+        )
+
+        for line in iter(proc.stdout.readline, b''):
+        # print(line.decode("utf-8"))
+            # yield line.decode("utf-8").rstrip() + '<br/>\n'
+            yield line.decode("utf-8").rstrip() + '$'
+
+    # text/html is required for most browsers to show th$
+    return Response(inner(), mimetype='text/event-stream')
+    # return Response(inner(), mimetype='text/html')
+
+import flask
+@app.route('/page')
+def get_page():
+    return flask.send_file('templates/public/page.html')
 
 
 @app.route("/guestbook/create-entry", methods=["POST"])
@@ -92,10 +128,17 @@ def upload_image():
 from_sketch_button = False
 
 list_image_files = []
+
+@app.route('/dataset')
+def dataset():
+    font_folder = ['AlKareem', 'AlQalam', 'KFGQPC', 'LPMQ', 'PDMS',
+                   'amiri', 'meQuran', 'norehidayat', 'norehira', 'norehuda']
+    # print(app.config['MARKER_FOLDER'][font_folder[1]])
+    return render_template('public/dataset.html', marker_folder=app.config['MARKER_FOLDER'])
+
 @app.route('/sketch', methods=["GET", "POST"])
 def sketch():
     global from_sketch_button
-    global l
     global req
     global list_image_files
     if request.method == "POST":
@@ -104,15 +147,30 @@ def sketch():
             res = request.get_json()
             print(res)
             from_sketch_button = True
-            # res = make_response(jsonify(req), 200)
-            # print(type(res))
-            # time.sleep(2)
-            # return res
-            if res == 'start':
-                res = make_response(jsonify('processing'), 200)
-                return res
 
-            return redirect(request.url)
+            if res == 'start':
+                response = make_response(jsonify('processing'), 200)
+                return response
+
+            imagePath = '/home/mhbrt/Desktop/Wind/Multiscale/temp/0v4.jpg'
+            markerPath = '/home/mhbrt/Desktop/Wind/Multiscale/marker'
+            img = cv2.imread(imagePath)
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            # font_list = mess.font(imagePath=imagePath, image=gray, setting=res)
+            font_list = flow.font_list(
+                imagePath=imagePath, image=gray, setting=res, markerPath=markerPath)
+            temp_object = []
+            # print(font_list)
+            # print(font_list[1].marker_location)
+            for font_object in font_list:
+                font_object.run()
+                temp_object.append(font_object.get_object_result())
+            print(temp_object)
+            flow.big_blok(temp_object, imagePath,
+                          font_object, model, font_list)
+            response = make_response(jsonify('ok'), 200)
+            return response
+            # return redirect(request.url)
 
         if request.files:
             # files = request.files.getlist("files")
@@ -120,18 +178,19 @@ def sketch():
 
             image = request.files["image"]
             print(image)
-            saved_path = os.path.join(app.config["IMAGE_UPLOADS"], image.filename)
+            saved_path = os.path.join(
+                app.config["IMAGE_UPLOADS"], image.filename)
             list_image_files.append(saved_path)
             image.save(saved_path)
             print("Image saved")
             res = make_response(jsonify(saved_path), 200)
-            # return render_template('public/sketch.html', marker_type=app.config['MARKER'])
+            # return render_template('public/sketch.html', marker_type=app.config['MARKER_TYPE'])
             # return redirect(request.url)
             return res
 
     print('outside if')
 
-    return render_template('public/sketch.html', marker_type=app.config['MARKER'])
+    return render_template('public/sketch.html', marker_type=app.config['MARKER_TYPE'])
 
 
 # @app.route('/sketch1', methods=["GET", "POST"])
@@ -144,6 +203,8 @@ def sketch():
 
 req = {}
 # from_sketch_button = True
+
+
 @app.route('/sketch_')
 def sketch_():
     global from_sketch_button
@@ -205,7 +266,7 @@ def do_something_and_again_final():
     time.sleep(3)
     req['A message from python'] = 'number 4 done and back to sketch'
     # return render_template('public/sketch_.html', next='/sketch', req=req)
-    return render_template('public/sketch.html', marker_type=app.config['MARKER'])
+    return render_template('public/sketch.html', marker_type=app.config['MARKER_TYPE'])
 
 # @app.route('/test')
 # def test():

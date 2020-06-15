@@ -1,0 +1,56 @@
+{% extends 'public/template/public_template.html' %}
+
+{% block title %}Sketch{% endblock %}
+
+{% block main %}
+<div class="wrapper">
+    <div class="box box0"></div>
+    <div class="box box1"></div>
+    <div class="box box2">
+        <h4><b>Template Images</b></h4>
+        <div class="demo-gallery">
+            <ul id="lightgallery" class="list-unstyled column">
+                {% for font in marker_folder %}
+                <!-- <div class="grid-container">f  -->
+                <!-- {{marker_folder[font][0]}} -->
+                <li class="col-xs-6 col-sm-4 col-md-3" data-src="{{ marker_folder[font][0] }}"
+                    data-sub-html="<h3>{{ font }}</h3><p>{{ marker_type[font][0] }}</p>">
+                    <a href="">
+                        <img class="img-responsive" src="/static/img/folder1.png" style="max-width: 150px;">
+                        <div class="demo-gallery-poster">
+                            <img src="static/light_gallery/img/zoom.png">
+                        </div>
+                    </a>
+                    <div>
+                        <h6>{{ font }}</h6>
+                    </div>
+                </li>
+                <!-- </div> -->
+                {% for x in range(marker_folder[font]|count) %}
+                {% if not loop.first %}
+                <li style="display: none;" data-src="{{ marker_folder[font][x] }}"
+                    data-sub-html="<h3>{{ font }}</h3><p>{{ marker_type[font][x] }}<p>">
+                    <a href="">
+                        <img class="img-responsive" src="{{ marker_folder[font][x] }}">
+                    </a>
+                </li>
+                {% endif %}
+                {% endfor %}
+                {% endfor %}
+
+            </ul>
+        </div>
+    </div>
+    <div class="box box3"></div>
+    <div class="box box4"></div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+    // lightGallery(document.getElementById('lightgallery'))
+    $(document).ready(function () {
+        $('#lightgallery').lightGallery();
+    });
+</script>
+{% endblock %}

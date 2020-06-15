@@ -129,6 +129,8 @@ class Marker:
         # boundingBoxes = np.ones((1,4), dtype=int)
         boundingBoxes = []
         max_value_list = []
+        self.imagelist_visualize = []
+        self.image_visualize_white_block = []
         # print(numstep)
         # Loop over scaled image (start stop numstep) from the back
         for scale in np.linspace(0.2, 2.0, numstep)[::-1]:
@@ -162,10 +164,11 @@ class Marker:
             if visualize:
                 # clone = np.dstack([edged, edged, edged])
                 clone = np.dstack([resized, resized, resized])
-                print(self.get_template_location())
-                print(maxVal)
+                # print(self.get_template_location())
+                # print(maxVal)
                 cv2.rectangle(clone, (maxLoc[0], maxLoc[1]),
                               (maxLoc[0] + tW, maxLoc[1] + tH), (0, 0, 255), 2)
+                self.imagelist_visualize.append(clone)
                 # cv2.imshow("Visualizing", clone)
                 # cv2.waitKey(0)
                 # plt.imshow(clone)
@@ -197,6 +200,7 @@ class Marker:
                                     int((maxLoc[1] + tH) * r))
                     temp = [startX, startY, endX, endY]
                     boundingBoxes.append(temp)
+                self.image_visualize_white_block.append(resized)
 #                     print(boundingBoxes)
 
         # If detected on this scale size
@@ -227,6 +231,8 @@ class FontWrapper(Marker):
         self._Data = kwargs
         self.nms_thresh = nms_thresh
         self.visualize = visualize
+        self.imagelist_visualize_white_blok = []
+        # self.visualize = True
 
         self.image_location = self._Data["image_loc"]
         self.marker_location = self._Data["loc_list"]
@@ -242,16 +248,15 @@ class FontWrapper(Marker):
         self.pocket = {}
         # super().__init__()
         colour_tanwin = [
-            (255, 0, 255), (0, 0, 255), (128, 0, 128),
-            (0, 0, 128)
+            (255, 0, 0), (204, 0, 0), (255, 51, 51)
         ]
         colour_nun = [
-            (255, 0, 0), (128, 0, 0), (255, 99, 71),
-            (220, 20, 60), (139, 0, 0)
+            (0, 255, 0), (0, 204, 0), (51, 255, 51),
+            (102, 255, 102), (0, 153, 0)
         ]
         colour_mim = [
-            (154, 205, 50), (107, 142, 35), (85, 107, 47),
-            (0, 128, 0), (34, 139, 34)
+            (0, 255, 255), (0, 0, 204), (51, 51, 255),
+            (102, 102, 255), (0, 0, 153)
         ]
         t = 0
         m = 0
@@ -296,7 +301,7 @@ class FontWrapper(Marker):
         return self.pocket
 
     def get_image(self):
-        return self.image
+        return self.image.copy()
 
     def get_object_name(self):
         return self.get_marker_location()[0].split('/')[2]
@@ -314,22 +319,22 @@ class FontWrapper(Marker):
                                   (endX, endY), self.temp_colour[key], 2)
                 # print(self.pick_colour[x])
                 found = True
-        if found:
-            print('<<<<<<<< View Result >>>>>>>>')
-            cv2.imshow("Detected Image_" + self.get_object_name(),
-                       rectangle_image)
-        else:
-            cv2.imshow("Original Image", rectangle_image)
-            print('not found')
-        print('>')
-        cv2.waitKey(0)
+        # if found:
+        #     print('<<<<<<<< View Result >>>>>>>>')
+        #     cv2.imshow("Detected Image_" + self.get_object_name(),
+        #                rectangle_image)
+        # else:
+        #     cv2.imshow("Original Image", rectangle_image)
+        #     print('not found')
+        # print('>')
+        # cv2.waitKey(0)
         # cv2.destroyWindow("Detected Image_" + self.get_object_name())
+        return rectangle_image
 
     def run(self, view=False, numstep=100):
         # Tanwin
         # print(self.get_marker_thresh())
         print('run() Marker Font')
-
         # gray = cv2.cvtColor(self.get_original_image(), cv2.COLOR_BGR2GRAY)
         if self.numstep == 0:
             numstep = numstep
@@ -348,6 +353,8 @@ class FontWrapper(Marker):
             (pocketData[x], pocketData[x+len(self.get_marker_thresh())]) \
                 = super().match_template(visualize=self.visualize,
                                          numstep=numstep)
+            self.imagelist_visualize_white_blok.append(self.image_visualize_white_block)
+            
             # print(type(pocketData[x]))
 
         # Change the name by +id
@@ -735,10 +742,13 @@ class FontWrapper(Marker):
                 start_point.append(x)
                 break
 
+#         if len(start_point) % 2 != 0:
+#             if h_projection[len(h_projection) - 1] > 0 or len(start_point)==1:
+#                 start_point.append(len(h_projection) - 1)
         if len(start_point) % 2 != 0:
             if h_projection[len(h_projection) - 1] > 0 or len(start_point)==1:
                 start_point.append(len(h_projection) - 1)
-#         print('start point from mess:', start_point)
+        print('start point from mess:', start_point)
         if len(start_point) > 0:
             self.start_point_h = [start_point[0], start_point[1]]
         else:
@@ -1620,172 +1630,360 @@ class FontWrapper(Marker):
         return write_canvas
 
 
-def font(imagePath, image):
+# def font(imagePath, image):
+#     # LPMQ_Font
+#     # print("LPMQ")
+#     loc_list_LPMQ = sorted(glob.glob('./marker/LPMQ/*.png'))
+#     font_LPMQ = FontWrapper(thresh_list={'tanwin_1': 0.7,
+#                                          'tanwin_2': 0.7,
+#                                          'nun_stand': 0.7,
+#                                          'nun_beg_1': 0.7,
+#                                          'nun_beg_2': 0.7,
+#                                          'nun_mid': 0.7,
+#                                          'nun_end': 0.6,
+#                                          'mim_stand': 0.7,
+#                                          'mim_beg': 0.8,
+#                                          'mim_mid': 0.7,
+#                                          'mim_end_1': 0.7,
+#                                          'mim_end_2': 0.7},
+#                             loc_list=loc_list_LPMQ, image_loc=imagePath,
+#                             image=image, visualize=False, nms_thresh=0.3,
+#                             numstep=30)
+#     # AlQalam_Font
+#     # print("AlQalam")
+#     loc_list_AlQalam = sorted(glob.glob('./marker/AlQalam/*.png'))
+#     font_AlQalam = FontWrapper(thresh_list={'tanwin_1': 0.7,
+#                                             'tanwin_2': 0.7,
+#                                             'nun_stand': 0.7,
+#                                             'nun_beg': 0.7,
+#                                             'nun_mid': 0.7,
+#                                             'nun_end': 0.7,
+#                                             'mim_stand': 0.7,
+#                                             'mim_beg': 0.7,
+#                                             'mim_mid': 0.7,
+#                                             'mim_end': 0.7},
+#                                loc_list=loc_list_AlQalam, image_loc=imagePath,
+#                                image=image, visualize=False, nms_thresh=0.3)
+#     # meQuran_Font
+#     # print("meQuran")
+#     loc_list_meQuran = sorted(glob.glob('./marker/meQuran/*.png'))
+#     font_meQuran = FontWrapper(thresh_list={'tanwin_1': 0.7,
+#                                             'tanwin_2': 0.65,
+#                                             'nun_stand': 0.7,
+#                                             'nun_beg_1': 0.7,
+#                                             'nun_beg_2': 0.7,
+#                                             'nun_mid': 0.7,
+#                                             'nun_end': 0.7,
+#                                             'mim_stand': 0.7,
+#                                             'mim_beg': 0.7,
+#                                             'mim_mid': 0.7,
+#                                             'mim_end_1': 0.7,
+#                                             'mim_end_2': 0.68},
+#                                loc_list=loc_list_meQuran, image_loc=imagePath,
+#                                image=image, visualize=False, nms_thresh=0.3)
+#     # PDMS_Font
+#     # print("PDMS")
+#     loc_list_PDMS = sorted(glob.glob('./marker/PDMS/*.png'))
+#     font_PDMS = FontWrapper(thresh_list={'tanwin_1': 0.7,
+#                                          'tanwin_2': 0.7,
+#                                          'nun_stand': 0.7,
+#                                          'nun_beg': 0.65,
+#                                          'nun_mid': 0.7,
+#                                          'nun_end': 0.7,
+#                                          'mim_stand': 0.7,
+#                                          'mim_beg': 0.7,
+#                                          'mim_mid': 0.7,
+#                                          'mim_end': 0.65},
+#                             loc_list=loc_list_PDMS, image_loc=imagePath,
+#                             image=image, visualize=False, nms_thresh=0.3)
+    
+#     # AlKareem_Font
+#     loc_list_AlKareem = sorted(glob.glob('./marker/AlKareem/*.png'))
+#     font_AlKareem = FontWrapper(thresh_list={'tanwin_1': 0.7,
+#                                          'tanwin_2': 0.7,
+#                                          'nun_stand': 0.7,
+#                                          'nun_beg': 0.65,
+#                                          'nun_mid': 0.7,
+#                                          'nun_end': 0.7,
+#                                          'mim_stand': 0.7,
+#                                          'mim_beg': 0.7,
+#                                          'mim_mid': 0.7,
+#                                          'mim_end': 0.65,
+#                                          'mim_end': 0.65},
+#                             loc_list=loc_list_AlKareem, image_loc=imagePath,
+#                             image=image, visualize=False, nms_thresh=0.3)
+
+#     # KFGQPC_Font
+#     loc_list_KFGQPC = sorted(glob.glob('./marker/KFGQPC/*.png'))
+#     font_KFGQPC = FontWrapper(thresh_list={'tanwin_1': 0.7,
+#                                          'tanwin_2': 0.7,
+#                                          'nun_stand': 0.7,
+#                                          'nun_beg': 0.65,
+#                                          'nun_beg': 0.65,
+#                                          'nun_mid': 0.7,
+#                                          'nun_end': 0.7,
+#                                          'mim_stand': 0.7,
+#                                          'mim_beg': 0.7,
+#                                          'mim_mid': 0.7,
+#                                          'mim_end': 0.65},
+#                             loc_list=loc_list_KFGQPC, image_loc=imagePath,
+#                             image=image, visualize=False, nms_thresh=0.3)
+
+#     # Amiri_Font
+#     loc_list_Amiri = sorted(glob.glob('./marker/amiri/*.png'))
+#     font_Amiri = FontWrapper(thresh_list={'tanwin_1': 0.7,
+#                                          'tanwin_2': 0.7,
+#                                          'nun_stand': 0.7,
+#                                          'nun_beg': 0.65,
+#                                          'nun_beg': 0.65,
+#                                          'nun_beg': 0.65,
+#                                          'nun_mid': 0.7,
+#                                          'nun_end': 0.7,
+#                                          'mim_stand': 0.7,
+#                                          'mim_beg': 0.7,
+#                                          'mim_mid': 0.7,
+#                                          'mim_end': 0.8,
+#                                          'mim_end': 0.8},
+#                             loc_list=loc_list_Amiri, image_loc=imagePath,
+#                             image=image, visualize=False, nms_thresh=0.3)
+    
+#     # Norehidayat_Font
+#     loc_list_Norehidayat = sorted(glob.glob('./marker/norehidayat/*.png'))
+#     font_Norehidayat = FontWrapper(thresh_list={'tanwin_1': 0.7,
+#                                          'tanwin_2': 0.7,
+#                                          'nun_stand': 0.7,
+#                                          'nun_beg': 0.65,
+#                                          'nun_beg': 0.65,
+#                                          'nun_end': 0.7,
+#                                          'mim_stand': 0.7,
+#                                          'mim_beg': 0.7,
+#                                          'mim_mid': 0.7,
+#                                          'mim_end': 0.65},
+#                             loc_list=loc_list_Norehidayat, image_loc=imagePath,
+#                             image=image, visualize=False, nms_thresh=0.3)
+    
+#     # Norehira_Font
+#     loc_list_Norehira = sorted(glob.glob('./marker/norehira/*.png'))
+#     font_Norehira = FontWrapper(thresh_list={'tanwin_1': 0.9,
+#                                          'tanwin_2': 0.7,
+#                                          'nun_stand': 0.7,
+#                                          'nun_beg': 0.65,
+#                                          'nun_mid': 0.7,
+#                                          'nun_end': 0.65,
+#                                          'mim_stand': 0.7,
+#                                          'mim_beg': 0.7,
+#                                          'mim_mid': 0.7,
+#                                          'mim_end': 0.65,
+#                                          'mim_end': 0.65},
+#                             loc_list=loc_list_Norehira, image_loc=imagePath,
+#                             image=image, visualize=False, nms_thresh=0.3)
+    
+#     # Norehuda_Font
+#     loc_list_Norehuda = sorted(glob.glob('./marker/norehuda/*.png'))
+#     font_Norehuda = FontWrapper(thresh_list={'tanwin_1': 0.9,
+#                                          'tanwin_2': 0.7,
+#                                          'nun_stand': 0.7,
+#                                          'nun_beg': 0.65,
+#                                          'nun_mid': 0.7,
+#                                          'nun_end': 0.7,
+#                                          'mim_stand': 0.7,
+#                                          'mim_beg': 0.7,
+#                                          'mim_mid': 0.7,
+#                                          'mim_end': 0.65},
+#                             loc_list=loc_list_Norehuda, image_loc=imagePath,
+#                             image=image, visualize=False, nms_thresh=0.3)
+
+#     # list_object_font = [font_LPMQ, font_AlQalam, font_meQuran, font_PDMS]
+#     list_object_font = [font_LPMQ, font_AlQalam, font_meQuran, font_PDMS,
+#                         font_AlKareem, font_KFGQPC, font_Amiri, font_Norehidayat,
+#                         font_Norehira, font_Norehuda]
+
+#     return list_object_font
+
+def font(imagePath, image, setting, markerPath):
     # LPMQ_Font
     # print("LPMQ")
-    loc_list_LPMQ = sorted(glob.glob('./marker/LPMQ/*.png'))
-    font_LPMQ = FontWrapper(thresh_list={'tanwin_1': 0.7,
-                                         'tanwin_2': 0.7,
-                                         'nun_stand': 0.7,
-                                         'nun_beg_1': 0.7,
-                                         'nun_beg_2': 0.7,
-                                         'nun_mid': 0.7,
-                                         'nun_end': 0.6,
-                                         'mim_stand': 0.7,
-                                         'mim_beg': 0.8,
-                                         'mim_mid': 0.7,
-                                         'mim_end_1': 0.7,
-                                         'mim_end_2': 0.7},
+    loc_list_LPMQ = sorted(glob.glob(markerPath + '/LPMQ/*.png'))
+    font_LPMQ = FontWrapper(thresh_list={'tanwin_1': float(setting['LPMQ'][0][0]),
+                                         'tanwin_2': float(setting['LPMQ'][0][1]),
+                                         'nun_stand': float(setting['LPMQ'][0][2]),
+                                         'nun_beg_1': float(setting['LPMQ'][0][3]),
+                                         'nun_beg_2': float(setting['LPMQ'][0][4]),
+                                         'nun_mid': float(setting['LPMQ'][0][5]),
+                                         'nun_end': float(setting['LPMQ'][0][6]),
+                                         'mim_stand': float(setting['LPMQ'][0][7]),
+                                         'mim_beg': float(setting['LPMQ'][0][8]),
+                                         'mim_mid': float(setting['LPMQ'][0][9]),
+                                         'mim_end_1': float(setting['LPMQ'][0][10]),
+                                         'mim_end_2': float(setting['LPMQ'][0][11]),},
                             loc_list=loc_list_LPMQ, image_loc=imagePath,
-                            image=image, visualize=False, nms_thresh=0.3,
-                            numstep=30)
+                            image=image, visualize=True, nms_thresh=0.3,
+                            numstep=int(setting['LPMQ'][1]))
     # AlQalam_Font
     # print("AlQalam")
-    loc_list_AlQalam = sorted(glob.glob('./marker/AlQalam/*.png'))
-    font_AlQalam = FontWrapper(thresh_list={'tanwin_1': 0.7,
-                                            'tanwin_2': 0.7,
-                                            'nun_stand': 0.7,
-                                            'nun_beg': 0.7,
-                                            'nun_mid': 0.7,
-                                            'nun_end': 0.7,
-                                            'mim_stand': 0.7,
-                                            'mim_beg': 0.7,
-                                            'mim_mid': 0.7,
-                                            'mim_end': 0.7},
+    loc_list_AlQalam = sorted(glob.glob(markerPath + '/AlQalam/*.png'))
+    font_AlQalam = FontWrapper(thresh_list={'tanwin_1': float(setting['AlQalam'][0][0]),
+                                            'tanwin_2': float(setting['AlQalam'][0][1]),
+                                            'nun_stand': float(setting['AlQalam'][0][2]),
+                                            'nun_beg': float(setting['AlQalam'][0][3]),
+                                            'nun_mid': float(setting['AlQalam'][0][4]),
+                                            'nun_end': float(setting['AlQalam'][0][5]),
+                                            'mim_stand': float(setting['AlQalam'][0][6]),
+                                            'mim_beg': float(setting['AlQalam'][0][7]),
+                                            'mim_mid': float(setting['AlQalam'][0][8]),
+                                            'mim_end': float(setting['AlQalam'][0][9])},
                                loc_list=loc_list_AlQalam, image_loc=imagePath,
-                               image=image, visualize=False, nms_thresh=0.3)
+                               image=image, visualize=True, nms_thresh=0.3,
+                               numstep=int(setting['AlQalam'][1]))
     # meQuran_Font
     # print("meQuran")
-    loc_list_meQuran = sorted(glob.glob('./marker/meQuran/*.png'))
-    font_meQuran = FontWrapper(thresh_list={'tanwin_1': 0.7,
-                                            'tanwin_2': 0.65,
-                                            'nun_stand': 0.7,
-                                            'nun_beg_1': 0.7,
-                                            'nun_beg_2': 0.7,
-                                            'nun_mid': 0.7,
-                                            'nun_end': 0.7,
-                                            'mim_stand': 0.7,
-                                            'mim_beg': 0.7,
-                                            'mim_mid': 0.7,
-                                            'mim_end_1': 0.7,
-                                            'mim_end_2': 0.68},
+    loc_list_meQuran = sorted(glob.glob(markerPath + '/meQuran/*.png'))
+    font_meQuran = FontWrapper(thresh_list={'tanwin_1': float(setting['meQuran'][0][0]),
+                                            'tanwin_2': float(setting['meQuran'][0][1]),
+                                            'nun_stand': float(setting['meQuran'][0][2]),
+                                            'nun_beg_1': float(setting['meQuran'][0][3]),
+                                            'nun_beg_2': float(setting['meQuran'][0][4]),
+                                            'nun_mid': float(setting['meQuran'][0][5]),
+                                            'nun_end': float(setting['meQuran'][0][6]),
+                                            'mim_stand': float(setting['meQuran'][0][7]),
+                                            'mim_beg': float(setting['meQuran'][0][8]),
+                                            'mim_mid': float(setting['meQuran'][0][9]),
+                                            'mim_end_1': float(setting['meQuran'][0][10]),
+                                            'mim_end_2': float(setting['meQuran'][0][11])},
                                loc_list=loc_list_meQuran, image_loc=imagePath,
-                               image=image, visualize=False, nms_thresh=0.3)
+                               image=image, visualize=True, nms_thresh=0.3, 
+                               numstep=int(setting['meQuran'][1]))
     # PDMS_Font
     # print("PDMS")
-    loc_list_PDMS = sorted(glob.glob('./marker/PDMS/*.png'))
-    font_PDMS = FontWrapper(thresh_list={'tanwin_1': 0.7,
-                                         'tanwin_2': 0.7,
-                                         'nun_stand': 0.7,
-                                         'nun_beg': 0.65,
-                                         'nun_mid': 0.7,
-                                         'nun_end': 0.7,
-                                         'mim_stand': 0.7,
-                                         'mim_beg': 0.7,
-                                         'mim_mid': 0.7,
-                                         'mim_end': 0.65},
+    loc_list_PDMS = sorted(glob.glob(markerPath + '/PDMS/*.png'))
+    font_PDMS = FontWrapper(thresh_list={'tanwin_1': float(setting['PDMS'][0][0]),
+                                         'tanwin_2': float(setting['PDMS'][0][1]),
+                                         'nun_stand': float(setting['PDMS'][0][2]),
+                                         'nun_beg': float(setting['PDMS'][0][3]),
+                                         'nun_mid': float(setting['PDMS'][0][4]),
+                                         'nun_end': float(setting['PDMS'][0][5]),
+                                         'mim_stand': float(setting['PDMS'][0][6]),
+                                         'mim_beg': float(setting['PDMS'][0][7]),
+                                         'mim_mid': float(setting['PDMS'][0][8]),
+                                         'mim_end': float(setting['PDMS'][0][9])},
                             loc_list=loc_list_PDMS, image_loc=imagePath,
-                            image=image, visualize=False, nms_thresh=0.3)
+                            image=image, visualize=True, nms_thresh=0.3,
+                            numstep=int(setting['PDMS'][1]))
     
     # AlKareem_Font
-    loc_list_AlKareem = sorted(glob.glob('./marker/AlKareem/*.png'))
-    font_AlKareem = FontWrapper(thresh_list={'tanwin_1': 0.7,
-                                         'tanwin_2': 0.7,
-                                         'nun_stand': 0.7,
-                                         'nun_beg': 0.65,
-                                         'nun_mid': 0.7,
-                                         'nun_end': 0.7,
-                                         'mim_stand': 0.7,
-                                         'mim_beg': 0.7,
-                                         'mim_mid': 0.7,
-                                         'mim_end': 0.65,
-                                         'mim_end': 0.65},
+    loc_list_AlKareem = sorted(glob.glob(markerPath + '/AlKareem/*.png'))
+    font_AlKareem = FontWrapper(thresh_list={'tanwin_1': float(setting['AlKareem'][0][0]),
+                                         'tanwin_2': float(setting['AlKareem'][0][1]),
+                                         'nun_stand': float(setting['AlKareem'][0][2]),
+                                         'nun_beg': float(setting['AlKareem'][0][3]),
+                                         'nun_mid': float(setting['AlKareem'][0][4]),
+                                         'nun_end': float(setting['AlKareem'][0][5]),
+                                         'mim_stand': float(setting['AlKareem'][0][6]),
+                                         'mim_beg': float(setting['AlKareem'][0][7]),
+                                         'mim_mid': float(setting['AlKareem'][0][8]),
+                                         'mim_end': float(setting['AlKareem'][0][9]),
+                                         'mim_end': float(setting['AlKareem'][0][10])},
                             loc_list=loc_list_AlKareem, image_loc=imagePath,
-                            image=image, visualize=False, nms_thresh=0.3)
+                            image=image, visualize=True, nms_thresh=0.3,
+                            numstep=int(setting['AlKareem'][1]))
 
     # KFGQPC_Font
-    loc_list_KFGQPC = sorted(glob.glob('./marker/KFGQPC/*.png'))
-    font_KFGQPC = FontWrapper(thresh_list={'tanwin_1': 0.7,
-                                         'tanwin_2': 0.7,
-                                         'nun_stand': 0.7,
-                                         'nun_beg': 0.65,
-                                         'nun_beg': 0.65,
-                                         'nun_mid': 0.7,
-                                         'nun_end': 0.7,
-                                         'mim_stand': 0.7,
-                                         'mim_beg': 0.7,
-                                         'mim_mid': 0.7,
-                                         'mim_end': 0.65},
+    loc_list_KFGQPC = sorted(glob.glob(markerPath + '/KFGQPC/*.png'))
+    font_KFGQPC = FontWrapper(thresh_list={'tanwin_1': float(setting['KFGQPC'][0][0]),
+                                         'tanwin_2': float(setting['KFGQPC'][0][1]),
+                                         'nun_stand': float(setting['KFGQPC'][0][2]),
+                                         'nun_beg': float(setting['KFGQPC'][0][3]),
+                                         'nun_beg': float(setting['KFGQPC'][0][4]),
+                                         'nun_mid': float(setting['KFGQPC'][0][5]),
+                                         'nun_end': float(setting['KFGQPC'][0][6]),
+                                         'mim_stand': float(setting['KFGQPC'][0][7]),
+                                         'mim_beg': float(setting['KFGQPC'][0][8]),
+                                         'mim_mid': float(setting['KFGQPC'][0][9]),
+                                         'mim_end': float(setting['KFGQPC'][0][10])},
                             loc_list=loc_list_KFGQPC, image_loc=imagePath,
-                            image=image, visualize=False, nms_thresh=0.3)
+                            image=image, visualize=True, nms_thresh=0.3,
+                            numstep=int(setting['KFGQPC'][1]))
 
     # Amiri_Font
-    loc_list_Amiri = sorted(glob.glob('./marker/amiri/*.png'))
-    font_Amiri = FontWrapper(thresh_list={'tanwin_1': 0.7,
-                                         'tanwin_2': 0.7,
-                                         'nun_stand': 0.7,
-                                         'nun_beg': 0.65,
-                                         'nun_beg': 0.65,
-                                         'nun_beg': 0.65,
-                                         'nun_mid': 0.7,
-                                         'nun_end': 0.7,
-                                         'mim_stand': 0.7,
-                                         'mim_beg': 0.7,
-                                         'mim_mid': 0.7,
-                                         'mim_end': 0.8,
-                                         'mim_end': 0.8},
+    loc_list_Amiri = sorted(glob.glob(markerPath + '/amiri/*.png'))
+    font_Amiri = FontWrapper(thresh_list={'tanwin_1': float(setting['amiri'][0][0]),
+                                         'tanwin_2': float(setting['amiri'][0][1]),
+                                         'nun_stand': float(setting['amiri'][0][2]),
+                                         'nun_beg': float(setting['amiri'][0][3]),
+                                         'nun_beg': float(setting['amiri'][0][4]),
+                                         'nun_beg': float(setting['amiri'][0][5]),
+                                         'nun_mid': float(setting['amiri'][0][6]),
+                                         'nun_end': float(setting['amiri'][0][7]),
+                                         'mim_stand': float(setting['amiri'][0][8]),
+                                         'mim_beg': float(setting['amiri'][0][9]),
+                                         'mim_mid': float(setting['amiri'][0][10]),
+                                         'mim_end': float(setting['amiri'][0][11]),
+                                         'mim_end': float(setting['amiri'][0][12])},
                             loc_list=loc_list_Amiri, image_loc=imagePath,
-                            image=image, visualize=False, nms_thresh=0.3)
+                            image=image, visualize=True, nms_thresh=0.3,
+                            numstep=int(setting['amiri'][1]))
     
     # Norehidayat_Font
-    loc_list_Norehidayat = sorted(glob.glob('./marker/norehidayat/*.png'))
-    font_Norehidayat = FontWrapper(thresh_list={'tanwin_1': 0.7,
-                                         'tanwin_2': 0.7,
-                                         'nun_stand': 0.7,
-                                         'nun_beg': 0.65,
-                                         'nun_beg': 0.65,
-                                         'nun_end': 0.7,
-                                         'mim_stand': 0.7,
-                                         'mim_beg': 0.7,
-                                         'mim_mid': 0.7,
-                                         'mim_end': 0.65},
+    loc_list_Norehidayat = sorted(glob.glob(markerPath + '/norehidayat/*.png'))
+    font_Norehidayat = FontWrapper(thresh_list={'tanwin_1': float(setting['norehidayat'][0][0]),
+                                         'tanwin_2': float(setting['norehidayat'][0][1]),
+                                         'nun_stand': float(setting['norehidayat'][0][2]),
+                                         'nun_beg': float(setting['norehidayat'][0][3]),
+                                         'nun_beg': float(setting['norehidayat'][0][4]),
+                                         'nun_end': float(setting['norehidayat'][0][5]),
+                                         'mim_stand': float(setting['norehidayat'][0][6]),
+                                         'mim_beg': float(setting['norehidayat'][0][7]),
+                                         'mim_mid': float(setting['norehidayat'][0][8]),
+                                         'mim_end': float(setting['norehidayat'][0][9])},
                             loc_list=loc_list_Norehidayat, image_loc=imagePath,
-                            image=image, visualize=False, nms_thresh=0.3)
+                            image=image, visualize=True, nms_thresh=0.3,
+                            numstep=int(setting['norehidayat'][1]))
     
     # Norehira_Font
-    loc_list_Norehira = sorted(glob.glob('./marker/norehira/*.png'))
-    font_Norehira = FontWrapper(thresh_list={'tanwin_1': 0.9,
-                                         'tanwin_2': 0.7,
-                                         'nun_stand': 0.7,
-                                         'nun_beg': 0.65,
-                                         'nun_mid': 0.7,
-                                         'nun_end': 0.65,
-                                         'mim_stand': 0.7,
-                                         'mim_beg': 0.7,
-                                         'mim_mid': 0.7,
-                                         'mim_end': 0.65,
-                                         'mim_end': 0.65},
+    loc_list_Norehira = sorted(glob.glob(markerPath + '/norehira/*.png'))
+    font_Norehira = FontWrapper(thresh_list={'tanwin_1': float(setting['norehira'][0][0]),
+                                         'tanwin_2': float(setting['norehira'][0][1]),
+                                         'nun_stand': float(setting['norehira'][0][2]),
+                                         'nun_beg': float(setting['norehira'][0][3]),
+                                         'nun_mid': float(setting['norehira'][0][4]),
+                                         'nun_end': float(setting['norehira'][0][5]),
+                                         'mim_stand': float(setting['norehira'][0][6]),
+                                         'mim_beg': float(setting['norehira'][0][7]),
+                                         'mim_mid': float(setting['norehira'][0][8]),
+                                         'mim_end': float(setting['norehira'][0][9]),
+                                         'mim_end': float(setting['norehira'][0][10]),},
                             loc_list=loc_list_Norehira, image_loc=imagePath,
-                            image=image, visualize=False, nms_thresh=0.3)
+                            image=image, visualize=True, nms_thresh=0.3,
+                            numstep=int(setting['norehira'][1]))
     
     # Norehuda_Font
-    loc_list_Norehuda = sorted(glob.glob('./marker/norehuda/*.png'))
-    font_Norehuda = FontWrapper(thresh_list={'tanwin_1': 0.9,
-                                         'tanwin_2': 0.7,
-                                         'nun_stand': 0.7,
-                                         'nun_beg': 0.65,
-                                         'nun_mid': 0.7,
-                                         'nun_end': 0.7,
-                                         'mim_stand': 0.7,
-                                         'mim_beg': 0.7,
-                                         'mim_mid': 0.7,
-                                         'mim_end': 0.65},
+    loc_list_Norehuda = sorted(glob.glob(markerPath + '/norehuda/*.png'))
+    font_Norehuda = FontWrapper(thresh_list={'tanwin_1': float(setting['norehuda'][0][0]),
+                                         'tanwin_2': float(setting['norehuda'][0][1]),
+                                         'nun_stand': float(setting['norehuda'][0][2]),
+                                         'nun_beg': float(setting['norehuda'][0][3]),
+                                         'nun_mid': float(setting['norehuda'][0][4]),
+                                         'nun_end': float(setting['norehuda'][0][5]),
+                                         'mim_stand': float(setting['norehuda'][0][6]),
+                                         'mim_beg': float(setting['norehuda'][0][7]),
+                                         'mim_mid': float(setting['norehuda'][0][8]),
+                                         'mim_end': float(setting['norehuda'][0][9])},
                             loc_list=loc_list_Norehuda, image_loc=imagePath,
-                            image=image, visualize=False, nms_thresh=0.3)
+                            image=image, visualize=True, nms_thresh=0.3,
+                            numstep=int(setting['norehuda'][1]))
 
     # list_object_font = [font_LPMQ, font_AlQalam, font_meQuran, font_PDMS]
     list_object_font = [font_LPMQ, font_AlQalam, font_meQuran, font_PDMS,
                         font_AlKareem, font_KFGQPC, font_Amiri, font_Norehidayat,
                         font_Norehira, font_Norehuda]
+    font_name = ['AlKareem', 'AlQalam', 'KFGQPC', 'LPMQ', 'PDMS',
+                'amiri', 'meQuran', 'norehidayat', 'norehira', 'norehuda']
+    temp_path = [loc_list_AlKareem, loc_list_AlQalam, loc_list_KFGQPC, 
+                 loc_list_LPMQ, loc_list_PDMS, loc_list_Amiri,loc_list_meQuran,
+                 loc_list_Norehidayat, loc_list_Norehira, loc_list_Norehuda]
+    loc_path = {}
+    for x in range(len(font_name)):
+        loc_path[font_name[x]] = temp_path[x]
 
-    return list_object_font
+
+    return list_object_font, loc_path

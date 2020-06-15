@@ -187,7 +187,7 @@
 
                     <button type="button" class="btn btn-primary" onclick="show_input_image()">Show</button>
                     <button type="button" class="btn btn-warning" onclick="start_processing()"
-                        id="start_process">Process</button>
+                        id="start_process" disabled='disabled'>Process</button>
                     <!-- </form> -->
 
                 </div>
@@ -205,7 +205,7 @@
             <hr>
         </div>
         <div class="page" id='page2'>
-            <h2>Page 2</h2>
+            <!-- <h2>Page 2</h2> -->
             <hr>
             <div id="carouselExampleControls" class="carousel slide" data-ride="carousel">
                 <div class="carousel-inner" id='page1_carousel'>
@@ -254,6 +254,19 @@
 {% block script %}
 <script>
 
+    var setting_done
+    var image_ready
+
+    var refreshIntervalId = setInterval(waiting_button, 3000);
+    function waiting_button(){
+        console.log('waiting')
+        if (setting_done==true && image_ready == true){
+            document.getElementById('start_process').disabled = false
+            clearInterval(refreshIntervalId);
+        }
+    }
+
+
     var entry = {}
     var list_entry = []
     function saveBlob() {
@@ -286,10 +299,10 @@
                     return
                 }
                 response.json().then(function (data) {
-                    // console.log(data);
-                  if (data == 'processing'){
-                      location.replace('sketch_')
-                  }
+                    console.log(data);
+                    if (data == 'processing') {
+                        location.replace('sketch_')
+                    }
                 });
             })
             .catch(function (error) {
@@ -298,7 +311,9 @@
     }
 
     $(document).ready(function () {
-        p2.style.display = 'block'
+        // p2.style.display = 'block'
+        myfunction2()
+        myfunction2()
     });
     $("#getFile").change(function () {
         loadFileAsText()
@@ -347,7 +362,7 @@
                     console.log("Fetch error: " + error)
                 })
         }
-        // console.log(list_data)    
+        image_ready = true
     }
 
     function show_input_image() {
@@ -355,6 +370,7 @@
         inside_carousel = document.getElementById('page1_carousel')
         inside_carousel.innerHTML = m
         p2.style.display = 'block'
+        
     }
 
     function loadFileAsText() {
@@ -476,7 +492,18 @@
                 headers: new Headers({
                     "content-type": "application/json"
                 })
-            });
+            }).then(function (response) {
+                if (response.status !== 200) {
+                    console.log('error')
+                    return
+                }
+                response.json().then(function (data) {
+                    setting_done = true
+                });
+            })
+                .catch(function (error) {
+                    console.log("Fetch error: " + error)
+                })
         }
     };
 

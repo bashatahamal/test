@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
     <!-- Import our custom stylesheet -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-
+    <link rel="stylesheet" href="{{ url_for('static', filename='light_gallery/css/lightgallery.css') }}">
     <title>{% block title %}{% endblock %}</title>
 </head>
 
@@ -28,7 +28,7 @@
                 <a class="nav-link" href="/">Home</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="/jinja">Jinja</a>
+                <a class="nav-link" href="/dataset">Dataset</a>
             </li>
         </ul>
     </div>
@@ -55,8 +55,12 @@
     <!-- Import Bootstrap bundle -->
     <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
     <!-- Import our custom JavaScript -->
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <!-- <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script src="{{ url_for('static', filename='js/download.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/lg-zoom.js') }}"></script> -->
+    <script src="{{ url_for('static', filename='light_gallery/lightgallery-all.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='light_gallery/jquery.mousewheel.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='light_gallery/picturefill.min.js') }}"></script>
     {% block script %}{% endblock %}
 </body>
 

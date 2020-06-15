@@ -1,0 +1,517 @@
+from flask import Response
+import subprocess
+import pickle
+from flask import jsonify, make_response
+import time
+from Multiscale import app
+from flask import render_template, request, redirect, url_for, send_from_directory
+import os
+import shutil
+import cv2
+import sys
+sys.path.insert(1, '/home/mhbrt/Desktop/Wind/Multiscale/')
+import complete_flow as flow
+
+# model_name = '/home/mhbrt/Desktop/Wind/Multiscale/Colab/best_model_DenseNet_DD.pkl'
+# model = pickle.load(open(model_name, 'rb'))
+from tensorflow.keras.models import model_from_json
+json_file = open('/home/mhbrt/Desktop/Wind/Multiscale/Colab/model.json', 'r')
+loaded_model_json = json_file.read()
+json_file.close()
+model = model_from_json(loaded_model_json)
+model.load_weights("/home/mhbrt/Desktop/Wind/Multiscale/Colab/model.h5")
+print('_LOAD MODEL DONE_')
+# model = ''
+
+# Global Variable
+from_sketch_button = False
+list_image_files = []
+global_count = 0
+setting = {}
+req = {}
+temp_object = []
+imagelist_template_matching_result = []
+imagelist_template_scale_visualize = []
+imagelist_visualize_white_block = []
+final_image_result = 0
+normal_processing_result = 0
+crop_ratio_processing_result = 0
+imagelist_horizontal_line_by_eight_conn = 0
+listof_imagelist_template_matching_result = []
+listof_imagelist_template_scale_visualize = []
+listof_imagelist_visualize_white_block = []
+listof_final_image_result = []
+listof_normal_processing_result = []
+listof_crop_ratio_processing_result = []
+listof_imagelist_horizontal_line_by_eight_conn = []
+
+@app.after_request
+def add_header(r):
+    """
+    Add headers to both force latest IE rendering engine or Chrome Frame,
+    and also to cache the rendered page for 10 minutes.
+    """
+    r.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    r.headers["Pragma"] = "no-cache"
+    r.headers["Expires"] = "0"
+    r.headers['Cache-Control'] = 'public, max-age=0'
+    return r
+
+
+@app.route('/')
+def index():
+    return render_template('public/index.html')
+
+# @app.route('/about')
+# def about():
+#     return "<h1 style = 'color: red'> ABOUT!! </h1>"
+
+
+@app.route('/stream')
+def yieldd():
+    def inner():
+        proc = subprocess.Popen(
+            # call something with a lot of output so we can see it
+            ["python", "-u", app.root_path + "/count_timer.py"],
+            stdout=subprocess.PIPE,
+            # universal_newlines=True
+        )
+
+        for line in iter(proc.stdout.readline, b''):
+        # print(line.decode("utf-8"))
+            # yield line.decode("utf-8").rstrip() + '<br/>\n'
+            yield line.decode("utf-8").rstrip() + '$'
+
+    # text/html is required for most browsers to show th$
+    return Response(inner(), mimetype='text/event-stream')
+    # return Response(inner(), mimetype='text/html')
+
+import flask
+@app.route('/processing_page')
+def get_page():
+    # if from_sketch_button:
+    # return flask.send_file('templates/public/page.html')
+    return render_template('public/page.html')
+
+
+@app.route('/processing')
+def processing():
+    global from_sketch_button
+    global list_image_files
+    global setting
+    global req
+    global temp_object
+    global listof_imagelist_template_matching_result
+    global listof_imagelist_template_scale_visualize
+    global listof_imagelist_visualize_white_block
+    global listof_final_image_result
+    global listof_normal_processing_result
+    global listof_crop_ratio_processing_result
+    global listof_imagelist_horizontal_line_by_eight_conn
+    global model
+    global global_count
+    font_folder = ['AlKareem', 'AlQalam', 'KFGQPC', 'LPMQ', 'PDMS',
+                   'amiri', 'meQuran', 'norehidayat', 'norehira', 'norehuda']
+
+    req['A message from python'] = 'Initialiation'
+    if from_sketch_button:
+        # resetting all global variable
+        from_sketch_button = False
+        def runner():
+            for global_count in range(len(list_image_files)):
+                numfiles = len(list_image_files)
+                # if global_count < numfiles-1:
+                #     imagePath = list_image_files[global_count]
+                #     global_count += 1
+                # else:
+                #     imagePath = list_image_files[global_count]
+                imagePath = list_image_files[global_count]
+                markerPath = app.config['MARKER_ROOT']
+                img = cv2.imread(imagePath)
+                gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+                font_list, loc_path = flow.font_list(
+                    imagePath=imagePath, image=gray, setting=setting, markerPath=markerPath)
+                local_count = -1
+                for font_object in font_list:
+                    local_count += 1
+                    yield str(global_count+1)+'_'+font_folder[local_count]+'_'+ str(numfiles) + '$'
+                    font_object.run()
+                    imagelist_template_scale_visualize.append(font_object.imagelist_visualize)
+                    imagelist_visualize_white_block.append(font_object.imagelist_visualize_white_blok)
+                    temp_object.append(font_object.get_object_result())
+                    imagelist_template_matching_result.append(font_object.display_marker_result(img))
+                print(temp_object)
+                yield str(global_count+1) + '_Doing BIG BLOK_' + str(numfiles) + '$'
+                max_id = flow.most_marker(temp_object)
+                if max_id is None:
+                    yield str(global_count+1) + '_empty_' + str(numfiles) + '$'
+                else:
+                    yield str(global_count+1) + '_Image Processing_' + str(numfiles) + '$'
+                    save_state, normal_processing_result, crop_ratio_processing_result,\
+                    imagelist_horizontal_line_by_eight_conn = flow.define_normal_or_crop_processing(
+                        imagePath, temp_object, max_id, font_object, font_list
+                    )
+                    yield  str(global_count+1) + '_Recognition_' + str(numfiles) + '$'
+                    final_image_result = flow.character_recognition(
+                        save_state, imagePath, model
+                    )
+                    yield  str(global_count+1) + '_Saving Result_' + str(numfiles) + '$'
+                    listof_imagelist_template_matching_result.append(imagelist_template_matching_result)
+                    listof_imagelist_template_scale_visualize.append(imagelist_template_scale_visualize)
+                    listof_imagelist_visualize_white_block.append(imagelist_visualize_white_block)
+                    listof_final_image_result.append(final_image_result)
+                    listof_normal_processing_result.append(normal_processing_result)
+                    listof_crop_ratio_processing_result.append(crop_ratio_processing_result)
+                    listof_imagelist_horizontal_line_by_eight_conn.append(imagelist_horizontal_line_by_eight_conn)
+                    if global_count+1 == numfiles:
+                        yield str(global_count+1) + '_DONE!_' + str(numfiles) + '$'
+        return Response(runner(), mimetype='text/event-stream')
+        # return render_template('public/sketch_.html', next='/number1', req=req)
+
+    # return render_template('public/sketch.html')
+    return redirect('/processing_result')
+
+def prepare_folder():
+    store_folder_mr = app.root_path + '/static/img/result/matching_result'
+    store_folder_sv = app.root_path + '/static/img/result/scale_visualize'
+    store_folder_wb = app.root_path + '/static/img/result/white_block'
+    store_folder_final = app.root_path + '/static/img/result/final_result'
+    store_folder_np = app.root_path + '/static/img/result/normal_processing'
+    store_folder_cp = app.root_path + '/static/img/result/crop_processing'
+    store_folder_ec = app.root_path + '/static/img/result/eight_conn'
+    if os.path.exists(store_folder_mr):
+        shutil.rmtree(store_folder_mr)
+        os.makedirs(store_folder_mr)
+    else:
+        os.makedirs(store_folder_mr)
+    if os.path.exists(store_folder_sv):
+        shutil.rmtree(store_folder_sv)
+        os.makedirs(store_folder_sv)
+    else:
+        os.makedirs(store_folder_sv)
+    if os.path.exists(store_folder_wb):
+        shutil.rmtree(store_folder_wb)
+        os.makedirs(store_folder_wb)
+    else:
+        os.makedirs(store_folder_wb)
+    if os.path.exists(store_folder_final):
+        shutil.rmtree(store_folder_final)
+        os.makedirs(store_folder_final)
+    else:
+        os.makedirs(store_folder_final)
+    if os.path.exists(store_folder_np):
+        shutil.rmtree(store_folder_np)
+        os.makedirs(store_folder_np)
+    else:
+        os.makedirs(store_folder_np)
+    if os.path.exists(store_folder_cp):
+        shutil.rmtree(store_folder_cp)
+        os.makedirs(store_folder_cp)
+    else:
+        os.makedirs(store_folder_cp)
+    if os.path.exists(store_folder_ec):
+        shutil.rmtree(store_folder_ec)
+        os.makedirs(store_folder_ec)
+    else:
+        os.makedirs(store_folder_ec)
+
+    return store_folder_cp, store_folder_ec, store_folder_final,\
+         store_folder_mr, store_folder_np, store_folder_sv, store_folder_wb
+
+@app.route("/processing_result")
+def processing_result():
+    print("READY TO DO SOMETHING")
+    print(len(listof_imagelist_template_matching_result))
+    print(len(listof_imagelist_template_scale_visualize))
+    print(len(listof_imagelist_visualize_white_block))
+    print(len(listof_final_image_result))
+    print(len(listof_normal_processing_result))
+    print(len(listof_crop_ratio_processing_result))
+    print(len(listof_imagelist_horizontal_line_by_eight_conn))
+
+    store_folder_cp, store_folder_ec, store_folder_final,\
+         store_folder_mr, store_folder_np, store_folder_sv, store_folder_wb = prepare_folder()
+
+    pathof_imagelist_template_matching_result = []
+    count1 = 0
+    for list_image in listof_imagelist_template_matching_result:
+        count2 = 0
+        path_image = []
+        for image in list_image:
+            file = store_folder_mr+'/'+str(count1)+'_'+str(count2)+'.png'
+            cv2.imwrite(file, image)
+            path_image.append(file[36:])
+            print(file[36:])
+            count2 += 1
+        pathof_imagelist_template_matching_result.append(path_image)
+        count1 += 1
+
+
+    return render_template('public/result.html', marker_type=app.config['MARKER_TYPE'])
+
+@app.route("/guestbook/create-entry", methods=["POST"])
+def create_entry():
+
+    req = request.get_json()
+
+    print(req)
+    print(request.url)
+
+    # res = make_response(jsonify({"message": "OK"}), 200)
+    res = make_response(jsonify(req), 200)
+
+    return res
+    # return render_template('public/jinja.html')
+
+
+@app.route('/jinja', methods=["GET", "POST"])
+def jinja():
+
+    req = request.get_json()
+    # print(app.config["MARKER"])
+    print('hhh', req)
+
+    test_list = ['2323', 'fdfd', '23123']
+    if request.method == "POST":
+        req = request.form
+        # username = request.form.get("username")
+        # email = request.form.get("email")
+        # password = request.form.get("password")
+
+        # # Alternatively
+
+        # username = request.form["username"]
+        # email = request.form["email"]
+        # password = request.form["password"]
+
+        print(req)
+        print(request.url)
+
+        return redirect(request.url)
+
+    return render_template('public/jinja.html', test_list=test_list)
+
+
+@app.route("/upload-image", methods=["GET", "POST"])
+def upload_image():
+
+    if request.method == "POST":
+
+        if request.files:
+
+            image = request.files["image"]
+
+            image.save(os.path.join(
+                app.config["IMAGE_UPLOADS"], image.filename))
+
+            print("Image saved")
+
+            return redirect(request.url)
+
+    return render_template("public/upload_image.html")
+
+
+@app.route('/dataset')
+def dataset():
+    font_folder = ['AlKareem', 'AlQalam', 'KFGQPC', 'LPMQ', 'PDMS',
+                   'amiri', 'meQuran', 'norehidayat', 'norehira', 'norehuda']
+    print('ds', app.config['MARKER_FOLDER'][font_folder[1]])
+    print(app.root_path)
+    return render_template('public/dataset.html', marker_folder=app.config['MARKER_FOLDER'], marker_type=app.config['MARKER_TYPE'])
+
+@app.route('/marker/<path:filename>')
+def base_static(filename):
+    return send_from_directory(app.root_path + '/marker/', filename)
+
+@app.route('/sketch', methods=["GET", "POST"])
+def sketch():
+    global from_sketch_button
+    global setting
+    global list_image_files
+    if request.method == "POST":
+        if request.is_json:
+            req = {}
+            res = request.get_json()
+            print(res)
+
+            if res == 'start':
+                from_sketch_button = True
+                response = make_response(jsonify('processing'), 200)
+                return response
+            setting = res
+            # if res.split('"')[0] == '<li style=':
+            #     thefile = open(app.root_path + '/templates/public/sketch.html', 'r')
+            #     body_file = thefile.read().split('<!-- split_in_lightgallery -->')
+            #     print('____', body_file)
+            #     thefile = open(app.root_path + '/templates/public/sketch.html', 'w')
+            #     thefile.write(body_file[0] + res + '<!-- split_in_lightgallery -->' + body_file[1])
+
+            # print('____IM DOING SOMENTHING___')
+            # imagePath = '/home/mhbrt/Desktop/Wind/Multiscale/temp/0v4.jpg'
+            # markerPath = '/home/mhbrt/Desktop/Wind/Multiscale/marker'
+            # img = cv2.imread(imagePath)
+            # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            # # font_list = mess.font(imagePath=imagePath, image=gray, setting=res)
+            # font_list = flow.font_list(
+            #     imagePath=imagePath, image=gray, setting=res, markerPath=markerPath)
+            # temp_object = []
+            # # print(font_list)
+            # # print(font_list[1].marker_location)
+            # for font_object in font_list:
+            #     font_object.run()
+            #     temp_object.append(font_object.get_object_result())
+            # print(temp_object)
+            # flow.big_blok(temp_object, imagePath,
+            #               font_object, model, font_list)
+            response = make_response(jsonify('ok'), 200)
+            return response
+            # return redirect(request.url)
+
+        if request.files:
+            # files = request.files.getlist("files")
+            # print(files)
+
+            image = request.files["image"]
+            print(image)
+            saved_path = os.path.join(
+                app.config["IMAGE_UPLOADS"], image.filename)
+            list_image_files.append(saved_path)
+            image.save(saved_path)
+            print("Image saved")
+            print(list_image_files)
+            res = make_response(jsonify(saved_path), 200)
+            # return render_template('public/sketch.html', marker_type=app.config['MARKER_TYPE'])
+            # return redirect(request.url)
+            return res
+
+    print('outside if')
+
+    return render_template('public/sketch.html', marker_type=app.config['MARKER_TYPE'])
+
+
+
+
+req = {}
+# from_sketch_button = True
+
+
+@app.route('/sketch_')
+def sketch_():
+    global from_sketch_button
+    global req
+
+    # from_sketch_button = True
+    # for x in range(3):
+    req['A message from python'] = 'Initialiation'
+    if from_sketch_button:
+        # resetting all global variable
+        from_sketch_button = True
+        req = {}
+        req['A message from python'] = 'Doing the number1'
+        print('button________________')
+        # res = make_response(jsonify(req), 200)
+        # time.sleep(6)
+        print(request.url)
+        return render_template('public/sketch_.html', next='/number1', req=req)
+
+    # return render_template('public/sketch.html')
+    return redirect('/sketch')
+
+
+@app.route('/number1')
+def do_something():
+    print(from_sketch_button)
+    time.sleep(5)
+    req['A message from python'] = 'number 1 done and prepare for number 2'
+    return render_template('public/sketch_.html', next='/number2', req=req)
+
+
+@app.route('/number2')
+def do_something_again():
+    print(from_sketch_button)
+    time.sleep(4)
+    req['A message from python'] = 'number 2 done and prepare for number 3'
+    return render_template('public/sketch_.html', next='/number3', req=req)
+
+
+@app.route('/number3')
+def do_something_and_again():
+    print(from_sketch_button)
+    time.sleep(4)
+    req['A message from python'] = 'number 3 done and prepare for number 4'
+    return render_template('public/sketch_.html', next='/number4', req=req)
+
+
+@app.route('/number4')
+def do_something_and_again_and_again_and_again():
+    print(from_sketch_button)
+    time.sleep(4)
+    req['A message from python'] = 'number 4 done and prepare for number 5'
+    return render_template('public/sketch_.html', next='/result', req=req)
+
+
+@app.route('/result')
+def do_something_and_again_final():
+    print(from_sketch_button)
+    time.sleep(3)
+    req['A message from python'] = 'number 4 done and back to sketch'
+    # return render_template('public/sketch_.html', next='/sketch', req=req)
+    return render_template('public/sketch.html', marker_type=app.config['MARKER_TYPE'])
+
+# @app.route('/test')
+# def test():
+#     test = 'THIS IS JINJA'
+#     return render_template('public/test.html', test=test)
+
+# @app.route('/sketch_')
+# def sketch_():
+#     global from_sketch_button
+#     global first
+#     global second
+#     global end
+#     global l
+#     global req
+#     from_sketch_button = True
+#     # for x in range(3):
+#     req['A message from python'] = 'Initialiation'
+#     if from_sketch_button:
+#         from_sketch_button = False
+#         first = True
+#         req['A message from python'] = 'This is the message'
+#         # req[x]=x
+#         print('button________________')
+#         res = make_response(jsonify(req), 200)
+#         # time.sleep(1)
+#         print(request.url)
+#         # return render_template('public/sketch_.html', req=req)
+#         return res
+#         # return redirect(request.url)
+#     if first:
+#         first = False
+#         second = True
+#         print('first________________________________')
+#         req['A message from python'] = 'This is comes from the first section'
+#         req[l] = l
+#         res = make_response(jsonify(req), 200)
+#         time.sleep(1)
+#         # return render_template('public/sketch_.html', req=req)
+#         return res
+#     if second:
+#         second = False
+#         end = True
+#         print('second_________________')
+#         req['A message from python'] = 'This is comes from the second section'
+#         req[l] = l
+#         time.sleep(1)
+#         res = make_response(jsonify(req), 200)
+#         # return render_template('public/sketch_.html', req=req)
+#         return res
+#     # if end:
+#     #     end = False
+#     #     if l > 0:
+#     #         l -= 1
+#     #         first = True
+#     #         time.sleep(1)
+#     #         return render_template('public/sketch_.html', req=req)
+#     return render_template('public/sketch_.html', req=req)
