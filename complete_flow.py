@@ -164,6 +164,7 @@ def get_marker_name(key):
 
 def region_tanwin(coordinat, image, font_list, view=True):
     saved_tanwin_height = coordinat[3] - coordinat[1]
+    saved_tanwin_width = coordinat[2] - coordinat[0]
     font_object = font_list[0]
     h, w, = image.shape
 
@@ -181,7 +182,7 @@ def region_tanwin(coordinat, image, font_list, view=True):
         cv2.waitKey(0)
     # cv2.destroyAllWindows()
     font_object.horizontal_projection(image_process)
-    h_image = font_object.detect_horizontal_line(image.copy(), 0, 0)
+    h_image = font_object.detect_horizontal_line(image.copy(), int(1/2*saved_tanwin_width), int(1/2*saved_tanwin_width))
     start_point_h = font_object.start_point_h
     font_object.vertical_projection(image_process)
     h_image = font_object.detect_vertical_line(image.copy(), 0)
@@ -191,18 +192,21 @@ def region_tanwin(coordinat, image, font_list, view=True):
                            start_point_v[1], start_point_h[1]]
     cc_count = black_pixel_count(image, coordinat_candidate)
 
-    if cc_count < 2 * marker_only_count:
+    if marker_only_count < cc_count < 2 * marker_only_count:
+        print('marker only count', marker_only_count)
+        print('cc count', cc_count)
+        print('region tanwin modified')
         coordinat = coordinat_candidate
 
     cv2.rectangle(image_process, (coordinat[0], coordinat[1]),
                   (coordinat[2], coordinat[3]), (0, 255, 0), 2)
     if view:
-        cv2.imshow('d', image_process)
+        cv2.imshow('coordinat tanwin', image_process)
         cv2.waitKey(0)
 
     upper, lower = get_ul_coordinat(coordinat, h)
-    print(upper)
-    print(lower)
+    # print(upper)
+    # print(lower)
     upper_count, lower_count = upper_or_lower(image, upper, lower)
 
     if upper_count < lower_count:
@@ -314,8 +318,8 @@ def eight_conn_by_seed_tanwin(coordinat, img, font_list, view=True):
         cv2.waitKey(0)
 
     upper, lower = get_ul_coordinat(coordinat, h)
-    print(upper)
-    print(lower)
+    # print(upper)
+    # print(lower)
     upper_count, lower_count = upper_or_lower(image, upper, lower)
 
     if upper_count < lower_count:
@@ -379,7 +383,7 @@ def eight_conn_by_seed_tanwin(coordinat, img, font_list, view=True):
         #         print(region)
         if len(con_pack[region]) > max_left_region:
             max_left_region = len(con_pack[region])
-            print(max_left_region)
+            # print(max_left_region)
         for val in con_pack[region]:
             #             print(region)
             #             print(val)
@@ -727,7 +731,10 @@ def normal_image_processing_blok(imagePath, object_result):
         pixel_limit_ets=5   # End to start
     )  # Got self.start_point_h
     # cv2.imshow('from main', input_image.original_image)
-    bag_h_original = input_image.start_point_h
+    # cv2.imshow('h_image', horizontal_image)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
+    bag_h_original = input_image.start_point_h.copy()
     input_image.crop_image(h_point=input_image.start_point_h,
                            input_image=original_image.copy())  # crop ori
 
@@ -978,7 +985,7 @@ def normal_image_processing_blok(imagePath, object_result):
                         continue
                     else:
                         save_state[count-1].append(scale)
-                        save_state[count-1].append(bag_h_original[image])
+                        save_state[count-1].append((bag_h_original[image], bag_h_original[image+1]))
                         save_state[count-1].append(
                             crop_words['ordinat_' + join]
                         )
@@ -1007,7 +1014,7 @@ def normal_image_processing_blok(imagePath, object_result):
                         continue
                     else:
                         save_state[count-1].append(scale)
-                        save_state[count-1].append(bag_h_original[image])
+                        save_state[count-1].append((bag_h_original[image], bag_h_original[image+1]))
                         save_state[count-1].append(
                             crop_words['ordinat_' + join]
                         )
@@ -1020,7 +1027,6 @@ def normal_image_processing_blok(imagePath, object_result):
                 # print('sd', imagelist_final_word_img)
                 imagelist_final_segmented_char.append(final_segmented_char)
                 # print('l', imagelist_final_segmented_char)
-
     return save_state, imagelist_perchar_marker, imagelist_final_word_img, imagelist_final_segmented_char,\
         imagelist_bag_of_h_with_baseline, imagelist_image_final_body, imagelist_image_final_marker,\
             horizontal_image
@@ -1113,19 +1119,19 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
         font_object.vertical_projection(image_v)
         font_object.detect_vertical_line(image_v.copy(), 10)
         start_point_v = font_object.start_point_v
-        print(start_point_v)
-    #     for x in range(len(start_point_v)):
-    #         if x % 2 == 0:
-    #             cv2.line(image_v, (start_point_v[x], 0),
-    #                      (start_point_v[x], height), (0, 0, 0), 2)
-    #         else:
-    #             cv2.line(image_v, (start_point_v[x], 0),
-    #                      (start_point_v[x], height), (100, 100, 100), 2)
-    #     cv2.imshow('line', image_v)
-    #     print('>')
-    #     cv2.waitKey(0)
+        print('start point v:', start_point_v)
+        # for x in range(len(start_point_v)):
+        #     if x % 2 == 0:
+        #         cv2.line(image_v, (start_point_v[x], 0),
+        #                  (start_point_v[x], height), (0, 0, 0), 2)
+        #     else:
+        #         cv2.line(image_v, (start_point_v[x], 0),
+        #                  (start_point_v[x], height), (100, 100, 100), 2)
+        # cv2.imshow('line', image_v)
+        # print('>')
+        # cv2.waitKey(0)
 
-        if len(start_point_v) > 5:
+        if len(start_point_v) > 8:
             # Go to the normal match
             normal_processing.append(True)
         else:
@@ -1135,7 +1141,7 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
     cv2.destroyAllWindows()
 
     # In[25]:
-
+    print('normal processing:', normal_processing)
     normal_processing = most_frequent(normal_processing)
     print(normal_processing)
 
@@ -1200,6 +1206,7 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
                                       (0, 255, 0), 2)
                         # cv2.imshow('check', gray_copy)
                         # cv2.waitKey(0)
+                        # get up or down by tanwin position (c)
                         c = region_tanwin(c, bw_image, font_list, False)
                         next_c, _ = get_lr_coordinat(c, width)
                         next_c_count = black_pixel_count(bw_image, next_c)
@@ -1208,6 +1215,7 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
                             next_c_count = black_pixel_count(bw_image, next_c)
                             if next_c[0] < 1:
                                 break
+                        # modified y coordinat
                         if next_c[1] > y1_c:
                             mod_c, _ = get_ul_coordinat(next_c, height)
                             next_c = [next_c[0], mod_c[1],
@@ -1248,13 +1256,16 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
                         # cv2.waitKey(0)
                         sub_image = cv2.subtract(image_process, crop_image)
                         sub_image = cv2.bitwise_not(sub_image)
-    #                     final_c = [int(1/2*w_next), 0, w_crop, h_crop]
+                        # final_c = [int(1/2*w_next), 0, w_crop, h_crop]
                         final_c = [0, 0, w_crop, h_crop]
                         check_img = sub_image[final_c[1]:final_c[3],
                                               final_c[0]:final_c[2]]
                         final_img = image_process[final_c[1]:final_c[3],
                                                   final_c[0]:final_c[2]]
+                        # cv2.imshow('tanwin', check_img)
                         dot = font_object.dot_checker(check_img)
+                        # print(dot)
+                        # cv2.waitKey(0)
                         if dot:
                             final_img = cv2.bitwise_and(check_img, final_img)
                             # final_img = cv2.add(check_img, final_img)
@@ -1264,7 +1275,7 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
                         save_state[arr_count] = []
                         save_state[arr_count].append(name)
                         save_state[arr_count].append(1)  # scale
-                        save_state[arr_count].append(0)  # y_origin
+                        save_state[arr_count].append((next_c[1]+crop_by, next_c[3]))  # y_origin
                         save_state[arr_count].append(c)  # marker_coordinat
                         save_state[arr_count].append(final_img)
                         save_state[arr_count].append(next_c[0])
@@ -1369,7 +1380,10 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
                                               final_c[0]:final_c[2]]
                         final_img = image_process[final_c[1]:final_c[3],
                                                   final_c[0]:final_c[2]]
+                        # cv2.imshow('mim', check_img)
                         dot = font_object.dot_checker(check_img)
+                        # print(dot)
+                        # cv2.waitKey(0)
                         if dot:
                             print('dot')
                             final_img = cv2.bitwise_and(final_img, check_img)
@@ -1380,7 +1394,7 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
                         save_state[arr_count] = []
                         save_state[arr_count].append(name)
                         save_state[arr_count].append(1)  # scale
-                        save_state[arr_count].append(0)  # y_origin
+                        save_state[arr_count].append((next_c[1]+crop_by, next_c[3]))  # y_origin
                         save_state[arr_count].append(c)  # marker_coordinat
                         save_state[arr_count].append(final_img)
                         save_state[arr_count].append(
@@ -1455,6 +1469,8 @@ def character_recognition(save_state, imagePath, model):
     #     print(save_state)
     # Final segmented char recognition
     char_recog = []
+    skip_index = []
+    character_y = {}
     for x in save_state:
         if len(save_state[x]) < 2:
             continue
@@ -1465,7 +1481,13 @@ def character_recognition(save_state, imagePath, model):
             horizontal_projection(save_state[x][4]), 0, 50)
     #     print(x)
         print(start_point)
+        if len(start_point) < 2:
+            skip_index.append(x)
+            continue
         cut_image = save_state[x][4][start_point[0]:start_point[1], :]
+        character_y[x] = (save_state[x][2][0]+start_point[0],
+                       save_state[x][2][0]+start_point[1])
+
     #     cv2.imshow('r', cut_image)
     #     cv2.waitKey(0)
     #     cv2.destroyAllWindows()
@@ -1488,8 +1510,15 @@ def character_recognition(save_state, imagePath, model):
 
     count = -1
     for x in save_state:
-        if len(save_state[x]) < 2:
+        # skipping
+        skip = False
+        for index in skip_index:
+            if  x == index:
+                skip = True
+                break
+        if len(save_state[x]) < 2 or skip:
             continue
+
         count += 1
         h, w = save_state[x][4].shape
         marker = save_state[x][0].split('_')
@@ -1498,6 +1527,9 @@ def character_recognition(save_state, imagePath, model):
         elif isinstance(save_state[x][3], type(np.array([]))):
             marker_coordinat = save_state[x][3]
         char_box = marker_coordinat / save_state[x][1]
+        char_box = [int(char_box[0]), int(char_box[1]),
+                    int(char_box[2]), int(char_box[3])]
+        # print('char box', char_box)
     #         final_box = [
     #             int(char_box[0]) - int(w / save_state[x][1]),
     #             int(char_box[1]) + save_state[x][2], int(char_box[2]),
@@ -1508,10 +1540,24 @@ def character_recognition(save_state, imagePath, model):
     #         save_state[x][2], int(char_box[2]),
     #         int(char_box[3]) + save_state[x][2]
     #     ]
+        # final_box = [
+        #     int(save_state[x][5] / save_state[x][1]),
+        #     int(char_box[1]),
+        #     int(char_box[2]), int(char_box[3])
+        # ]
+        if char_box[1] < character_y[x][0]:
+            y1 = char_box[1]
+        else:
+            y1 = character_y[x][0]
+        if char_box[3] > character_y[x][1]:
+            y2 = char_box[3]
+
+        else:
+            y2 = character_y[x][1]
+
         final_box = [
-            int(save_state[x][5] / save_state[x][1]),
-            int(char_box[1]),
-            int(char_box[2]), int(char_box[3])
+            int(save_state[x][5] / save_state[x][1]), y1,
+            int(char_box[2]), y2
         ]
         found = False
         if marker[0] == 'nun' or marker[0] == 'tanwin':

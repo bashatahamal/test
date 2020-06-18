@@ -1286,7 +1286,7 @@ class ImageProcessing():
         # check dot if theres is two dot that parallel and the whitespace is
         # not more than 1/3 dot size then append that to char as one char if
         # it's separated and that 2 appended char only get one dot
-        dot_single_count = []
+        '''dot_single_count = []
         for char in final_group_dot:
             if len(final_group_dot[char]) == 1:
                 dot_single_count.append(char)
@@ -1314,7 +1314,7 @@ class ImageProcessing():
                         final_group_dot[char_next][0]
                     )
                     del(final_group_marker[char_next])
-                    del(final_group_dot[char_next])
+                    del(final_group_dot[char_next])'''
         temp_marker_pos = marker_pos.copy()
         pos = sorted(marker_pos)
         marker_pos = {}

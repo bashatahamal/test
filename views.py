@@ -14,13 +14,13 @@ import complete_flow as flow
 
 # model_name = '/home/mhbrt/Desktop/Wind/Multiscale/Colab/best_model_DenseNet_DD.pkl'
 # model = pickle.load(open(model_name, 'rb'))
-from tensorflow.keras.models import model_from_json
-json_file = open('/home/mhbrt/Desktop/Wind/Multiscale/Colab/model.json', 'r')
-loaded_model_json = json_file.read()
-json_file.close()
-model = model_from_json(loaded_model_json)
-model.load_weights("/home/mhbrt/Desktop/Wind/Multiscale/Colab/model.h5")
-print('_LOAD MODEL DONE_')
+# from tensorflow.keras.models import model_from_json
+# json_file = open('/home/mhbrt/Desktop/Wind/Multiscale/Colab/model.json', 'r')
+# loaded_model_json = json_file.read()
+# json_file.close()
+# model = model_from_json(loaded_model_json)
+# model.load_weights("/home/mhbrt/Desktop/Wind/Multiscale/Colab/model.h5")
+# print('_LOAD MODEL DONE_')
 # model = ''
 
 # Global Variable
@@ -100,7 +100,7 @@ def processing():
     global list_image_files
     global setting
     global req
-    global temp_object
+    # global temp_object
     global listof_imagelist_template_matching_result
     global listof_imagelist_template_scale_visualize
     global listof_imagelist_visualize_white_block
@@ -119,12 +119,29 @@ def processing():
         from_sketch_button = False
         def runner():
             for global_count in range(len(list_image_files)):
+                
+                font_list = 0
+                loc_path = 0
+                numfiles = 0
+                imagePath = 0
+                markerPath = 0
+                img = 0
+                gray = 0
+                font_object = 0
+                imagelist_horizontal_line_by_eight_conn = 0
+                imagelist_template_matching_result= []
+                imagelist_template_scale_visualize = []
+                imagelist_visualize_white_block = []
+                temp_object = []
+                check_image_size = 0
+                final_image_result = 0
+                max_id = ''
+                save_state = 0
+                normal_processing_result = 0
+                crop_ratio_processing_result = 0
+                
+
                 numfiles = len(list_image_files)
-                # if global_count < numfiles-1:
-                #     imagePath = list_image_files[global_count]
-                #     global_count += 1
-                # else:
-                #     imagePath = list_image_files[global_count]
                 imagePath = list_image_files[global_count]
                 markerPath = app.config['MARKER_ROOT']
                 img = cv2.imread(imagePath)
@@ -166,13 +183,14 @@ def processing():
                     listof_imagelist_horizontal_line_by_eight_conn.append(imagelist_horizontal_line_by_eight_conn)
                     if global_count+1 == numfiles:
                         yield str(global_count+1) + '_DONE!_' + str(numfiles) + '$'
+        time.sleep(2)  #wait for class init done
         return Response(runner(), mimetype='text/event-stream')
         # return render_template('public/sketch_.html', next='/number1', req=req)
 
     # return render_template('public/sketch.html')
     return redirect('/processing_result')
 
-def prepare_folder():
+def save_image_to_disk():
     store_folder_mr = app.root_path + '/static/img/result/matching_result'
     store_folder_sv = app.root_path + '/static/img/result/scale_visualize'
     store_folder_wb = app.root_path + '/static/img/result/white_block'
@@ -216,23 +234,6 @@ def prepare_folder():
     else:
         os.makedirs(store_folder_ec)
 
-    return store_folder_cp, store_folder_ec, store_folder_final,\
-         store_folder_mr, store_folder_np, store_folder_sv, store_folder_wb
-
-@app.route("/processing_result")
-def processing_result():
-    print("READY TO DO SOMETHING")
-    print(len(listof_imagelist_template_matching_result))
-    print(len(listof_imagelist_template_scale_visualize))
-    print(len(listof_imagelist_visualize_white_block))
-    print(len(listof_final_image_result))
-    print(len(listof_normal_processing_result))
-    print(len(listof_crop_ratio_processing_result))
-    print(len(listof_imagelist_horizontal_line_by_eight_conn))
-
-    store_folder_cp, store_folder_ec, store_folder_final,\
-         store_folder_mr, store_folder_np, store_folder_sv, store_folder_wb = prepare_folder()
-
     pathof_imagelist_template_matching_result = []
     count1 = 0
     for list_image in listof_imagelist_template_matching_result:
@@ -240,12 +241,273 @@ def processing_result():
         path_image = []
         for image in list_image:
             file = store_folder_mr+'/'+str(count1)+'_'+str(count2)+'.png'
-            cv2.imwrite(file, image)
-            path_image.append(file[36:])
-            print(file[36:])
+            if image != []:
+                cv2.imwrite(file, image)
+                path_image.append(file[35:])
             count2 += 1
         pathof_imagelist_template_matching_result.append(path_image)
         count1 += 1
+    
+    
+    pathof_imagelist_template_scale_visualize = []
+    count1 = 0
+    for list_image in listof_imagelist_template_scale_visualize:
+        count2 = 0
+        path_image = []
+        for font in list_image:
+            for image in font:
+                file = store_folder_sv+'/'+str(count1)+'_'+str(count2)+'.png'
+                if image != []:
+                    cv2.imwrite(file, image)
+                    path_image.append(file[35:])
+                count2 += 1
+        pathof_imagelist_template_scale_visualize.append(path_image)
+        count1 += 1
+
+    pathof_imagelist_visualize_white_block = []
+    count1 = 0
+    for list_image in listof_imagelist_visualize_white_block:
+        count2 = 0
+        path_image = []
+        for font in list_image:
+            for marker in font:
+                for image in marker:
+                    if image != []:
+                        file = store_folder_wb+'/'+str(count1)+'_'+str(count2)+'.png'
+                        if image != []:
+                            cv2.imwrite(file, image)
+                            path_image.append(file[35:])
+                        count2 += 1
+        pathof_imagelist_visualize_white_block.append(path_image)
+        count1 += 1
+
+    pathof_imagelist_horizontal_line_by_eight_conn= []
+    count1 = 0
+    for list_image in listof_imagelist_horizontal_line_by_eight_conn:
+        count2 = 0
+        path_image = []
+        for image in list_image:
+            file = store_folder_ec+'/'+str(count1)+'_'+str(count2)+'.png'
+            if image != []:
+                cv2.imwrite(file, image)
+                path_image.append(file[35:])
+            count2 += 1
+        pathof_imagelist_horizontal_line_by_eight_conn.append(path_image)
+        count1 += 1
+
+
+    pathof_normal_processing_result = []
+    count1 = 0
+    for list_image in listof_normal_processing_result:
+        pathof_normal = []
+        if list_image != []:
+            count2 = 0
+            one = []
+            two = []
+            three = []
+            four = []
+            five = []
+            six = []
+            zero = []
+            path_image = []
+            image = list_image[6]
+            file = store_folder_np+'/'+str(count1)+'_'+str(count2)+'.png'
+            cv2.imwrite(file, image)
+            path_image.append(file[35:])
+            count2 += 1
+            six.append(path_image)
+            path_image = []
+            for image in list_image[3]:
+                file = store_folder_np+'/'+str(count1)+'_'+str(count2)+'.png'
+                if image != []:
+                    cv2.imwrite(file, image)
+                    path_image.append(file[35:])
+                count2 += 1
+            three.append(path_image)
+            path_image = []
+            for image in list_image[4]:
+                file = store_folder_np+'/'+str(count1)+'_'+str(count2)+'.png'
+                if image != []:
+                    cv2.imwrite(file, image)
+                    path_image.append(file[35:])
+                count2 += 1
+            four.append(path_image)
+            path_image = []
+            for image in list_image[5]:
+                file = store_folder_np+'/'+str(count1)+'_'+str(count2)+'.png'
+                if image != []:
+                    cv2.imwrite(file, image)
+                    path_image.append(file[35:])
+                count2 += 1
+            five.append(path_image)
+            path_image = []
+            for image in list_image[1]:
+                file = store_folder_np+'/'+str(count1)+'_'+str(count2)+'.png'
+                if image != []:
+                    cv2.imwrite(file, image)
+                    path_image.append(file[35:])
+                count2 += 1
+            one.append(path_image)
+            path_image = []
+            for result in list_image[0]:
+                for image in result:
+                    file = store_folder_np+'/'+str(count1)+'_'+str(count2)+'.png'
+                    if image != []:
+                        cv2.imwrite(file, image)
+                        path_image.append(file[35:])
+                    count2 += 1
+            zero.append(path_image)
+            path_image = []
+            for image in list_image[2]:
+                file = store_folder_np+'/'+str(count1)+'_'+str(count2)+'.png'
+                if image != []:
+                    cv2.imwrite(file, image)
+                    path_image.append(file[35:])
+                count2 += 1
+            two.append(path_image)
+            pathof_normal.append(zero)
+            pathof_normal.append(one)
+            pathof_normal.append(two)
+            pathof_normal.append(three)
+            pathof_normal.append(four)
+            pathof_normal.append(five)
+            pathof_normal.append(six)
+            pathof_normal_processing_result.append(pathof_normal)
+            count1 += 1
+        else:
+            pathof_normal_processing_result.append([])
+
+    pathof_crop_ratio_processing_result = []
+    count1 = 0
+    for list_image in listof_crop_ratio_processing_result:
+        pathof_crop = []
+        if list_image != []:
+            count2 = 0
+            one = []
+            two = []
+            three = []
+            four = []
+            zero = []
+            path_image = []
+            for image in list_image[3]:
+                file = store_folder_cp+'/'+str(count1)+'_'+str(count2)+'.png'
+                if image != []:
+                    cv2.imwrite(file, image)
+                    path_image.append(file[35:])
+                count2 += 1
+            three.append(path_image)
+            path_image = []
+            for image in list_image[4]:
+                file = store_folder_cp+'/'+str(count1)+'_'+str(count2)+'.png'
+                if image != []:
+                    cv2.imwrite(file, image)
+                    path_image.append(file[35:])
+                count2 += 1
+            four.append(path_image)
+            path_image = []
+            for image in list_image[1]:
+                file = store_folder_cp+'/'+str(count1)+'_'+str(count2)+'.png'
+                if image != []:
+                    cv2.imwrite(file, image)
+                    path_image.append(file[35:])
+                count2 += 1
+            one.append(path_image)
+            path_image = []
+            for image in list_image[0]:
+                file = store_folder_cp+'/'+str(count1)+'_'+str(count2)+'.png'
+                if image != []:
+                    cv2.imwrite(file, image)
+                    path_image.append(file[35:])
+                count2 += 1
+            zero.append(path_image)
+            path_image = []
+            for image in list_image[2]:
+                file = store_folder_cp+'/'+str(count1)+'_'+str(count2)+'.png'
+                if image != []:
+                    cv2.imwrite(file, image)
+                    path_image.append(file[35:])
+                count2 += 1
+            two.append(path_image)
+            pathof_crop.append(zero)
+            pathof_crop.append(one)
+            pathof_crop.append(two)
+            pathof_crop.append(three)
+            pathof_crop.append(four)
+            pathof_crop_ratio_processing_result.append(pathof_crop)
+            count1 += 1
+        else:
+            pathof_crop_ratio_processing_result.append([])
+    
+    pathof_final_image_result = []
+    count1 = 0
+    for image in listof_final_image_result:
+        file = store_folder_final+'/'+str(count1)+'.png'
+        cv2.imwrite(file, image)
+        pathof_final_image_result.append(file[35:])
+        count1 += 1
+
+    return pathof_crop_ratio_processing_result, pathof_imagelist_horizontal_line_by_eight_conn,\
+        pathof_imagelist_template_matching_result, pathof_imagelist_template_scale_visualize, \
+            pathof_imagelist_visualize_white_block, pathof_normal_processing_result, \
+                pathof_final_image_result
+
+@app.route("/processing_result")
+def processing_result():
+    global from_sketch_button
+    global list_image_files
+    global setting
+    global req
+    global temp_object
+    global listof_imagelist_template_matching_result
+    global listof_imagelist_template_scale_visualize
+    global listof_imagelist_visualize_white_block
+    global listof_final_image_result
+    global listof_normal_processing_result
+    global listof_crop_ratio_processing_result
+    global listof_imagelist_horizontal_line_by_eight_conn
+    global model
+    global global_count
+
+    print("READY TO DO SOMETHING")
+    shutil.rmtree(app.config["IMAGE_UPLOADS"])
+    os.makedirs(app.config["IMAGE_UPLOADS"])
+
+    pathof_crop_ratio_processing_result, pathof_imagelist_horizontal_line_by_eight_conn,\
+        pathof_imagelist_template_matching_result, pathof_imagelist_template_scale_visualize, \
+            pathof_imagelist_visualize_white_block, pathof_normal_processing_result, \
+                pathof_final_image_result = save_image_to_disk()
+    
+    dumpPath = [pathof_crop_ratio_processing_result, pathof_imagelist_horizontal_line_by_eight_conn,
+        pathof_imagelist_template_matching_result, pathof_imagelist_template_scale_visualize, 
+            pathof_imagelist_visualize_white_block, pathof_normal_processing_result, 
+                pathof_final_image_result]
+
+    filename = "/home/mhbrt/Desktop/Wind/Multiscale/static/dumpPath.pkl"
+    pickle.dump(dumpPath, open(filename, 'wb'))
+
+    # Clearing global variable
+    from_sketch_button = False
+    list_image_files = []
+    global_count = 0
+    setting = {}
+    req = {}
+    temp_object = []
+    imagelist_template_matching_result = []
+    imagelist_template_scale_visualize = []
+    imagelist_visualize_white_block = []
+    final_image_result = 0
+    normal_processing_result = 0
+    crop_ratio_processing_result = 0
+    imagelist_horizontal_line_by_eight_conn = 0
+    listof_imagelist_template_matching_result = []
+    listof_imagelist_template_scale_visualize = []
+    listof_imagelist_visualize_white_block = []
+    listof_final_image_result = []
+    listof_normal_processing_result = []
+    listof_crop_ratio_processing_result = []
+    listof_imagelist_horizontal_line_by_eight_conn = []
+    list_image_files = []
+
 
 
     return render_template('public/result.html', marker_type=app.config['MARKER_TYPE'])
@@ -324,6 +586,18 @@ def dataset():
 def base_static(filename):
     return send_from_directory(app.root_path + '/marker/', filename)
 
+def check_image_size(path, threshold):
+    image = cv2.imread(path)
+    h, w, _ = image.shape
+    if h > threshold or w > threshold:
+        if h >= w:
+            scale = threshold/h
+            image = cv2.resize(image, (int(w*scale), int(h*scale)))
+        else:
+            scale = threshold/w
+            image = cv2.resize(image, (int(w*scale), int(h*scale)))
+        cv2.imwrite(path, image)
+    
 @app.route('/sketch', methods=["GET", "POST"])
 def sketch():
     global from_sketch_button
@@ -378,6 +652,7 @@ def sketch():
                 app.config["IMAGE_UPLOADS"], image.filename)
             list_image_files.append(saved_path)
             image.save(saved_path)
+            check_image_size(saved_path, 1200)
             print("Image saved")
             print(list_image_files)
             res = make_response(jsonify(saved_path), 200)
@@ -458,6 +733,10 @@ def do_something_and_again_final():
     req['A message from python'] = 'number 4 done and back to sketch'
     # return render_template('public/sketch_.html', next='/sketch', req=req)
     return render_template('public/sketch.html', marker_type=app.config['MARKER_TYPE'])
+
+@app.route('/temp_result')
+def temp_result():
+    return render_template('public/test_result.html', marker_type=app.config['MARKER_TYPE'])
 
 # @app.route('/test')
 # def test():
