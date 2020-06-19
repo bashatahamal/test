@@ -1377,22 +1377,26 @@ class ImageProcessing():
             # Convert from oneline coordinat to word coordinat
             x_b4_marker = marker_pos[final_group_marker[char_list[0]][0]][0]\
                 - wall[0]
-            # Check if marker is not in 0 x coordinat to be able looping
-            if x_b4_marker > 0:
-                for x in range(0, x_b4_marker)[::-1]:
-                    # if body_v_projection[x] > 2 * word_baseline_height:
-                    if body_v_projection[x] > 2 * oneline_height_sorted:
-                        final_segmented_char = final_segmented_char_candidate[
-                            :, x+1:wall[1]
-                        ]
-                        pass_x1 += x+1
-                        break
-                    else:
-                        final_segmented_char = final_segmented_char_candidate
+            # check if body image is not empty
+            if len(body_v_projection) >= x_b4_marker:
+                # Check if marker is not in 0 x coordinat to be able looping
+                if x_b4_marker > 0:
+                    for x in range(0, x_b4_marker)[::-1]:
+                        # if body_v_projection[x] > 2 * word_baseline_height:
+                        if body_v_projection[x] > 2 * oneline_height_sorted:
+                            final_segmented_char = final_segmented_char_candidate[
+                                :, x+1:wall[1]
+                            ]
+                            pass_x1 += x+1
+                            break
+                        else:
+                            final_segmented_char = final_segmented_char_candidate
+                else:
+                    final_segmented_char = final_segmented_char_candidate
+                print('__Final word only have one marker__')
+                return final_segmented_char, pass_x1
             else:
-                final_segmented_char = final_segmented_char_candidate
-            print('__Final word only have one marker__')
-            return final_segmented_char, pass_x1
+                return 'continue', 'continue'
 
         if len(final_group_marker) > 1:  # At least there are two chars or more
             final_segmented_char_candidate = self.image_final_sorted[

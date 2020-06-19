@@ -28,51 +28,69 @@ def horizontal_projection(image_h):
 
     return h_projection
 
-
-def detect_horizontal_line(h_projection, pixel_limit_ste, pixel_limit_ets):
+def detect_horizontal_line_up_down(h_projection):
     # Detect line horizontal
-    up_flag = 0
-    down_flag = 0
-    # pixel_limit = 5
-    start_to_end = 0
-    end_to_start = pixel_limit_ets + 1
     start_point = []
     for x in range(len(h_projection)):
-        if h_projection[x] > 0 and up_flag == 1:
-            start_to_end += 1
-
-        if h_projection[x] == 0 and up_flag == 1:
-            # print(start_to_end)
+        if h_projection[x] > 0:
             start_point.append(x)
-            # print(start_point)
-            if start_to_end < pixel_limit_ste:
-                del(start_point[len(start_point) - 1])
-                # print('delete ste')
-                down_flag = 0
-                up_flag = 1
-            else:
-                down_flag = 1
-                up_flag = 0
-                start_to_end = 0
+            break
 
-        if h_projection[x] == 0 and down_flag == 1:
-            end_to_start += 1
-
-        if h_projection[x] > 0 and up_flag == 0:
+    for x in range(len(h_projection))[::-1]:
+        if h_projection[x] > 0:
             start_point.append(x)
-            # print(start_point)
-            if end_to_start < pixel_limit_ets:
-                del(start_point[len(start_point)-1])
-                del(start_point[len(start_point)-1])
-            up_flag = 1
-            down_flag = 0
-            end_to_start = 0
+            break
 
     if len(start_point) % 2 != 0:
         if h_projection[len(h_projection) - 1] > 0:
             start_point.append(len(h_projection) - 1)
 
     return start_point
+
+# def detect_horizontal_line(h_projection, pixel_limit_ste, pixel_limit_ets):
+#     # Detect line horizontal
+#     up_flag = 0
+#     down_flag = 0
+#     # pixel_limit = 5
+#     start_to_end = 0
+#     end_to_start = pixel_limit_ets + 1
+#     start_point = []
+#     for x in range(len(h_projection)):
+#         if h_projection[x] > 0 and up_flag == 1:
+#             start_to_end += 1
+
+#         if h_projection[x] == 0 and up_flag == 1:
+#             # print(start_to_end)
+#             start_point.append(x)
+#             # print(start_point)
+#             if start_to_end < pixel_limit_ste:
+#                 del(start_point[len(start_point) - 1])
+#                 # print('delete ste')
+#                 down_flag = 0
+#                 up_flag = 1
+#             else:
+#                 down_flag = 1
+#                 up_flag = 0
+#                 start_to_end = 0
+
+#         if h_projection[x] == 0 and down_flag == 1:
+#             end_to_start += 1
+
+#         if h_projection[x] > 0 and up_flag == 0:
+#             start_point.append(x)
+#             # print(start_point)
+#             if end_to_start < pixel_limit_ets:
+#                 del(start_point[len(start_point)-1])
+#                 del(start_point[len(start_point)-1])
+#             up_flag = 1
+#             down_flag = 0
+#             end_to_start = 0
+
+#     if len(start_point) % 2 != 0:
+#         if h_projection[len(h_projection) - 1] > 0:
+#             start_point.append(len(h_projection) - 1)
+
+#     return start_point
 
 
 # #### used by image processing stage
@@ -687,24 +705,26 @@ def eight_conn_by_seed(coordinat, img, font_list, view=True):
 # In[8]:
 
 
-def normal_image_processing_blok(imagePath, object_result):
+def normal_image_processing_blok(imagePath, object_result, bw_method):
     original_image = cv2.imread(imagePath)
     gray = cv2.cvtColor(original_image, cv2.COLOR_BGR2GRAY)
     # template = cv2.Canny(gray, 50, 200)
+    if bw_method == 0:
     # Otsu threshold
-    ret_img, image = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY
-                                   + cv2.THRESH_OTSU)
+        ret_img, image = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY
+                                    + cv2.THRESH_OTSU)
+    if bw_method == 1:
     # Simple threshold
-    # ret_img, image2 = cv2.threshold(image, 127, 255, cv2.THRESH_BINARY)
+        ret_img, image = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)
+    if bw_method == 2:
     # Adaptive threshold value is the mean of neighbourhood area
-    # image = cv2.adaptiveThreshold(image, 255, cv2.ADAPTIVE_THRESH_MEAN_C,
-    #                               cv2.THRESH_BINARY, 11, 2)
-
+        image = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_MEAN_C,
+                                      cv2.THRESH_BINARY, 11, 2)
+    if bw_method == 3:
     # Adaptive threshold value is the weighted sum of neighbourhood
     # values where weights are a gaussian window
-#     image = cv2.adaptiveThreshold(gray, 255,
-#                                   cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-#                                   cv2.THRESH_BINARY, 11, 2)
+        image = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                      cv2.THRESH_BINARY, 11, 2)
 
     # cv2.imshow('otsu', image1)
     # cv2.imshow('simple', image2)
@@ -1078,7 +1098,7 @@ def most_marker(temp_object):
     
     return max_id
 
-def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object, font_list):
+def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object, font_list, bw_method):
     # In[23]:
     # Get the horizontal line image by using eight connectivity
     img = cv2.imread(imagePath)
@@ -1113,20 +1133,22 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
     gray_copy = gray.copy()
     height, width = gray_copy.shape
     normal_processing = []
+    image_v_checking = []
     for y_y in list_start_point_h:
         image_vo = gray[y_y[0]:y_y[1], :]
         image_v = image_vo.copy()
         font_object.vertical_projection(image_v)
-        font_object.detect_vertical_line(image_v.copy(), 10)
+        font_object.detect_vertical_line(image_v.copy(), 5)
         start_point_v = font_object.start_point_v
         print('start point v:', start_point_v)
-        # for x in range(len(start_point_v)):
-        #     if x % 2 == 0:
-        #         cv2.line(image_v, (start_point_v[x], 0),
-        #                  (start_point_v[x], height), (0, 0, 0), 2)
-        #     else:
-        #         cv2.line(image_v, (start_point_v[x], 0),
-        #                  (start_point_v[x], height), (100, 100, 100), 2)
+        for x in range(len(start_point_v)):
+            if x % 2 == 0:
+                cv2.line(image_v, (start_point_v[x], 0),
+                         (start_point_v[x], height), (0, 0, 0), 2)
+            else:
+                cv2.line(image_v, (start_point_v[x], 0),
+                         (start_point_v[x], height), (100, 100, 100), 2)
+        image_v_checking.append(image_v)
         # cv2.imshow('line', image_v)
         # print('>')
         # cv2.waitKey(0)
@@ -1138,7 +1160,7 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
             # Just crop the next char by ratio
             normal_processing.append(False)
             print(len(start_point_v), 'is not enough')
-    cv2.destroyAllWindows()
+    # cv2.destroyAllWindows()
 
     # In[25]:
     print('normal processing:', normal_processing)
@@ -1149,11 +1171,27 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
 
     img = cv2.imread(imagePath)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    bw_image = cv2.adaptiveThreshold(gray, 255,
-                                     cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                     cv2.THRESH_BINARY, 11, 2)
+    if bw_method == 0:
+    # Otsu threshold
+        _, bw_image = cv2.threshold(gray, 0, 255,
+                                    cv2.THRESH_BINARY
+                                    + cv2.THRESH_OTSU)
+    if bw_method == 1:
+    # Simple threshold
+        _, bw_image = cv2.threshold(gray, 127, 255,
+                                    cv2.THRESH_BINARY)
+    if bw_method == 2:
+    # Adaptive threshold value is the mean of neighbourhood area
+        bw_image = cv2.adaptiveThreshold(gray, 255,
+                                         cv2.ADAPTIVE_THRESH_MEAN_C,
+                                         cv2.THRESH_BINARY, 11, 2)
+    if bw_method == 3:
+    # Adaptive threshold value is the weighted sum of neighbourhood
+    # values where weights are a gaussian window
+        bw_image = cv2.adaptiveThreshold(gray, 255,
+                                        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                        cv2.THRESH_BINARY, 11, 2)
     height, width = gray.shape
-
     kernel = np.ones((3, 3), np.uint8)
 
     temp_gray_copy = []
@@ -1168,7 +1206,7 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
         #     pass
         save_state, imagelist_perchar_marker, imagelist_final_word_img, imagelist_final_segmented_char,\
          imagelist_bag_of_h_with_baseline, imagelist_image_final_body, imagelist_image_final_marker,\
-             horizontal_image = normal_image_processing_blok(imagePath, temp_object[max_id])
+             horizontal_image = normal_image_processing_blok(imagePath, temp_object[max_id], bw_method)
         # print('comeon', save_state)
         # print('f', imagelist_perchar_marker)
         # print('ddd', imagelist_final_word_img)
@@ -1444,7 +1482,7 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
     #                     cv2.waitKey(0)
 
 
-    return save_state, normal_processing_result, crop_ratio_processing_result, imagelist_horizontal_line_by_eight_conn
+    return save_state, normal_processing_result, crop_ratio_processing_result, imagelist_horizontal_line_by_eight_conn, image_v_checking
 
 
 def character_recognition(save_state, imagePath, model):
@@ -1469,6 +1507,7 @@ def character_recognition(save_state, imagePath, model):
     #     print(save_state)
     # Final segmented char recognition
     char_recog = []
+    saved_char_recog = []
     skip_index = []
     character_y = {}
     for x in save_state:
@@ -1477,13 +1516,18 @@ def character_recognition(save_state, imagePath, model):
         # cv2.imshow('save state image', save_state[x][4])
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()
-        start_point = detect_horizontal_line(
-            horizontal_projection(save_state[x][4]), 0, 50)
+        # h, w = save_state[x][4].shape
+        start_point = detect_horizontal_line_up_down(
+            horizontal_projection(save_state[x][4]))
     #     print(x)
         print(start_point)
         if len(start_point) < 2:
             skip_index.append(x)
             continue
+        elif len(start_point) >= 2:
+            if start_point[1] - start_point[0] < 1:
+                skip_index.append(x)
+                continue 
         cut_image = save_state[x][4][start_point[0]:start_point[1], :]
         character_y[x] = (save_state[x][2][0]+start_point[0],
                        save_state[x][2][0]+start_point[1])
@@ -1501,6 +1545,7 @@ def character_recognition(save_state, imagePath, model):
     #         char_recog.append(image_32_dk)
         char_recog.append(image_32_dd)
 
+    saved_char_recog = char_recog.copy()
     if len(save_state) > 0:
         char_recog = np.array(char_recog)
         char_recog = char_recog.reshape(-1, 32, 32, 1).astype(np.float32)/255
@@ -1509,6 +1554,13 @@ def character_recognition(save_state, imagePath, model):
         y_pred = np.argmax(y_pred, axis=1)
 
     count = -1
+    char_list_nameonly = [
+    'Alif‬', 'Bā’', 'Tā’', 'Ṡā’‬', 'Jīm', 'h_Ḥā’‬', 'Khā’‬',
+    'Dāl‬', 'Żāl‬', 'Rā’‬', 'zai‬', 'sīn‬', 'syīn‬', 's_ṣād',
+    'd_ḍād', 't_ṭā’‬', 'z_ẓȧ’‬', '‘ain', 'gain‬', 'fā’‬', 'qāf‬',
+    'kāf‬', 'lām‬', 'mīm‬', 'nūn‬', 'wāw‬', 'hā’‬', 'yā’‬'
+    ]
+    pred_result = []
     for x in save_state:
         # skipping
         skip = False
@@ -1517,9 +1569,17 @@ def character_recognition(save_state, imagePath, model):
                 skip = True
                 break
         if len(save_state[x]) < 2 or skip:
+            pred_result.append('n/a')
             continue
+        else:
+            count += 1
+            print('y_pred', y_pred)
+            # pred_result.append(y_pred[count])
+            pred_result.append(char_list_nameonly[y_pred[count]])
+            print(pred_result)
+            # print(char_list_nameonly[y_pred[count]])
 
-        count += 1
+
         h, w = save_state[x][4].shape
         marker = save_state[x][0].split('_')
         if isinstance(save_state[x][3], type([])):
@@ -1641,6 +1701,6 @@ def character_recognition(save_state, imagePath, model):
     final_image_result = original_image
 
 
-    return final_image_result
+    return final_image_result, pred_result, saved_char_recog
 
 # DONE!!!

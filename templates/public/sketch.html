@@ -103,7 +103,8 @@
                 <button id='load_config_button' type="button" class="btn btn-secondary">Load</button>
                 <button id='save_config_button' type="button" class="btn btn-secondary"
                     onclick="saveBlob();return false">Save</button>
-                <button id='delete_config_button' type="button" class="btn btn-secondary">Delete</button>
+                <button id='delete_config_button' type="button" class="btn btn-secondary"
+                    onclick="delete_config();return false">Delete</button>
                 <!-- <input id="fileField" type="file" placeholder="file"/>    -->
             </div>
             <!-- <button class="btn btn-primary" onclick="save_to_file()" id='savetofile_button'>save configuration</button> -->
@@ -260,6 +261,7 @@
 
     var setting_done
     var image_ready
+    var selectedD
 
     // lightGallery(document.getElementById('lightgallery'))
     $(document).ready(function () {
@@ -269,6 +271,7 @@
     var refreshIntervalId = setInterval(waiting_button, 3000);
     function waiting_button() {
         console.log('waiting')
+        // console.log(list_entry)
         if (setting_done == true && image_ready == true) {
             document.getElementById('start_process').disabled = false
             clearInterval(refreshIntervalId);
@@ -288,8 +291,60 @@
             save_entry = list_entry
         }
         const blob = new Blob([JSON.stringify(save_entry, null, 2)], { type: 'application/json' });
-        download(blob, "dlTextBlob.txt", "text/plain");
-        display_list()
+        // download(blob, "dlTextBlob.txt", "text/plain");
+        fetch(`${window.origin}/sketch`, {
+            method: "POST",
+            credentials: "include",
+            body: JSON.stringify(save_entry, null, 2),
+            cache: "no-cache",
+            headers: new Headers({
+                "content-type": "application/json"
+            })
+        })
+            .then(function (response) {
+                if (response.status !== 200) {
+                    console.log('error')
+                    return
+                }
+                response.json().then(function (data) {
+                    // console.log(data);
+                    list_entry = data
+                    display_list()
+                    submit_marker()
+                });
+            })
+            .catch(function (error) {
+                console.log("Fetch error: " + error)
+            })
+        alert('Configuration Saved')
+    }
+
+    function delete_config() {
+        list_entry.splice(selectedD, 1)
+        fetch(`${window.origin}/sketch`, {
+            method: "POST",
+            credentials: "include",
+            body: JSON.stringify(list_entry, null, 2),
+            cache: "no-cache",
+            headers: new Headers({
+                "content-type": "application/json"
+            })
+        })
+            .then(function (response) {
+                if (response.status !== 200) {
+                    console.log('error')
+                    return
+                }
+                response.json().then(function (data) {
+                    // console.log(data);
+                    list_entry = data
+                    display_list()
+                });
+            })
+            .catch(function (error) {
+                console.log("Fetch error: " + error)
+            })
+        alert('Delete config '+selectedD+' success')
     }
 
     function start_processing() {
@@ -411,7 +466,6 @@
             var textFromFileLoaded = fileLoadedEvent.target.result;
             list_entry = JSON.parse(textFromFileLoaded)
             display_list()
-            // console.log(textFromFileLoaded);
         };
         fileReader.readAsText(fileToLoad, "UTF-8");
     }
@@ -419,16 +473,27 @@
     function display_list() {
         inner = document.getElementById('list_config')
         in_text = ''
-        for (x = 0; x < list_entry.length; x++) {
+        for (x = list_entry.length - 1; x >= 0; x--) {
             in_text += '<option value="' + x + '">config_' + x + '</option>'
         }
         inner.innerHTML = in_text
+        inner.selectedIndex = 0
+        selectedD = list_entry.length - 1
     }
 
     $("#list_config").on("click", function (value) {
         var This = $(this);
-        var selectedD = $(this).val();
+        selectedD = $(this).val();
         selected_setting = list_entry[selectedD]
+        console.log(selected_setting)
+        console.log(selectedD)
+        for (font in parsed) {
+            numstep_id = font + '_numstep'
+            numstep = document.getElementById(numstep_id)
+            numstep.value = selected_setting[font][1]
+            set_font_func(selected_setting[font][0], font)
+        };
+        submit_marker()
     });
 
     function save_button_id(clicked) {

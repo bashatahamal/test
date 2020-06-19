@@ -88,7 +88,7 @@ class Marker:
         # return only the bounding boxes that were picked
         return boxes[pick]
 
-    def match_template(self, visualize=False, numstep=100):
+    def match_template(self, visualize=False, numstep=100, bw_method=0):
         # Get template
         # print('.')
         template = cv2.imread(self.get_template_location())
@@ -143,22 +143,26 @@ class Marker:
             # Preprocessing resized image and then apply template matching
             # Cannyedge
             # edged = cv2.Canny(resized, 50, 200)
+            if bw_method == 0:
             # Otsu threshold
-            ret_img, resized = cv2.threshold(resized, 0, 255,
-                                             cv2.THRESH_BINARY
-                                             + cv2.THRESH_OTSU)
+                ret_img, resized = cv2.threshold(resized, 0, 255,
+                                                cv2.THRESH_BINARY
+                                                + cv2.THRESH_OTSU)
+            if bw_method == 1:
             # Simple threshold
-            # ret_img, resized = cv2.threshold(resized, 127, 255,
-            #                                  cv2.THRESH_BINARY)
+                ret_img, resized = cv2.threshold(resized, 127, 255,
+                                                 cv2.THRESH_BINARY)
+            if bw_method == 2:
             # Adaptive threshold value is the mean of neighbourhood area
-            # resized = cv2.adaptiveThreshold(resized, 255,
-            #                                 cv2.ADAPTIVE_THRESH_MEAN_C,
-            #                                 cv2.THRESH_BINARY, 11, 2)
+                resized = cv2.adaptiveThreshold(resized, 255,
+                                                cv2.ADAPTIVE_THRESH_MEAN_C,
+                                                cv2.THRESH_BINARY, 11, 2)
+            if bw_method == 3:
             # Adaptive threshold value is the weighted sum of neighbourhood
             # values where weights are a gaussian window
-            # resized = cv2.adaptiveThreshold(resized, 255,
-            #                                 cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-            #                                 cv2.THRESH_BINARY, 11, 2)
+                resized = cv2.adaptiveThreshold(resized, 255,
+                                                cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                                cv2.THRESH_BINARY, 11, 2)
             result = cv2.matchTemplate(resized, template, cv2.TM_CCOEFF_NORMED)
             (_, maxVal, _, maxLoc) = cv2.minMaxLoc(result)
             if visualize:
@@ -331,7 +335,7 @@ class FontWrapper(Marker):
         # cv2.destroyWindow("Detected Image_" + self.get_object_name())
         return rectangle_image
 
-    def run(self, view=False, numstep=100):
+    def run(self, view=False, numstep=100, bw_method=0):
         # Tanwin
         # print(self.get_marker_thresh())
         print('run() Marker Font')
@@ -352,7 +356,7 @@ class FontWrapper(Marker):
                              nms_thresh=self.nms_thresh)
             (pocketData[x], pocketData[x+len(self.get_marker_thresh())]) \
                 = super().match_template(visualize=self.visualize,
-                                         numstep=numstep)
+                                         numstep=numstep, bw_method=bw_method)
             self.imagelist_visualize_white_blok.append(self.image_visualize_white_block)
             
             # print(type(pocketData[x]))

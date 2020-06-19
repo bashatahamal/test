@@ -23,6 +23,7 @@
 
 .lg-actions .lg-next, .lg-actions .lg-prev {
   background-color: rgba(0, 0, 0, 0.45);
+/*   background-color: rgba(255, 255, 0, 0.45); */
   border-radius: 2px;
   color: #999;
   cursor: pointer;
@@ -164,6 +165,7 @@
   top: 0;
   width: 100%;
   background-color: rgba(0, 0, 0, 0.45);
+/*   background-color: rgba(255, 255, 0, 0.45); */
 }
 .lg-toolbar .lg-icon {
   color: #999;
@@ -196,6 +198,7 @@
 
 .lg-sub-html {
   background-color: rgba(0, 0, 0, 0.45);
+/*   background-color: rgba(255, 255, 0, 0.45); */
   bottom: 0;
   color: #EEE;
   font-size: 16px;
@@ -902,7 +905,8 @@ body:not(.lg-from-hash) .lg-outer.lg-start-zoom .lg-item.lg-complete .lg-object 
   right: 0;
   bottom: 0;
   z-index: 1040;
-  background-color: #000;
+/*   background-color: #000; */
+  background-color: #ddd;
   opacity: 0;
   -webkit-transition: opacity 0.15s ease 0s;
   -o-transition: opacity 0.15s ease 0s;
