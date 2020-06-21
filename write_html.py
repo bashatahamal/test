@@ -60,6 +60,14 @@ def display_result(filename):
 
         button += '<button class="btn btn-primary" id=file' + str(numfile+1) + ' onclick="show_file' + str(numfile+1) \
                 + '()">file'+str(numfile+1)+'</button>' +'\n'
+        if type(dumpPath[6][numfile]) == type(''):
+            src_fr = dumpPath[6][numfile]
+        else:
+            src_fr = ''
+        if type(dumpPath[11][numfile]) == type(''):
+            type_fr = dumpPath[11][numfile]
+        else:
+            type_fr = ''
         final_result += '<div id="file2'+str(numfile+1)+'" style="display: none;">\
                 <ul>\
                     <li>\
@@ -69,8 +77,8 @@ def display_result(filename):
                 <div class="demo-gallery">\
                     <ul id=result1'+str(numfile+1)+'>\
                         <li style="display: block;"\
-                            data-src="'+dumpPath[6][numfile]+'"\
-                            data-sub-html="<h3>File '+str(numfile+1)+'</h3><p>'+dumpPath[11][numfile]+'</p>">\
+                            data-src="'+src_fr+'"\
+                            data-sub-html="<h3>File '+str(numfile+1)+'</h3><p>'+type_fr+'</p>">\
                             <a href="">\
                                 <img class="img-responsive" src="/static/img/folder1.png" style="max-width: 150px;">\
                                 <div class="demo-gallery-poster">\
@@ -138,13 +146,20 @@ def display_result(filename):
                             </a>\
                         </li>'
         # box4
+        if len(dumpPath[4][numfile]) > 0:
+            if type(dumpPath[4][numfile][0]) == type(''):
+                src_wb = dumpPath[4][numfile][0]
+            else:
+                src_wb = ''
+        else:
+            src_wb = ''
         white_block = ' </ul>\
                 </div>\
                     \
                 <div class="demo-gallery">\
                     <ul id=result3'+str(numfile+1)+'>\
                         <li style="display: block;"\
-                            data-src="'+dumpPath[4][numfile][0]+'"\
+                            data-src="'+src_wb+'"\
                             data-sub-html="<h3>File '+str(numfile+1)+'</h3>">\
                             <a href="">\
                                 <img class="img-responsive" src="/static/img/folder1.png" style="max-width: 150px;">\
@@ -203,13 +218,17 @@ def display_result(filename):
                         </li>'
         
         # box4
+        if len(dumpPath[1][numfile]) > 0:
+            src_hl = dumpPath[1][numfile][0]
+        else:
+            src_hl = ''
         h_line = ' </ul>\
                 </div>\
                     \
                 <div class="demo-gallery">\
                     <ul id=result5'+str(numfile+1)+'>\
                         <li style="display: block;"\
-                            data-src="'+dumpPath[1][numfile][0]+'"\
+                            data-src="'+src_hl+'"\
                             data-sub-html="<h3>File '+str(numfile+1)+'</h3>">\
                             <a href="">\
                                 <img class="img-responsive" src="/static/img/folder1.png" style="max-width: 150px;">\
@@ -233,13 +252,17 @@ def display_result(filename):
                             </a>\
                         </li>'
         # box4
+        if len(dumpPath[4][numfile]) > 0:
+            src_vc = dumpPath[4][numfile][0]
+        else:
+            src_vc = ''
         v_check = ' </ul>\
                 </div>\
                     \
                 <div class="demo-gallery">\
                     <ul id=result14'+str(numfile+1)+'>\
                         <li style="display: block;"\
-                            data-src="'+dumpPath[9][numfile][0]+'"\
+                            data-src="'+src_vc+'"\
                             data-sub-html="<h3>File '+str(numfile+1)+'</h3>">\
                             <a href="">\
                                 <img class="img-responsive" src="/static/img/folder1.png" style="max-width: 150px;">\
@@ -334,82 +357,93 @@ def display_result(filename):
             # box4
             np_name = ['Gray_Image', 'Eight_Conn_on_Base', 'Substract_Image', 'Cutted_Substract', 'Final_Segmented_Char']
             p_perfile_list = []
-            for x in range(len(dumpPath[0][numfile])):
-                # box4
-                p_perfile = ''
-                if x == 4:
-                    p_perfile = ' </ul>\
-                            </div>\
-                                \
-                            <div class="demo-gallery">\
-                                <ul id=result'+str(6+x)+str(numfile+1)+'>\
-                                    <li style="display: block;"\
-                                        data-src="'+dumpPath[0][numfile][x][0][0]+'"\
-                                        data-sub-html="<h3>File '+str(numfile+1)+'</h3><p>'+dumpPath[7][numfile][0]+'</p>">\
-                                        <a href="">\
-                                            <img class="img-responsive" src="/static/img/folder1.png" style="max-width: 150px;">\
-                                            <div class="demo-gallery-poster">\
-                                                <img src="static/light_gallery/img/zoom.png">\
-                                            </div>\
-                                        </a>\
-                                        <h6>'+np_name[x]+'</h6>\
-                                    </li>'
-                else:
-                    p_perfile = ' </ul>\
-                            </div>\
-                                \
-                            <div class="demo-gallery">\
-                                <ul id=result'+str(6+x)+str(numfile+1)+'>\
-                                    <li style="display: block;"\
-                                        data-src="'+dumpPath[0][numfile][x][0][0]+'"\
-                                        data-sub-html="<h3>File '+str(numfile+1)+'</h3>">\
-                                        <a href="">\
-                                            <img class="img-responsive" src="/static/img/folder1.png" style="max-width: 150px;">\
-                                            <div class="demo-gallery-poster">\
-                                                <img src="static/light_gallery/img/zoom.png">\
-                                            </div>\
-                                        </a>\
-                                        <h6>'+np_name[x]+'</h6>\
-                                    </li>'
-
-                first = True
-                count = 0
-                for image in dumpPath[0][numfile][x][0]:
-                    if first:
-                        first = False
-                        continue
-                    count += 1
+            if len(dumpPath[0][numfile]) > 0:
+                for x in range(len(dumpPath[0][numfile])):
+                    # box4
+                    p_perfile = ''
                     if x == 4:
-                        p_perfile += '<li style="display: none;" data-src="'+image+'"\
-                                        data-sub-html="<h3>File '+str(numfile+1)+'</h3><p>'+dumpPath[7][numfile][count]+'</p>">\
-                                        <a href="">\
-                                            <img class="img-responsive" src="'+image+'" style="max-width: 150px;">\
-                                        </a>\
-                                    </li>'
+                        p_perfile = ' </ul>\
+                                </div>\
+                                    \
+                                <div class="demo-gallery">\
+                                    <ul id=result'+str(6+x)+str(numfile+1)+'>\
+                                        <li style="display: block;"\
+                                            data-src="'+dumpPath[0][numfile][x][0][0]+'"\
+                                            data-sub-html="<h3>File '+str(numfile+1)+'</h3><p>'+dumpPath[7][numfile][0]+'</p>">\
+                                            <a href="">\
+                                                <img class="img-responsive" src="/static/img/folder1.png" style="max-width: 150px;">\
+                                                <div class="demo-gallery-poster">\
+                                                    <img src="static/light_gallery/img/zoom.png">\
+                                                </div>\
+                                            </a>\
+                                            <h6>'+np_name[x]+'</h6>\
+                                        </li>'
                     else:
-                        p_perfile += '<li style="display: none;" data-src="'+image+'"\
-                                        data-sub-html="<h3>File '+str(numfile+1)+'</h3>">\
-                                        <a href="">\
-                                            <img class="img-responsive" src="'+image+'" style="max-width: 150px;">\
-                                        </a>\
-                                    </li>'
-                p_perfile_list.append(p_perfile)
-            p_perfile_html = p_perfile_list[0] + p_perfile_list[1] + p_perfile_list[2] \
-                            + p_perfile_list[3] + p_perfile_list[4]
-        
+                        p_perfile = ' </ul>\
+                                </div>\
+                                    \
+                                <div class="demo-gallery">\
+                                    <ul id=result'+str(6+x)+str(numfile+1)+'>\
+                                        <li style="display: block;"\
+                                            data-src="'+dumpPath[0][numfile][x][0][0]+'"\
+                                            data-sub-html="<h3>File '+str(numfile+1)+'</h3>">\
+                                            <a href="">\
+                                                <img class="img-responsive" src="/static/img/folder1.png" style="max-width: 150px;">\
+                                                <div class="demo-gallery-poster">\
+                                                    <img src="static/light_gallery/img/zoom.png">\
+                                                </div>\
+                                            </a>\
+                                            <h6>'+np_name[x]+'</h6>\
+                                        </li>'
+
+                    first = True
+                    count = 0
+                    for image in dumpPath[0][numfile][x][0]:
+                        if first:
+                            first = False
+                            continue
+                        count += 1
+                        if x == 4:
+                            p_perfile += '<li style="display: none;" data-src="'+image+'"\
+                                            data-sub-html="<h3>File '+str(numfile+1)+'</h3><p>'+dumpPath[7][numfile][count]+'</p>">\
+                                            <a href="">\
+                                                <img class="img-responsive" src="'+image+'" style="max-width: 150px;">\
+                                            </a>\
+                                        </li>'
+                        else:
+                            p_perfile += '<li style="display: none;" data-src="'+image+'"\
+                                            data-sub-html="<h3>File '+str(numfile+1)+'</h3>">\
+                                            <a href="">\
+                                                <img class="img-responsive" src="'+image+'" style="max-width: 150px;">\
+                                            </a>\
+                                        </li>'
+                    p_perfile_list.append(p_perfile)
+                p_perfile_html = p_perfile_list[0] + p_perfile_list[1] + p_perfile_list[2] \
+                                + p_perfile_list[3] + p_perfile_list[4]
+            else:
+                p_perfile_html = ''
         # box4
         cr_pred = []
         for pred in dumpPath[7][numfile]:
             if pred != 'n/a':
                 cr_pred.append(pred)
+        if len(dumpPath[7][numfile]) > 0:
+            type_cr = cr_pred[0]
+        else:
+            type_cr = ''
+
+        if len(dumpPath[10][numfile]) > 0:
+            src_cr = dumpPath[10][numfile][0]
+        else:
+            src_cr = ''
         char_recog = ' </ul>\
                 </div>\
                     \
                 <div class="demo-gallery">\
                     <ul id=result15'+str(numfile+1)+'>\
                         <li style="display: block;"\
-                            data-src="'+dumpPath[10][numfile][0]+'"\
-                            data-sub-html="<h3>File '+str(numfile+1)+'</h3><p>'+cr_pred[0]+'</p>">\
+                            data-src="'+src_cr+'"\
+                            data-sub-html="<h3>File '+str(numfile+1)+'</h3><p>'+type_cr+'</p>">\
                             <a href="">\
                                 <img class="img-responsive" src="/static/img/folder1.png" style="max-width: 150px;">\
                                 <div class="demo-gallery-poster">\
@@ -427,8 +461,12 @@ def display_result(filename):
                 first = False
                 continue
             count += 1
+            if count < len(cr_pred):
+                recog = cr_pred[count]
+            else:
+                recog = 'n/a'
             cr_perfile += '<li style="display: none;" data-src="'+image+'"\
-                            data-sub-html="<h3>File '+str(numfile+1)+'</h3><p>'+cr_pred[count]+'</p>">\
+                            data-sub-html="<h3>File '+str(numfile+1)+'</h3><p>'+recog+'</p>">\
                             <a href="">\
                                 <img class="img-responsive" src="'+image+'" style="max-width: 150px;">\
                             </a>\

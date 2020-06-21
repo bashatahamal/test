@@ -1396,6 +1396,7 @@ class ImageProcessing():
                 print('__Final word only have one marker__')
                 return final_segmented_char, pass_x1
             else:
+                print('one marker continue')
                 return 'continue', 'continue'
 
         if len(final_group_marker) > 1:  # At least there are two chars or more

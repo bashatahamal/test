@@ -43,7 +43,7 @@
                     placeholder="numstep" , value=20></div>
         </div>
         <hr>
-        <button class="btn btn-primary" id="submit_{{font}}" onclick="submit_marker();">Submit</button>
+        <button class="btn btn-primary btn-block" id="submit_{{font}}" onclick="submit_marker();">Submit</button>
     </div>
     {% endfor %}
 </div>
@@ -62,7 +62,7 @@
         {% for font in marker_type %}
         <!-- <button id='{{font}}'>{{font}}</button> -->
         <div class="box2">
-            <button class="btn btn-primary" id='trig_{{font}}'>{{font}}</button>
+            <button type="button" class="btn btn-outline-dark btn-block" id='trig_{{font}}'>{{font}}</button>
             <!-- <button id='{{font}}'>{{font}}</button> -->
             <!-- <a href="#" class='{{font}}'>Lorem ipsum dolor sit amet.</a> -->
         </div>
@@ -118,8 +118,8 @@
     <div class="box box0">
         <nav class="navbar navbar-expand-lg navbar-dark mb-3" style="background-color: #333;">
             <div id='bp1'>
-                <a class="navbar-brand" href="#" onclick="myfunction1();return false;" id='final_result'>Final
-                    Result</a>
+                <a class="navbar-brand" href="#" onclick="myfunction1();return false;" id='input_image'>Input
+                    Image</a>
             </div>
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
                 aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -130,10 +130,10 @@
                 <ul class="navbar-nav">
                     <div id='bp2'>
                         <li class="nav-item">
-                            <a id='input_image' href="#" onclick="myfunction2();return false;">Input Image</a>
+                            <a id='configuration' href="#" onclick="myfunction2();return false;">Configuration</a>
                         </li>
                     </div>
-                    <div id='bp3'>
+                    <!-- <div id='bp3'>
                         <li class="nav-item">
                             <a id='preprocessing' href="#" onclick="myfunction3();return false;">Preprocessing</a>
                         </li>
@@ -153,7 +153,7 @@
                         <li class="nav-item">
                             <a id='recognition' href="#" onclick="myfunction6();return false;">Recognition</a>
                         </li>
-                    </div>
+                    </div> -->
                 </ul>
             </div>
 
@@ -211,23 +211,9 @@
                 <ul id="lightgallery" class="list-unstyled column">
                 </ul>
             </div>
-            <!-- <hr>
-            <div id="carouselExampleControls" class="carousel slide" data-ride="carousel">
-                <div class="carousel-inner" id='page1_carousel'> -->
-            <!-- inside carousel -->
-            <!-- </div>
-                <a class="carousel-control-prev" href="#carouselExampleControls" role="button" data-slide="prev">
-                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                    <span class="sr-only">Previous</span>
-                </a>
-                <a class="carousel-control-next" href="#carouselExampleControls" role="button" data-slide="next">
-                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                    <span class="sr-only">Next</span>
-                </a>
-            </div> -->
         </div>
         <div class="page" id='page3'>
-            <h2>Page 3</h2>
+            <h2></h2>
             <hr>
         </div>
         <div class="page" id='page4'>
@@ -243,10 +229,15 @@
             <hr>
         </div>
     </div>
-    <div class="box box3"></div>
-    <div class="box box4">Box 4</div>
-</div>
+    <div class="box box3" style="display: block;">
+        <div id="config"></div>
+    </div>
+    <div class="box box4" style="display: none;"></div>
 
+</div>
+<footer>
+    <p>Departemen Ilmu Komputer dan Elektronika <br>2020</p>
+</footer>
 
 <div class="loader-wrapper">
     <div class="loader_text"></div>
@@ -543,6 +534,16 @@
         button.onclick = save_button_id
     }
 
+    function show_config(){
+        page3 = document.getElementById('page3')
+        var text = ''
+        for (font in entry){
+            text = font + ' (' + String(entry[font][1]) + ') = ' + String(entry[font][0]) + '\n'
+            page3.innerHTML += '<li>' + text + '</li>'
+        }
+        p3.style.display = 'block'
+    }
+
     function submit_marker() {
 
         // var parsed = JSON.parse('{{marker_type | tojson|safe}}');
@@ -569,10 +570,10 @@
                 entry[font] = [list]
                 entry[font].push(numstep.value)
                 button.innerText = 'Edit'
-                button.className = "btn btn-success"
+                button.className = "btn btn-success btn-block"
             } else {
                 button.innerText = 'Submit'
-                button.className = "btn btn-primary"
+                button.className = "btn btn-primary btn-block"
             };
         };
         if (box.readOnly == true) {
@@ -594,6 +595,7 @@
                 }
                 response.json().then(function (data) {
                     setting_done = true
+                    show_config()
                 });
             })
                 .catch(function (error) {

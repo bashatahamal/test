@@ -47,50 +47,50 @@ def detect_horizontal_line_up_down(h_projection):
 
     return start_point
 
-# def detect_horizontal_line(h_projection, pixel_limit_ste, pixel_limit_ets):
-#     # Detect line horizontal
-#     up_flag = 0
-#     down_flag = 0
-#     # pixel_limit = 5
-#     start_to_end = 0
-#     end_to_start = pixel_limit_ets + 1
-#     start_point = []
-#     for x in range(len(h_projection)):
-#         if h_projection[x] > 0 and up_flag == 1:
-#             start_to_end += 1
+def detect_horizontal_line(h_projection, pixel_limit_ste, pixel_limit_ets):
+    # Detect line horizontal
+    up_flag = 0
+    down_flag = 0
+    # pixel_limit = 5
+    start_to_end = 0
+    end_to_start = pixel_limit_ets + 1
+    start_point = []
+    for x in range(len(h_projection)):
+        if h_projection[x] > 0 and up_flag == 1:
+            start_to_end += 1
 
-#         if h_projection[x] == 0 and up_flag == 1:
-#             # print(start_to_end)
-#             start_point.append(x)
-#             # print(start_point)
-#             if start_to_end < pixel_limit_ste:
-#                 del(start_point[len(start_point) - 1])
-#                 # print('delete ste')
-#                 down_flag = 0
-#                 up_flag = 1
-#             else:
-#                 down_flag = 1
-#                 up_flag = 0
-#                 start_to_end = 0
+        if h_projection[x] == 0 and up_flag == 1:
+            # print(start_to_end)
+            start_point.append(x)
+            # print(start_point)
+            if start_to_end < pixel_limit_ste:
+                del(start_point[len(start_point) - 1])
+                # print('delete ste')
+                down_flag = 0
+                up_flag = 1
+            else:
+                down_flag = 1
+                up_flag = 0
+                start_to_end = 0
 
-#         if h_projection[x] == 0 and down_flag == 1:
-#             end_to_start += 1
+        if h_projection[x] == 0 and down_flag == 1:
+            end_to_start += 1
 
-#         if h_projection[x] > 0 and up_flag == 0:
-#             start_point.append(x)
-#             # print(start_point)
-#             if end_to_start < pixel_limit_ets:
-#                 del(start_point[len(start_point)-1])
-#                 del(start_point[len(start_point)-1])
-#             up_flag = 1
-#             down_flag = 0
-#             end_to_start = 0
+        if h_projection[x] > 0 and up_flag == 0:
+            start_point.append(x)
+            # print(start_point)
+            if end_to_start < pixel_limit_ets:
+                del(start_point[len(start_point)-1])
+                del(start_point[len(start_point)-1])
+            up_flag = 1
+            down_flag = 0
+            end_to_start = 0
 
-#     if len(start_point) % 2 != 0:
-#         if h_projection[len(h_projection) - 1] > 0:
-#             start_point.append(len(h_projection) - 1)
+    if len(start_point) % 2 != 0:
+        if h_projection[len(h_projection) - 1] > 0:
+            start_point.append(len(h_projection) - 1)
 
-#     return start_point
+    return start_point
 
 
 # #### used by image processing stage
@@ -280,6 +280,7 @@ def raw_baseline(image_b, font_object):
 
 
 def eight_conn_by_seed_tanwin(coordinat, img, font_list, view=True):
+    original_coordinat = coordinat
     saved_tanwin_height = coordinat[3] - coordinat[1]
     font_object = font_list[0]
     h, w, _ = img.shape
@@ -386,10 +387,11 @@ def eight_conn_by_seed_tanwin(coordinat, img, font_list, view=True):
                               (upper[2], upper[3]), (100, 150, 0), 2)
 
     left_count, _ = upper_or_lower(image, left, right)
-    while(left_count < 2):
+    while(left_count < marker_only_count):
         left, _ = get_lr_coordinat(left, w)
         left_count, _ = upper_or_lower(image, left, right)
-        if left[0] < 1:
+        if left[0] < 1 and left_count < 2:
+            left = original_coordinat
             break
     cv2.rectangle(image_process, (left[0], left[1]),
                   (left[2], left[3]), (100, 150, 0), 2)
@@ -528,7 +530,9 @@ def eight_conn_by_seed_tanwin(coordinat, img, font_list, view=True):
 
 
 def eight_conn_by_seed(coordinat, img, font_list, view=True):
+    original_coordinat = coordinat
     saved_starting_height = coordinat[3] - coordinat[1]
+    saved_starting_width = coordinat[2] - coordinat[0]
     font_object = font_list[0]
     h, w, _ = img.shape
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -587,16 +591,17 @@ def eight_conn_by_seed(coordinat, img, font_list, view=True):
             image.copy(), starting_height, 0)
         start_point_h = font_object.start_point_h
         font_object.vertical_projection(image_process)
-        h_image = font_object.detect_vertical_line(image.copy(), 0)
+        h_image = font_object.detect_vertical_line(image.copy(), saved_starting_width)
         start_point_v = font_object.start_point_v
 
-        coordinat_candidate = [start_point_v[0], start_point_h[0],
-                               start_point_v[1], start_point_h[1]]
-        cc_count = black_pixel_count(image, coordinat_candidate)
+        if len(start_point_v) > 1 and len(start_point_h) > 1:
+            coordinat_candidate = [start_point_v[0], start_point_h[0],
+                                start_point_v[1], start_point_h[1]]
+            cc_count = black_pixel_count(image, coordinat_candidate)
 
-        if cc_count < 2 * marker_only_count:
-            print('replace coordinat')
-            coordinat = coordinat_candidate
+            if cc_count < 2 * marker_only_count:
+                print('replace coordinat')
+                coordinat = coordinat_candidate
 
     cv2.rectangle(image_process, (coordinat[0], coordinat[1]),
                   (coordinat[2], coordinat[3]), (0, 255, 0), 2)
@@ -605,16 +610,19 @@ def eight_conn_by_seed(coordinat, img, font_list, view=True):
         cv2.waitKey(0)
 
     coordinat, right = get_lr_coordinat(coordinat, w)
-
+    left = coordinat
     left_count = black_pixel_count(image, coordinat)
     print('leftcount:', left_count)
-    while(left_count < 2):
+    left_thresh = int(1/2*marker_only_count)
+    while(left_count < left_thresh):
         coordinat, _ = get_lr_coordinat(coordinat, w)
         left_count = black_pixel_count(image, coordinat)
+        print('lt:', left_thresh)
         print('leftcount:', left_count)
-        if coordinat[0] < 1:
+        left = coordinat
+        if coordinat[0] < 1 and left_count < left_thresh:
+            left = original_coordinat
             break
-    left = coordinat
 
     cv2.rectangle(image_process, (left[0], left[1]),
                   (left[2], left[3]), (100, 150, 0), 2)
@@ -887,12 +895,14 @@ def normal_image_processing_blok(imagePath, object_result, bw_method):
                     for arr in range(len(temp_x)):
                         y1 = (temp_x)[arr][1]
                         y2 = (temp_x)[arr][3]
-                        if bag_h_original[image] <= y1 <= bag_h_original[image+1]:
-                            #                             print('pass')
+                        y_mid = (temp_x)[arr][1] + int((y2-y1)/2)
+                        if bag_h_original[image] <= y1 <= bag_h_original[image+1] \
+                                or bag_h_original[image] <= y2 <= bag_h_original[image+1]\
+                                    or bag_h_original[image] <= y_mid <= bag_h_original[image+1]:
                             print('processing:', name)
                             pass
                         else:
-                            #                             print('continue')
+                            print('continue:', name)
                             continue
                         x2 = (temp_x)[arr][2]  # x2 is on the right
                         x1 = (temp_x)[arr][0]  # x1 is on the left
@@ -994,7 +1004,9 @@ def normal_image_processing_blok(imagePath, object_result, bw_method):
                     final_img = input_image.image_join.copy()[
                         :, x_value[0]:x_value[1]]
                     w_height, w_width = final_img.shape
-#                     cv2.imshow('beside', final_img)
+                    # cv2.imshow(join, final_img)
+                    # cv2.waitKey(0)
+                    # cv2.destroyAllWindows()
                     final_segmented_char, pass_x1 = input_image.find_final_processed_char(
                         x_value, oneline_baseline
                     )
@@ -1050,6 +1062,93 @@ def normal_image_processing_blok(imagePath, object_result, bw_method):
     return save_state, imagelist_perchar_marker, imagelist_final_word_img, imagelist_final_segmented_char,\
         imagelist_bag_of_h_with_baseline, imagelist_image_final_body, imagelist_image_final_marker,\
             horizontal_image
+
+
+def get_number_of_lines_by_result(temp_object, max_id, h):
+    y_marker = []
+    # get y marker coordinat
+    for key in temp_object[max_id].keys():
+            if type(temp_object[max_id][key]) == type(np.array([])):
+                split = key.split('_')
+                name = get_marker_name(key)
+                if split[1] == 'tanwin':
+                    for c in temp_object[max_id][key]:
+                        upper, lower = get_ul_coordinat(c, h)
+                        y_marker.append((upper[1], lower[3]))
+                else:
+                    for c in temp_object[max_id][key]:
+                        y_marker.append((c[1], c[3]))
+    # append overlapped
+    y_dict = {}
+    for y in y_marker:
+        y_dict[y] = [y]
+        for y_ in y_marker:
+            if y==y_:
+                continue
+            if y[0] <= y_[0] <= y[1] or y[0] <= y_[1] <=y[1]:
+                y_dict[y].append(y_)
+    # append all overlapped and mark the same index
+    temp_dict = copy.deepcopy(y_dict)
+    what_same = {}
+    for key in y_dict:
+        found = False
+        what_same[key] = [key]
+        for val1 in y_dict[key]:
+            if found:
+                break
+            for lst in y_dict.values():
+                if val1 == lst[0]:
+                    continue
+                if val1 in lst:
+                    what_same[key].append(lst[0])
+                    for y in lst:
+                        if y not in y_dict[key]:
+                            temp_dict[key].append(y)
+                    found = True
+    # sort all overlapped
+    longest = {}
+    for key in what_same:
+        l = 0
+        for val in what_same[key]:
+            if len(temp_dict[val]) > l:
+                l = len(temp_dict[val])
+                long = val
+        longest[key] = val
+    # check overlapped on every longest overlapped result
+    latest = set(longest.values())
+    temp_latest = copy.deepcopy(latest)
+    last = {}
+    for x in latest:
+        last[x] = [x]
+        for y in latest:
+            if x == y:
+                continue
+            if x[0] <= y[0] <= x[1] or x[0] <= y[1] <= x[1]:
+                last[x].append(y)
+    # Filter out the same coordinat
+    temp_last = copy.deepcopy(last)
+    for key in last:
+        temp_last[key] = False
+    for key in last:
+        if temp_last[key]:
+            continue
+        for val in last[key]:
+            for key2 in last:
+                if key == key2:
+                    continue
+                for lst in last[key2]:
+                    if val == lst:
+                        temp_last[key2] = True
+                        break
+    # count the number of lines
+    line_count = 0
+    for line in temp_last.values():
+        if not line:
+            line_count += 1
+    print('number of lines: ', line_count)
+
+
+    return line_count
 
 
 # ## Image Processing Stage
@@ -1167,6 +1266,15 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
     normal_processing = most_frequent(normal_processing)
     print(normal_processing)
 
+    # Adding horizontal checking point
+    h_projection = font_object.horizontal_projection(gray_copy)
+    check_start_point_h = detect_horizontal_line(h_projection, 3, 3)
+    line_count = get_number_of_lines_by_result(temp_object, max_id, height)
+    print('number of h:', int(len(check_start_point_h)/2))
+    if int(len(check_start_point_h)/2) < line_count:
+        horizontal_line_is_good = False
+    else:
+        horizontal_line_is_good = True
     # In[26]:
 
     img = cv2.imread(imagePath)
@@ -1202,8 +1310,10 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
     save_state = {}
     normal_processing_result = []
     crop_ratio_processing_result = []
-    if normal_processing:
+    if normal_processing and horizontal_line_is_good:
+        print('\n___NORMAL PROCESSING___\n')
         #     pass
+        print(temp_object[max_id])
         save_state, imagelist_perchar_marker, imagelist_final_word_img, imagelist_final_segmented_char,\
          imagelist_bag_of_h_with_baseline, imagelist_image_final_body, imagelist_image_final_marker,\
              horizontal_image = normal_image_processing_blok(imagePath, temp_object[max_id], bw_method)
@@ -1219,6 +1329,7 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
                                     imagelist_image_final_marker,
                                     horizontal_image]
     else:
+        print('\n___CROP PROCESSING___\n')
         arr_count = -1
         for key in temp_object[max_id].keys():
             gray_copy = gray.copy()
@@ -1244,15 +1355,20 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
                                       (0, 255, 0), 2)
                         # cv2.imshow('check', gray_copy)
                         # cv2.waitKey(0)
+                        marker_only_count = black_pixel_count(bw_image, c)
+                        skip_this_marker = False
                         # get up or down by tanwin position (c)
                         c = region_tanwin(c, bw_image, font_list, False)
                         next_c, _ = get_lr_coordinat(c, width)
                         next_c_count = black_pixel_count(bw_image, next_c)
-                        while(next_c_count < 2):
+                        while(next_c_count < marker_only_count):
                             next_c, _ = get_lr_coordinat(next_c, width)
                             next_c_count = black_pixel_count(bw_image, next_c)
-                            if next_c[0] < 1:
+                            if next_c[0] < 1 and next_c_count < marker_only_count:
+                                skip_this_marker = True
                                 break
+                        if skip_this_marker:  # Skip process if next c candidate is empty
+                            continue
                         # modified y coordinat
                         if next_c[1] > y1_c:
                             mod_c, _ = get_ul_coordinat(next_c, height)
@@ -1270,6 +1386,11 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
                         crop_by = int(1/4 * temp_height)
                         crop_image = bw[next_c[1]+crop_by:next_c[3]  # -crop_by
                                         , next_c[0]:next_c[2]]
+                        h_crop, w_crop = crop_image.shape
+                        check_ci = black_pixel_count(crop_image, [0, 0, w_crop, h_crop])
+                        if check_ci < 1:
+                            print('crop image is empty')
+                            continue
                         one_base = raw_baseline(crop_image.copy(), font_object)
                         cv2.rectangle(gray_copy,
                                       (0, c[1] + one_base[0]),
@@ -1280,7 +1401,6 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
     #                     crop_image = cv2.erode(crop_image,kernel,iterations = 1)
                         # cv2.imshow('ff', crop_image)
                         # cv2.waitKey(0)
-                        h_crop, w_crop = crop_image.shape
                         base = [0, one_base[0],
                                 w_crop-1, one_base[1]]
                         con_pack = font_object.eight_connectivity(crop_image, base,
@@ -1370,13 +1490,18 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
                                       (0, 255, 0), 2)
                         # cv2.imshow('check', gray_copy)
                         # cv2.waitKey(0)
+                        marker_only_count = black_pixel_count(bw_image, c)
+                        skip_this_marker = False
                         next_c, _ = get_lr_coordinat(c, width)
                         next_c_count = black_pixel_count(bw_image, next_c)
-                        while(next_c_count < 2):
+                        while(next_c_count < int(1/2*marker_only_count)):
                             next_c, _ = get_lr_coordinat(next_c, width)
                             next_c_count = black_pixel_count(bw_image, next_c)
-                            if next_c[0] < 1:
+                            if next_c[0] < 1 and next_c_count < int(1/2*marker_only_count):
+                                skip_this_marker = True
                                 break
+                        if skip_this_marker:  # Skip process if next c candidate is empty
+                            continue
                         mod_c, _ = get_lr_coordinat(next_c, width)
                         w_next = mod_c[2] - mod_c[0]
                         next_c = [next_c[0] - int(1/2*w_next), next_c[1],
@@ -1385,10 +1510,17 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
                                       (next_c[0], next_c[1]),
                                       (next_c[2], next_c[3]),
                                       (200, 150, 0), 2)
+                        # cv2.imshow('check', gray_copy)
+                        # cv2.waitKey(0)
                         temp_height = c[3] - c[1]
                         crop_by = int(1/4 * temp_height)
                         crop_image = bw[next_c[1]+crop_by:next_c[3]  # -crop_by
                                         , next_c[0]:next_c[2]]
+                        h_crop, w_crop = crop_image.shape
+                        check_ci = black_pixel_count(crop_image, [0, 0, w_crop, h_crop])
+                        if check_ci < 1:
+                            print('crop image is empty')
+                            continue
                         one_base = raw_baseline(crop_image.copy(), font_object)
                         cv2.rectangle(gray_copy,
                                       (0, c[1] + one_base[0]),
@@ -1399,9 +1531,9 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
     #                     crop_image = cv2.erode(crop_image,kernel,iterations = 1)
                         # cv2.imshow('ff', crop_image)
                         # cv2.waitKey(0)
-                        h_crop, w_crop = crop_image.shape
                         base = [0, one_base[0],
                                 w_crop-1, one_base[1]]
+                        print(base)
                         con_pack = font_object.eight_connectivity(crop_image, base,
                                                                   left=False, right=False)
                         image_process = crop_image.copy()

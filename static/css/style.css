@@ -1,3 +1,19 @@
+footer{
+  position: relative;
+  left: 0;
+  bottom: 0;
+  width: 90%;
+  background-color: gray;
+  color: white;
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+  text-shadow: black;
+  text-indent: 0%;
+  text-anchor: middle;
+  vertical-align: middle;
+}
+
 /*__________________________________________*/
 body{
   background-color: #152836
@@ -142,7 +158,7 @@ body {
 
 
 .navbar a:hover, .dropdown:hover .dropbtn {
-  background-color: blueviolet;
+  background-color: gray;
 }
 
 
@@ -169,8 +185,10 @@ body {
 } */
 
 .box0{
-  grid-column:2/12;
+  grid-column:2/11;
   grid-row:1/2;
+  margin-left: auto;
+  margin-right: auto;
   border:1px solid #333;
 }
 
@@ -184,20 +202,25 @@ body {
   /* align-self:auto; */
   background: #ddd;
   grid-column:2/11;
+  margin-left: auto;
+  margin-right: auto;
   grid-row:2/4;
 }
 
 .box3{
-  /*justify-self:end;*/
-  grid-column:12;
+  /* justify-self:end; */
+  grid-column:100%;
   grid-row:2/4;
 }
 
 .box4{
   background:#ddd;
-  grid-column:2/12;
+  grid-column:2/11;
+  margin-left: auto;
+  margin-right: auto;
   grid-row:4/5;
-  border:1px solid #333;
+  width: 100%;
+  /* border:1px solid #333; */
 }
 
 

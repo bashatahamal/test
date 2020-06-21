@@ -66,7 +66,8 @@ def add_header(r):
 
 @app.route('/')
 def index():
-    return render_template('public/index.html')
+    # return render_template('public/index.html')
+    return redirect('/sketch')
 
 
 @app.route('/stream')
@@ -135,21 +136,21 @@ def processing():
                 img = 0
                 gray = 0
                 font_object = 0
-                imagelist_horizontal_line_by_eight_conn = 0
+                imagelist_horizontal_line_by_eight_conn = []
                 imagelist_template_matching_result= []
                 imagelist_template_scale_visualize = []
                 imagelist_visualize_white_block = []
                 temp_object = []
                 check_image_size = 0
-                final_image_result = 0
+                final_image_result = []
                 pred_result = []
                 image_v_checking = []
                 char_recog = []
                 input_image = []
                 max_id = ''
                 save_state = 0
-                normal_processing_result = 0
-                crop_ratio_processing_result = 0
+                normal_processing_result = []
+                crop_ratio_processing_result = []
                 bw_method = 0   # 0 = Otshu's threshold
                                 # 1 = Simple threshold
                                 # 2 = Adaptive mean of neighbourhood area
@@ -202,6 +203,18 @@ def processing():
                 max_id = flow.most_marker(temp_object)
                 if max_id is None:
                     yield str(global_count+1) + '_empty_' + str(numfiles) + '$'
+                    listof_imagelist_template_matching_result.append(imagelist_template_matching_result)
+                    listof_imagelist_template_scale_visualize.append(imagelist_template_scale_visualize)
+                    listof_imagelist_visualize_white_block.append(imagelist_visualize_white_block)
+                    listof_final_image_result.append(final_image_result)
+                    listof_prediction_result.append(pred_result)
+                    listof_image_v_checking.append(image_v_checking)
+                    listof_char_recog.append(char_recog)
+                    listof_input_image.append(input_image)
+                    listof_max_id.append([])
+                    listof_normal_processing_result.append(normal_processing_result)
+                    listof_crop_ratio_processing_result.append(crop_ratio_processing_result)
+                    listof_imagelist_horizontal_line_by_eight_conn.append(imagelist_horizontal_line_by_eight_conn)
                 else:
                     yield str(global_count+1) + '_Image Processing_' + str(numfiles) + '$'
                     save_state, normal_processing_result, crop_ratio_processing_result,\
@@ -549,9 +562,12 @@ def save_image_to_disk():
     pathof_final_image_result = []
     count1 = 0
     for image in listof_final_image_result:
-        file = store_folder_final+'/'+str(count1)+'.png'
-        cv2.imwrite(file, image)
-        pathof_final_image_result.append(file[35:])
+        if image != []:
+            file = store_folder_final+'/'+str(count1)+'.png'
+            cv2.imwrite(file, image)
+            pathof_final_image_result.append(file[35:])
+        else:
+            pathof_final_image_result.append([])
         count1 += 1
 
     return pathof_crop_ratio_processing_result, pathof_imagelist_horizontal_line_by_eight_conn,\
@@ -623,6 +639,10 @@ def processing_result():
     listof_crop_ratio_processing_result = []
     listof_imagelist_horizontal_line_by_eight_conn = []
     listof_prediction_result = []
+    listof_image_v_checking = []
+    listof_char_recog = []
+    listof_input_image = []
+    listof_max_id = []
 
     write_html.display_result(filename)
 
@@ -734,7 +754,7 @@ def sketch():
             setting = res
             if type(res) == type([]):
                 print(len(res))
-                thefile = open('/home/mhbrt/Desktop/Wind/Multiscale/static/js/dlTextBlob (5).txt', 'w')
+                thefile = open('/home/mhbrt/Desktop/Wind/Multiscale/templates/Saved Configuration.dcfg', 'w')
                 thefile.write(str(res).replace("'", '"'))
                 response = make_response(jsonify(res), 200)
                 return response
@@ -851,6 +871,10 @@ def do_something_and_again_final():
     req['A message from python'] = 'number 4 done and back to sketch'
     # return render_template('public/sketch_.html', next='/sketch', req=req)
     return render_template('public/sketch.html', marker_type=app.config['MARKER_TYPE'])
+
+@app.route('/training_result')
+def training_result():
+    return render_template('public/training_result.html')
 
 @app.route('/temp_result')
 def temp_result():
