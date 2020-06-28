@@ -30,6 +30,8 @@
         {% for marker in marker_type[font] %}
         <div class="m_value">
             <div class="m_name">{{ marker }}</div>
+            <input style="width: 25px; height: 20px;" type="checkbox" class="form-check-input"
+                id="skip_{{font}}_{{marker}}" value="{{font}}_{{marker}}" checked>
             <div class="box">
                 <input id='{{ font }}_{{ marker }}' type="number" min="0" , class="form-control" step="0.1"
                     placeholder="0.0" , value=0.0></div>
@@ -37,7 +39,7 @@
         {% endfor %}
         <hr>
         <div class="m_value">
-            <div class="m_name">Number of step</div>
+            <div class="m_name1">Number of step</div>
             <div class="box">
                 <input id='{{ font }}_numstep' type="number" min="0" , class="form-control" step="1"
                     placeholder="numstep" , value=20></div>
@@ -61,8 +63,13 @@
         <hr>
         {% for font in marker_type %}
         <!-- <button id='{{font}}'>{{font}}</button> -->
-        <div class="box2">
-            <button type="button" class="btn btn-outline-dark btn-block" id='trig_{{font}}'>{{font}}</button>
+        <div class="box2" style="padding-left: 5%;">
+            <span>
+                <input style="width: 20px; height: 28px;" type="checkbox" class="form-check-input" id="skip_{{font}}"
+                    value="{{font}}" checked>
+                <button type="button" class="btn btn-outline-dark btn-block" id='trig_{{font}}'>{{font}}</button>
+            </span>
+            <!-- <hr> -->
             <!-- <button id='{{font}}'>{{font}}</button> -->
             <!-- <a href="#" class='{{font}}'>Lorem ipsum dolor sit amet.</a> -->
         </div>
@@ -335,7 +342,7 @@
             .catch(function (error) {
                 console.log("Fetch error: " + error)
             })
-        alert('Delete config '+selectedD+' success')
+        alert('Delete config ' + selectedD + ' success')
     }
 
     function start_processing() {
@@ -367,8 +374,8 @@
 
     $(document).ready(function () {
         // p2.style.display = 'block'
-        myfunction2()
-        myfunction2()
+        // myfunction2()
+        // myfunction2()
     });
     $("#getFile").change(function () {
         loadFileAsText()
@@ -483,6 +490,16 @@
             numstep = document.getElementById(numstep_id)
             numstep.value = selected_setting[font][1]
             set_font_func(selected_setting[font][0], font)
+            temp_id = document.getElementById('skip_' + font)
+            if (selected_setting[font][2] == 'true') {
+                temp_id.checked = false
+            } else { temp_id.checked = true }
+            for (marker in parsed[font]) {
+                temp_id = document.getElementById('skip_' + font + '_' + parsed[font][marker])
+                if (selected_setting[font][3].includes(parsed[font][marker])) {
+                    temp_id.checked = false
+                } else { temp_id.checked = true }
+            }
         };
         submit_marker()
     });
@@ -534,11 +551,20 @@
         button.onclick = save_button_id
     }
 
-    function show_config(){
+    function show_config() {
         page3 = document.getElementById('page3')
+        page3.innerHTML = ''
         var text = ''
-        for (font in entry){
-            text = font + ' (' + String(entry[font][1]) + ') = ' + String(entry[font][0]) + '\n'
+        for (font in entry) {
+            if (entry[font][2] == 'false') {
+                if (entry[font][3].length < 1) {
+                    text = font + ' (' + String(entry[font][1]) + ') = ' + String(entry[font][0]) + '\n'
+                } else {
+                    text = font + ' (' + String(entry[font][1]) + ') = ' + String(entry[font][0]) + '; skipping;' + String(entry[font][3]) + '\n'
+                }
+            } else {
+                text = font + ' (' + String(entry[font][1]) + ') = skip' + '\n'
+            }
             page3.innerHTML += '<li>' + text + '</li>'
         }
         p3.style.display = 'block'
@@ -549,6 +575,7 @@
         // var parsed = JSON.parse('{{marker_type | tojson|safe}}');
         for (font in parsed) {
             var list = []
+            var temp_skip = []
             button_id = 'submit_' + font
             numstep_id = font + '_numstep'
             button = document.getElementById(button_id)
@@ -564,11 +591,21 @@
                 } else {
                     box.readOnly = false
                 };
+
+                temp_id = document.getElementById('skip_' + font + '_' + parsed[font][marker])
+                if (temp_id.checked == false) {
+                    temp_skip.push(parsed[font][marker])
+                };
             };
             // entry[font] = list
             if (button.innerText == 'Submit') {
                 entry[font] = [list]
                 entry[font].push(numstep.value)
+                temp_id = document.getElementById('skip_' + font)
+                if (temp_id.checked == false) {
+                    entry[font].push('true')
+                } else { entry[font].push('false') }
+                entry[font].push(temp_skip)
                 button.innerText = 'Edit'
                 button.className = "btn btn-success btn-block"
             } else {
@@ -656,6 +693,21 @@
             set_font(parsed[font], font)
         };
     };
+
+    function set_skip_checkbox(setting) {
+        for (font in parsed) {
+            temp_id = document.getElementById('skip_' + font)
+            if (setting[font][2] == 'true') {
+                temp_id.checked = false
+            } else { temp_id.checked = true }
+            for (marker in parsed[font]) {
+                temp_id = document.getElementById('skip_' + font + '_' + parsed[font][marker])
+                if (setting[font][3].includes(marker)) {
+                    temp_id.checked = false
+                } else { temp_id.checked = true }
+            }
+        }
+    }
 
     select_color = '#555'
     default_color = '#333'

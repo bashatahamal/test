@@ -3,7 +3,7 @@
 #             pathof_imagelist_visualize_white_block, pathof_normal_processing_result,
 #                 pathof_final_image_result]
 import pickle
-def display_result(filename):
+def display_result(filename, processed_font):
     dumpPath = pickle.load(open(filename, 'rb'))
     thefile = open('/home/mhbrt/Desktop/Wind/Multiscale/templates/public/temp_result.html', 'r')
     body_file = thefile.read().split('<!--// modified //-->')
@@ -56,7 +56,8 @@ def display_result(filename):
                             +"$('#result12"+ str(numfile+1) +"').lightGallery();" + "\n"\
                             +"$('#result13"+ str(numfile+1) +"').lightGallery();" + "\n"\
                             +"$('#result14"+ str(numfile+1) +"').lightGallery();" + "\n"\
-                            +"$('#result15"+ str(numfile+1) +"').lightGallery();" + "\n"
+                            +"$('#result15"+ str(numfile+1) +"').lightGallery();" + "\n"\
+                            +"$('#result16"+ str(numfile+1) +"').lightGallery();" + "\n"
 
         button += '<button class="btn btn-primary" id=file' + str(numfile+1) + ' onclick="show_file' + str(numfile+1) \
                 + '()">file'+str(numfile+1)+'</button>' +'\n'
@@ -183,8 +184,9 @@ def display_result(filename):
                             </a>\
                         </li>'
         # box4
-        font_name = ['AlKareem', 'AlQalam', 'KFGQPC', 'LPMQ', 'PDMS',
-                    'amiri', 'meQuran', 'norehidayat', 'norehira', 'norehuda']
+        # font_name = ['AlKareem', 'AlQalam', 'KFGQPC', 'LPMQ', 'PDMS',
+        #             'amiri', 'meQuran', 'norehidayat', 'norehira', 'norehuda']
+        font_name = processed_font
         template_matching = ' </ul>\
                 </div>\
                     \
@@ -252,8 +254,8 @@ def display_result(filename):
                             </a>\
                         </li>'
         # box4
-        if len(dumpPath[4][numfile]) > 0:
-            src_vc = dumpPath[4][numfile][0]
+        if len(dumpPath[9][numfile]) > 0:
+            src_vc = dumpPath[9][numfile][0]
         else:
             src_vc = ''
         v_check = ' </ul>\
@@ -286,6 +288,15 @@ def display_result(filename):
                             </a>\
                         </li>'
 
+        # box4 processsing
+        cr_pred = []
+        for pred in dumpPath[7][numfile]:
+            if pred != 'n/a':
+                cr_pred.append(pred)
+        if len(dumpPath[7][numfile]) > 0:
+            type_cr = cr_pred[0]
+        else:
+            type_cr = ''
         if dumpPath[5][numfile] != []:
             np_name = ['Per_Char_Marker', 'Final_Word', 'Final_Segemented_Char',
                     'H_baseline', 'Final_Body', 'Final_Marker', 'H_Image']
@@ -302,7 +313,7 @@ def display_result(filename):
                                 <ul id=result'+str(6+x)+str(numfile+1)+'>\
                                     <li style="display: block;"\
                                         data-src="'+dumpPath[5][numfile][x][0][0]+'"\
-                                        data-sub-html="<h3>File '+str(numfile+1)+'</h3><p>'+dumpPath[7][numfile][0]+'</p>">\
+                                        data-sub-html="<h3>File '+str(numfile+1)+'</h3><p>'+type_cr+'</p>">\
                                         <a href="">\
                                             <img class="img-responsive" src="/static/img/folder1.png" style="max-width: 150px;">\
                                             <div class="demo-gallery-poster">\
@@ -338,7 +349,7 @@ def display_result(filename):
                     count += 1
                     if x == 2:
                         p_perfile += '<li style="display: none;" data-src="'+image+'"\
-                                    data-sub-html="<h3>File '+str(numfile+1)+'</h3><p>'+dumpPath[7][numfile][count]+'</p>">\
+                                    data-sub-html="<h3>File '+str(numfile+1)+'</h3><p>'+cr_pred[count]+'</p>">\
                                     <a href="">\
                                         <img class="img-responsive" src="'+image+'" style="max-width: 150px;">\
                                     </a>\
@@ -357,6 +368,8 @@ def display_result(filename):
             # box4
             np_name = ['Gray_Image', 'Eight_Conn_on_Base', 'Substract_Image', 'Cutted_Substract', 'Final_Segmented_Char']
             p_perfile_list = []
+            first = True
+            count = 0
             if len(dumpPath[0][numfile]) > 0:
                 for x in range(len(dumpPath[0][numfile])):
                     # box4
@@ -422,16 +435,30 @@ def display_result(filename):
                                 + p_perfile_list[3] + p_perfile_list[4]
             else:
                 p_perfile_html = ''
+        
         # box4
-        cr_pred = []
-        for pred in dumpPath[7][numfile]:
-            if pred != 'n/a':
-                cr_pred.append(pred)
-        if len(dumpPath[7][numfile]) > 0:
-            type_cr = cr_pred[0]
+        if dumpPath[12][numfile] != []:
+            src_ds = dumpPath[12][numfile]
         else:
-            type_cr = ''
+            src_ds = ''
+        ds_image = ' </ul>\
+                </div>\
+                    \
+                <div class="demo-gallery">\
+                    <ul id=result16'+str(numfile+1)+'>\
+                        <li style="display: block;"\
+                            data-src="'+src_ds+'"\
+                            data-sub-html="<h3>File '+str(numfile+1)+'</h3>">\
+                            <a href="">\
+                                <img class="img-responsive" src="/static/img/folder1.png" style="max-width: 150px;">\
+                                <div class="demo-gallery-poster">\
+                                    <img src="static/light_gallery/img/zoom.png">\
+                                </div>\
+                            </a>\
+                            <h6>Detected_&_Segmented</h6>\
+                        </li>'
 
+        # box4
         if len(dumpPath[10][numfile]) > 0:
             src_cr = dumpPath[10][numfile][0]
         else:
@@ -478,7 +505,7 @@ def display_result(filename):
         
         blok_process += input_image + begin_file + sv_perfile + white_block + wb_perfile + template_matching \
                     + tm_perfile + h_line + hl_perfile + v_check + vc_perfile + p_perfile_html \
-                        + char_recog + cr_perfile + end_file
+                        + ds_image + char_recog + cr_perfile + end_file
 
 
     # print(len(dumpPath[3][2]))

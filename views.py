@@ -9,6 +9,7 @@ import os
 import shutil
 import cv2
 import sys
+from datetime import datetime
 sys.path.insert(1, '/home/mhbrt/Desktop/Wind/Multiscale/')
 import complete_flow as flow
 import write_html
@@ -50,6 +51,8 @@ listof_image_v_checking = []
 listof_char_recog = []
 listof_input_image = []
 listof_max_id = []
+listof_detected_and_segmented = []
+processed_font = []
 
 @app.after_request
 def add_header(r):
@@ -97,35 +100,50 @@ def get_page():
     return render_template('public/page.html')
 
 
+def detected_and_segmented_image(save_state, bw_image):
+    bw_copy = bw_image.copy()
+    for x in save_state:
+        if len(save_state[x]) < 2:
+            continue
+        cv2.rectangle(bw_copy, (save_state[x][3][0], save_state[x][3][1]),
+                      (save_state[x][3][2], save_state[x][3][3]),
+                      (0, 0, 0), 1)
+        cv2.rectangle(bw_copy, save_state[x][6][0], save_state[x][6][1],
+                      (200, 150, 0), 1)
+    
+    return bw_copy
+
 @app.route('/processing')
 def processing():
     global from_sketch_button
-    global list_image_files
-    global setting
-    global req
-    # global temp_object
-    global listof_imagelist_template_matching_result
-    global listof_imagelist_template_scale_visualize
-    global listof_imagelist_visualize_white_block
-    global listof_final_image_result
-    global listof_normal_processing_result
-    global listof_crop_ratio_processing_result
-    global listof_imagelist_horizontal_line_by_eight_conn
-    global listof_prediction_result
-    global listof_image_v_checking
-    global listof_char_recog
-    global listof_input_image
-    global listof_max_id
-    global model
-    global global_count
-    font_folder = ['AlKareem', 'AlQalam', 'KFGQPC', 'LPMQ', 'PDMS',
-                   'amiri', 'meQuran', 'norehidayat', 'norehira', 'norehuda']
-
     req['A message from python'] = 'Initialiation'
     if from_sketch_button:
         # resetting all global variable
         from_sketch_button = False
         def runner():
+            global list_image_files
+            global setting
+            global req
+            # global temp_object
+            global listof_imagelist_template_matching_result
+            global listof_imagelist_template_scale_visualize
+            global listof_imagelist_visualize_white_block
+            global listof_final_image_result
+            global listof_normal_processing_result
+            global listof_crop_ratio_processing_result
+            global listof_imagelist_horizontal_line_by_eight_conn
+            global listof_prediction_result
+            global listof_image_v_checking
+            global listof_char_recog
+            global listof_input_image
+            global listof_max_id
+            global listof_detected_and_segmented
+            global processed_font
+            global model
+            global global_count
+            font_folder = ['AlKareem', 'AlQalam', 'KFGQPC', 'LPMQ', 'PDMS',
+                        'amiri', 'meQuran', 'norehidayat', 'norehira', 'norehuda']
+            global processed_font
             for global_count in range(len(list_image_files)):
                 
                 font_list = 0
@@ -148,6 +166,8 @@ def processing():
                 char_recog = []
                 input_image = []
                 max_id = ''
+                ds_image = []
+                processed_font = []
                 save_state = 0
                 normal_processing_result = []
                 crop_ratio_processing_result = []
@@ -192,12 +212,27 @@ def processing():
                 local_count = -1
                 for font_object in font_list:
                     local_count += 1
+                    if setting[font_folder[local_count]][2] == 'true':
+                        print('skipping ', font_folder[local_count])
+                        continue
+                    else:
+                        processed_font.append(font_folder[local_count])
                     yield str(global_count+1)+'_'+font_folder[local_count]+'_'+ str(numfiles) + '$'
-                    font_object.run(bw_method=bw_method)
+                    skip_marker = []
+                    for sm in setting[font_folder[local_count]][3]:
+                        split = sm.split(' ')
+                        marker = ''
+                        for x in range(len(split)):
+                            if x < len(split)-1:
+                                marker += split[x].lower() + '_'
+                            else:
+                                marker += split[x].lower()
+                        skip_marker.append(marker)
+                    font_object.run(bw_method=bw_method, skip_marker=skip_marker)
                     imagelist_template_scale_visualize.append(font_object.imagelist_visualize)
                     imagelist_visualize_white_block.append(font_object.imagelist_visualize_white_blok)
                     temp_object.append(font_object.get_object_result())
-                    imagelist_template_matching_result.append(font_object.display_marker_result(img))
+                    imagelist_template_matching_result.append(font_object.display_marker_result(img, skip_marker))
                 # print(temp_object)
                 yield str(global_count+1) + '_Doing BIG BLOK_' + str(numfiles) + '$'
                 max_id = flow.most_marker(temp_object)
@@ -212,6 +247,7 @@ def processing():
                     listof_char_recog.append(char_recog)
                     listof_input_image.append(input_image)
                     listof_max_id.append([])
+                    listof_detected_and_segmented.append([])
                     listof_normal_processing_result.append(normal_processing_result)
                     listof_crop_ratio_processing_result.append(crop_ratio_processing_result)
                     listof_imagelist_horizontal_line_by_eight_conn.append(imagelist_horizontal_line_by_eight_conn)
@@ -227,6 +263,7 @@ def processing():
                         save_state, imagePath, model
                     )
                     yield  str(global_count+1) + '_Saving Result_' + str(numfiles) + '$'
+                    ds_image = detected_and_segmented_image(save_state, bw_image)
                     listof_imagelist_template_matching_result.append(imagelist_template_matching_result)
                     listof_imagelist_template_scale_visualize.append(imagelist_template_scale_visualize)
                     listof_imagelist_visualize_white_block.append(imagelist_visualize_white_block)
@@ -235,12 +272,14 @@ def processing():
                     listof_image_v_checking.append(image_v_checking)
                     listof_char_recog.append(char_recog)
                     listof_input_image.append(input_image)
-                    listof_max_id.append(font_folder[max_id])
+                    listof_max_id.append(processed_font[max_id])
+                    listof_detected_and_segmented.append(ds_image)
                     listof_normal_processing_result.append(normal_processing_result)
                     listof_crop_ratio_processing_result.append(crop_ratio_processing_result)
                     listof_imagelist_horizontal_line_by_eight_conn.append(imagelist_horizontal_line_by_eight_conn)
                     if global_count+1 == numfiles:
                         yield str(global_count+1) + '_DONE!_' + str(numfiles) + '$'
+            print('processed font: ', processed_font)
         time.sleep(2)  #wait for class init done
         return Response(runner(), mimetype='text/event-stream')
         # return render_template('public/sketch_.html', next='/number1', req=req)
@@ -259,6 +298,7 @@ def save_image_to_disk():
     store_folder_ii = app.root_path + '/static/img/result/input_image'
     store_folder_vc = app.root_path + '/static/img/result/v_checking'
     store_folder_cr = app.root_path + '/static/img/result/char_recog'
+    store_folder_ds = app.root_path + '/static/img/result/detected_and_segmented'
 
     if os.path.exists(store_folder_mr):
         shutil.rmtree(store_folder_mr)
@@ -310,6 +350,11 @@ def save_image_to_disk():
         os.makedirs(store_folder_cr)
     else:
         os.makedirs(store_folder_cr)
+    if os.path.exists(store_folder_ds):
+        shutil.rmtree(store_folder_ds)
+        os.makedirs(store_folder_ds)
+    else:
+        os.makedirs(store_folder_ds)
 
     pathof_imagelist_template_matching_result = []
     count1 = 0
@@ -569,13 +614,27 @@ def save_image_to_disk():
         else:
             pathof_final_image_result.append([])
         count1 += 1
+    
+    pathof_detected_and_segmented_image = []
+    count1 = 0
+    for image in listof_detected_and_segmented:
+        if image != []:
+            file = store_folder_ds+'/'+str(count1)+'.png'
+            cv2.imwrite(file, image)
+            pathof_detected_and_segmented_image.append(file[35:])
+        else:
+            pathof_detected_and_segmented_image.append([])
+        count1 += 1
 
     return pathof_crop_ratio_processing_result, pathof_imagelist_horizontal_line_by_eight_conn,\
         pathof_imagelist_template_matching_result, pathof_imagelist_template_scale_visualize, \
             pathof_imagelist_visualize_white_block, pathof_normal_processing_result, \
                 pathof_final_image_result, pathof_imagelist_input_image, \
-                    pathof_imagelist_v_checking, pathof_imagelist_char_recog
+                    pathof_imagelist_v_checking, pathof_imagelist_char_recog, \
+                        pathof_detected_and_segmented_image
 
+
+print('processed font: ', processed_font)
 @app.route("/processing_result")
 def processing_result():
     global from_sketch_button
@@ -595,6 +654,8 @@ def processing_result():
     global listof_char_recog
     global listof_input_image
     global listof_max_id
+    global listof_detected_and_segmented
+    global processed_font
     global model
     global global_count
 
@@ -606,13 +667,15 @@ def processing_result():
         pathof_imagelist_template_matching_result, pathof_imagelist_template_scale_visualize, \
             pathof_imagelist_visualize_white_block, pathof_normal_processing_result, \
                 pathof_final_image_result, pathof_imagelist_input_image, \
-                    pathof_imagelist_v_checking, pathof_imagelist_char_recog = save_image_to_disk()
+                    pathof_imagelist_v_checking, pathof_imagelist_char_recog, \
+                        pathof_detected_and_segmented_image = save_image_to_disk()
     
     dumpPath = [pathof_crop_ratio_processing_result, pathof_imagelist_horizontal_line_by_eight_conn,
-        pathof_imagelist_template_matching_result, pathof_imagelist_template_scale_visualize, 
-            pathof_imagelist_visualize_white_block, pathof_normal_processing_result, 
-                pathof_final_image_result, listof_prediction_result, pathof_imagelist_input_image, \
-                    pathof_imagelist_v_checking, pathof_imagelist_char_recog, listof_max_id]
+                pathof_imagelist_template_matching_result, pathof_imagelist_template_scale_visualize, 
+                pathof_imagelist_visualize_white_block, pathof_normal_processing_result, 
+                pathof_final_image_result, listof_prediction_result, pathof_imagelist_input_image,
+                pathof_imagelist_v_checking, pathof_imagelist_char_recog, listof_max_id,
+                pathof_detected_and_segmented_image]
 
     filename = "/home/mhbrt/Desktop/Wind/Multiscale/static/dumpPath.pkl"
     pickle.dump(dumpPath, open(filename, 'wb'))
@@ -643,9 +706,12 @@ def processing_result():
     listof_char_recog = []
     listof_input_image = []
     listof_max_id = []
+    listof_detected_and_segmented = []
 
-    write_html.display_result(filename)
-
+    print('processed font: ', processed_font)
+    write_html.display_result(filename, processed_font)
+    processed_font = []
+    # return 'OK'
     return render_template('public/test_result.html', marker_type=app.config['MARKER_TYPE'])
 
 @app.route("/guestbook/create-entry", methods=["POST"])
@@ -754,7 +820,9 @@ def sketch():
             setting = res
             if type(res) == type([]):
                 print(len(res))
-                thefile = open('/home/mhbrt/Desktop/Wind/Multiscale/templates/Saved Configuration.dcfg', 'w')
+                now = datetime.now()
+                dt_string = now.strftime("%y%m%d%H%M%S")
+                thefile = open('/home/mhbrt/Desktop/Wind/Multiscale/templates/Saved Configuration_'+dt_string+'.dcfg', 'w')
                 thefile.write(str(res).replace("'", '"'))
                 response = make_response(jsonify(res), 200)
                 return response

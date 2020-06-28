@@ -303,6 +303,7 @@ body {
     /* border:1px solid #333; */
     display:flex;
     align-items: center;
+    padding-left: 5%;
   }
 
   .box {
@@ -310,8 +311,17 @@ body {
     width: 100%;
   }
   .m_name {
-    flex:2;
+    flex:3;
+    padding-top: 5%;
+    padding-left: 5%;
   }
+
+  .m_name1 {
+    flex:3;
+    /* padding-top: 5%;
+    padding-left: 5%; */
+  }
+
 
   .nested {
     overflow: auto;

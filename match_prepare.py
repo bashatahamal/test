@@ -511,14 +511,15 @@ class ImageProcessing():
                 start_point.append(len(v_projection) - 1)
         self.start_point_v = start_point
         # Even is begining of line and Odd is end of line
-#         if view:
-#             for x in range(len(start_point)):
-#                 if x % 2 == 0:
-#                     cv2.line(original_image, (start_point[x], 0),
-#                              (start_point[x], self.height), (0, 0, 0), 2)
-#                 else:
-#                     cv2.line(original_image, (start_point[x], 0),
-#                              (start_point[x], self.height), (100, 100, 100), 2)
+        if view:
+            for x in range(len(start_point)):
+                if x % 2 == 0:
+                    cv2.line(original_image, (start_point[x], 0),
+                             (start_point[x], self.height), (0, 0, 0), 2)
+                else:
+                    cv2.line(original_image, (start_point[x], 0),
+                             (start_point[x], self.height), (100, 100, 100), 2)
+        self.image_v_line = original_image
 
 #             cv2.imshow('line', original_image)
 #             print('>')
@@ -1368,6 +1369,7 @@ class ImageProcessing():
                 :, wall[0]:wall[1]
             ]
             pass_x1 = wall[0]
+            self.fsc_coordinate = (pass_x1, wall[1])
             # self.horizontal_projection(final_segmented_char_candidate)
             # self.base_line(final_segmented_char_candidate.copy())
             # word_baseline_height = self.base_end - self.base_start
@@ -1388,6 +1390,7 @@ class ImageProcessing():
                                 :, x+1:wall[1]
                             ]
                             pass_x1 += x+1
+                            self.fsc_coordinate = (pass_x1, wall[1])
                             break
                         else:
                             final_segmented_char = final_segmented_char_candidate
@@ -1405,6 +1408,7 @@ class ImageProcessing():
                 :, marker_pos[final_group_marker[char_list[1]][0]][1]:wall[1]
             ]
             pass_x1 = marker_pos[final_group_marker[char_list[1]][0]][1]
+            self.fsc_coordinate = (pass_x1, wall[1])
 #             cv2.imshow('final_char_candidate', final_segmented_char_candidate)
 #             cv2.waitKey(0)
             # Getting differentiation list on every word pixel
@@ -1482,6 +1486,7 @@ class ImageProcessing():
                             :, x1_char:wall[1]
                         ]
                     pass_x1 += x1_char
+                    self.fsc_coordinate = (pass_x1, wall[1])
 #                     print('1/2 of the most consistent')
                 else:
                     final_segmented_char = final_segmented_char_candidate

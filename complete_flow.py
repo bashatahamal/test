@@ -857,6 +857,7 @@ def normal_image_processing_blok(imagePath, object_result, bw_method):
                 input_image.conn_pack_minus_body
             )
             imagelist_image_final_body.append(input_image.image_final_sorted)
+            imagelist_image_final_body.append(input_image.image_v_line)
             imagelist_image_final_marker.append(input_image.image_final_marker)
             # font_type.display_marker_result(input_image=temp_image_ori)
         else:
@@ -1023,6 +1024,8 @@ def normal_image_processing_blok(imagePath, object_result, bw_method):
                         )
                         save_state[count-1].append(final_segmented_char)
                         save_state[count-1].append(pass_x1)
+                        save_state[count-1].append([(input_image.fsc_coordinate[0], bag_h_original[image]),
+                                                   (input_image.fsc_coordinate[1], bag_h_original[image+1])])
 
                 if name[1] == 'inside':
                     x1_ordinat = crop_words['ordinat_' + join][0]
@@ -1052,6 +1055,8 @@ def normal_image_processing_blok(imagePath, object_result, bw_method):
                         )
                         save_state[count-1].append(final_segmented_char)
                         save_state[count-1].append(pass_x1)
+                        save_state[count-1].append([(input_image.fsc_coordinate[0], bag_h_original[image]),
+                                                   (input_image.fsc_coordinate[1], bag_h_original[image+1])])
                 
                 imagelist_perchar_marker.append(input_image.imagelist_perchar_marker)
                 # print('_________________________________', imagelist_perchar_marker)
@@ -1215,7 +1220,7 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
                         c, img, font_list, False)
                     imagelist_horizontal_line_by_eight_conn.append(image_process)
                     list_start_point_h.append(start_point_h)
-                    print(list_start_point_h)
+                    # print(list_start_point_h)
             else:
                 print(name)
                 for c in temp_object[max_id][key]:
@@ -1223,7 +1228,7 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
                         c, img, font_list, False)
                     imagelist_horizontal_line_by_eight_conn.append(image_process)
                     list_start_point_h.append(start_point_h)
-                    print(list_start_point_h)
+                    # print(list_start_point_h)
 
     # In[24]:
 
@@ -1239,7 +1244,7 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
         font_object.vertical_projection(image_v)
         font_object.detect_vertical_line(image_v.copy(), 5)
         start_point_v = font_object.start_point_v
-        print('start point v:', start_point_v)
+        # print('start point v:', start_point_v)
         for x in range(len(start_point_v)):
             if x % 2 == 0:
                 cv2.line(image_v, (start_point_v[x], 0),
@@ -1313,14 +1318,11 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
     if normal_processing and horizontal_line_is_good:
         print('\n___NORMAL PROCESSING___\n')
         #     pass
-        print(temp_object[max_id])
+        # print(temp_object[max_id])
         save_state, imagelist_perchar_marker, imagelist_final_word_img, imagelist_final_segmented_char,\
          imagelist_bag_of_h_with_baseline, imagelist_image_final_body, imagelist_image_final_marker,\
              horizontal_image = normal_image_processing_blok(imagePath, temp_object[max_id], bw_method)
-        # print('comeon', save_state)
-        # print('f', imagelist_perchar_marker)
-        # print('ddd', imagelist_final_word_img)
-        # print('normal__', imagelist_final_segmented_char)
+
         normal_processing_result = [imagelist_perchar_marker,
                                     imagelist_final_word_img,
                                     imagelist_final_segmented_char, 
@@ -1403,6 +1405,7 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
                         # cv2.waitKey(0)
                         base = [0, one_base[0],
                                 w_crop-1, one_base[1]]
+                        # print(crop_image.shape, base)
                         con_pack = font_object.eight_connectivity(crop_image, base,
                                                                   left=False, right=False)
                         image_process = crop_image.copy()
@@ -1437,6 +1440,8 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
                         save_state[arr_count].append(c)  # marker_coordinat
                         save_state[arr_count].append(final_img)
                         save_state[arr_count].append(next_c[0])
+                        save_state[arr_count].append([(next_c[0], next_c[1]+crop_by),
+                                                     (next_c[2], next_c[3])])
 
                         temp_gray_copy.append(gray_copy)
                         temp_image_process.append(image_process)
@@ -1533,7 +1538,7 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
                         # cv2.waitKey(0)
                         base = [0, one_base[0],
                                 w_crop-1, one_base[1]]
-                        print(base)
+                        # print(base)
                         con_pack = font_object.eight_connectivity(crop_image, base,
                                                                   left=False, right=False)
                         image_process = crop_image.copy()
@@ -1569,6 +1574,9 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
                         save_state[arr_count].append(final_img)
                         save_state[arr_count].append(
                             next_c[0] + int(1/2*w_next))
+                        save_state[arr_count].append([(next_c[0] + int(1/2*w_next),
+                                                      next_c[1]+crop_by),
+                                                      (next_c[2], next_c[3])])
                 
                         temp_gray_copy.append(gray_copy)
                         temp_image_process.append(image_process)
@@ -1705,10 +1713,10 @@ def character_recognition(save_state, imagePath, model):
             continue
         else:
             count += 1
-            print('y_pred', y_pred)
+            # print('y_pred', y_pred)
             # pred_result.append(y_pred[count])
             pred_result.append(char_list_nameonly[y_pred[count]])
-            print(pred_result)
+            # print(pred_result)
             # print(char_list_nameonly[y_pred[count]])
 
 
@@ -1830,6 +1838,7 @@ def character_recognition(save_state, imagePath, model):
     # cv2.imshow('Final Result', original_image)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
+    print(pred_result)
     final_image_result = original_image
 
 
