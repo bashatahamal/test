@@ -48,12 +48,20 @@ for imagePath in sorted(glob.glob("*.jpg")):
     
     ret_img, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY
                                    + cv2.THRESH_OTSU)
-
+    plt.figure(1)
     body_v_proj = horizontal_projection(image1)
     plt.subplot(121), plt.imshow(image1)
     plt.subplot(122), plt.plot(
         body_v_proj, np.arange(0, len(body_v_proj), 1)
     )
+    # plt.show()
+    from scipy.signal import find_peaks
+    plt.figure(2)
+    x = body_v_proj*-1
+    peaks, _ = find_peaks(x, distance=50)
+    plt.plot(x)
+    plt.plot(peaks, x[peaks], "x")
+    plt.plot(np.zeros_like(x), "--", color="gray")
     plt.show()
     cv2.waitKey(0)
 

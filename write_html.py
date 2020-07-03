@@ -349,7 +349,7 @@ def display_result(filename, processed_font):
                     count += 1
                     if x == 2:
                         p_perfile += '<li style="display: none;" data-src="'+image+'"\
-                                    data-sub-html="<h3>File '+str(numfile+1)+'</h3><p>'+cr_pred[count]+'</p>">\
+                                    data-sub-html="<h3>File '+str(numfile+1)+'</h3><p>'+dumpPath[7][numfile][count]+'</p>">\
                                     <a href="">\
                                         <img class="img-responsive" src="'+image+'" style="max-width: 150px;">\
                                     </a>\

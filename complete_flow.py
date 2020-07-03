@@ -13,6 +13,8 @@ import glob
 import cv2
 import copy
 import pickle
+from scipy.signal import find_peaks, peak_prominences
+from matplotlib.figure import Figure
 
 
 # #### horizontal projection
@@ -713,8 +715,9 @@ def eight_conn_by_seed(coordinat, img, font_list, view=True):
 # In[8]:
 
 
-def normal_image_processing_blok(imagePath, object_result, bw_method):
+def normal_image_processing_blok(imagePath, object_result, bw_method, list_start_point_h):
     original_image = cv2.imread(imagePath)
+    height, width, _ = original_image.shape
     gray = cv2.cvtColor(original_image, cv2.COLOR_BGR2GRAY)
     # template = cv2.Canny(gray, 50, 200)
     if bw_method == 0:
@@ -752,18 +755,28 @@ def normal_image_processing_blok(imagePath, object_result, bw_method):
     # cv2.waitKey(0)
 
     input_image = match.ImageProcessing(original_image=original_image.copy())
-    input_image.horizontal_projection(image.copy())  # adaptive binaryimage
-    horizontal_image = input_image.detect_horizontal_line(
-        image=original_image.copy(),
-        pixel_limit_ste=5,  # Start to end
-        pixel_limit_ets=5   # End to start
-    )  # Got self.start_point_h
+    # input_image.horizontal_projection(image.copy())  # adaptive binaryimage
+    # horizontal_image = input_image.detect_horizontal_line(
+    #     image=original_image.copy(),
+    #     pixel_limit_ste=5,  # Start to end
+    #     pixel_limit_ets=5   # End to start
+    # )  # Got self.start_point_h
+    horizontal_image = original_image.copy()
+    for x in range(len(list_start_point_h)):
+        if x % 2 == 0:     # Start_point
+            cv2.line(horizontal_image, (0, list_start_point_h[x]),
+                        (width, list_start_point_h[x]), (0, 0, 255), 2)
+            # print(x)
+        else:         # End_point
+            cv2.line(horizontal_image, (0, list_start_point_h[x]),
+                        (width, list_start_point_h[x]), (100, 100, 255), 2)
     # cv2.imshow('from main', input_image.original_image)
     # cv2.imshow('h_image', horizontal_image)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
-    bag_h_original = input_image.start_point_h.copy()
-    input_image.crop_image(h_point=input_image.start_point_h,
+    # bag_h_original = input_image.start_point_h.copy()
+    bag_h_original = list_start_point_h
+    input_image.crop_image(h_point=list_start_point_h,
                            input_image=original_image.copy())  # crop ori
 
 #     marker_height_list = []
@@ -1199,89 +1212,13 @@ def most_marker(temp_object):
         if temp_marker_count[x] > max_count:
             max_count = temp_marker_count[x]
             max_id = x
-    
+
     return max_id
+
 
 def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object, font_list, bw_method):
     # In[23]:
     # Get the horizontal line image by using eight connectivity
-    img = cv2.imread(imagePath)
-    list_start_point_h = []
-    imagelist_horizontal_line_by_eight_conn = []
-    continue_flag = False
-    for key in temp_object[max_id].keys():
-        if type(temp_object[max_id][key]) == type(np.array([])):
-            split = key.split('_')
-            name = get_marker_name(key)
-            if split[1] == 'tanwin':
-                print(name)
-                for c in temp_object[max_id][key]:
-                    start_point_h, image_process = eight_conn_by_seed_tanwin(
-                        c, img, font_list, False)
-                    imagelist_horizontal_line_by_eight_conn.append(image_process)
-                    list_start_point_h.append(start_point_h)
-                    # print(list_start_point_h)
-            else:
-                print(name)
-                for c in temp_object[max_id][key]:
-                    start_point_h, image_process = eight_conn_by_seed(
-                        c, img, font_list, False)
-                    imagelist_horizontal_line_by_eight_conn.append(image_process)
-                    list_start_point_h.append(start_point_h)
-                    # print(list_start_point_h)
-
-    # In[24]:
-
-    img = cv2.imread(imagePath)
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    gray_copy = gray.copy()
-    height, width = gray_copy.shape
-    normal_processing = []
-    image_v_checking = []
-    for y_y in list_start_point_h:
-        image_vo = gray[y_y[0]:y_y[1], :]
-        image_v = image_vo.copy()
-        font_object.vertical_projection(image_v)
-        font_object.detect_vertical_line(image_v.copy(), 5)
-        start_point_v = font_object.start_point_v
-        # print('start point v:', start_point_v)
-        for x in range(len(start_point_v)):
-            if x % 2 == 0:
-                cv2.line(image_v, (start_point_v[x], 0),
-                         (start_point_v[x], height), (0, 0, 0), 2)
-            else:
-                cv2.line(image_v, (start_point_v[x], 0),
-                         (start_point_v[x], height), (100, 100, 100), 2)
-        image_v_checking.append(image_v)
-        # cv2.imshow('line', image_v)
-        # print('>')
-        # cv2.waitKey(0)
-
-        if len(start_point_v) > 8:
-            # Go to the normal match
-            normal_processing.append(True)
-        else:
-            # Just crop the next char by ratio
-            normal_processing.append(False)
-            print(len(start_point_v), 'is not enough')
-    # cv2.destroyAllWindows()
-
-    # In[25]:
-    print('normal processing:', normal_processing)
-    normal_processing = most_frequent(normal_processing)
-    print(normal_processing)
-
-    # Adding horizontal checking point
-    h_projection = font_object.horizontal_projection(gray_copy)
-    check_start_point_h = detect_horizontal_line(h_projection, 3, 3)
-    line_count = get_number_of_lines_by_result(temp_object, max_id, height)
-    print('number of h:', int(len(check_start_point_h)/2))
-    if int(len(check_start_point_h)/2) < line_count:
-        horizontal_line_is_good = False
-    else:
-        horizontal_line_is_good = True
-    # In[26]:
-
     img = cv2.imread(imagePath)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     if bw_method == 0:
@@ -1305,7 +1242,225 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
                                         cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                         cv2.THRESH_BINARY, 11, 2)
     height, width = gray.shape
-    kernel = np.ones((3, 3), np.uint8)
+    # list_start_point_h = []
+    imagelist_horizontal_line_by_eight_conn = []
+    # continue_flag = False
+    # for key in temp_object[max_id].keys():
+    #     if type(temp_object[max_id][key]) == type(np.array([])):
+    #         split = key.split('_')
+    #         name = get_marker_name(key)
+    #         if split[1] == 'tanwin':
+    #             print(name)
+    #             for c in temp_object[max_id][key]:
+    #                 start_point_h, image_process = eight_conn_by_seed_tanwin(
+    #                     c, img, font_list, False)
+    #                 imagelist_horizontal_line_by_eight_conn.append(image_process)
+    #                 list_start_point_h.append(start_point_h)
+    #                 # print(list_start_point_h)
+    #         else:
+    #             print(name)
+    #             for c in temp_object[max_id][key]:
+    #                 start_point_h, image_process = eight_conn_by_seed(
+    #                     c, img, font_list, False)
+    #                 imagelist_horizontal_line_by_eight_conn.append(image_process)
+    #                 list_start_point_h.append(start_point_h)
+    #                 # print(list_start_point_h)
+
+    max_height = 0
+    max_width = 0
+    bp_max = 0
+    other_than_tanwin = False
+    for key in temp_object[max_id].keys():
+        if type(temp_object[max_id][key]) == type(np.array([])):
+            split = key.split('_')
+            name = get_marker_name(key)
+            if split[1] == 'tanwin':
+                # print(name)
+                for c in temp_object[max_id][key]:
+                    temp_h = c[3] - c[1]
+                    temp_w = c[2] - c[0]
+                    bp = black_pixel_count(bw_image, c)
+                    if temp_h > max_height:
+                        max_height = temp_h
+                    if temp_w > max_width:
+                        max_width = temp_w
+                    if bp > bp_max:
+                        bp_max = bp
+            else:
+                # print(name)
+                other_than_tanwin = True
+                for c in temp_object[max_id][key]:
+                    temp_h = c[3] - c[1]
+                    temp_w = c[2] - c[0]
+                    bp = black_pixel_count(bw_image, c)
+                    if temp_h > max_height:
+                        max_height = temp_h
+                    if temp_w > max_width:
+                        max_width = temp_w
+                    if bp > bp_max:
+                        bp_max = bp
+
+    if not other_than_tanwin:
+        print('max height times x')
+        max_height = max_height * 5
+    print('line height: ', max_height)
+    print('black pixel: ', bp_max)
+
+    image1 = gray
+    body_v_proj = horizontal_projection(image1)
+    x = body_v_proj*-1
+    if max(body_v_proj) > bp_max:
+        peaks, _ = find_peaks(x, distance=max_height, prominence=bp_max*(2/3))
+    else:
+        print('no prominence')
+        peaks, _ = find_peaks(x, distance=max_height, prominence=0)
+    prominences = peak_prominences(x, peaks)[0]
+    contour_heights = x[peaks] - prominences
+
+    # plt.figure(1)
+    fig = Figure()
+    ax = fig.add_subplot(121)
+    ax.imshow(image1)
+    bx = fig.add_subplot(122)
+    bx.plot(body_v_proj, np.arange(0, len(body_v_proj), 1))
+    bx.plot(x[peaks], peaks, "x")
+    bx.hlines(y=peaks, xmax=contour_heights*-1, xmin=x[peaks])
+    fig.savefig('temp_h.png')
+    # plt.subplot(121), plt.imshow(image1)
+    # plt.subplot(122), plt.plot(
+    #     body_v_proj, np.arange(0, len(body_v_proj), 1)
+    # )
+    # plt.plot(x[peaks], peaks, "x")
+    # plt.hlines(y=peaks, xmax=contour_heights*-1, xmin=x[peaks])
+    # plt.plot(np.zeros_like(x), "--", color="gray")
+    # plt.savefig('temp_h.png')
+    # plt.close(1)
+    h_plot_img = cv2.imread('temp_h.png')
+    # plt.show()
+    h_point = list(peaks)
+    start_end = detect_horizontal_line_up_down(body_v_proj)
+    h_point.insert(0, start_end[0])
+    h_point.insert(len(h_point), start_end[1])
+
+    list_of_h_point = []
+    list_h_list = []
+    for x in range(len(h_point)):
+        if x == len(h_point)-1:
+            break
+        list_h_list.append([h_point[x], h_point[x+1]])
+        list_of_h_point.append(h_point[x])
+        list_of_h_point.append(h_point[x+1])
+
+    list_start_point_h  = list_h_list
+    list_for_mpclass = list_of_h_point
+    gray_copy = gray.copy()
+    height, width = gray_copy.shape
+    normal_processing = []
+    image_v_checking = []
+    imagelist_horizontal_line_by_eight_conn.append(h_plot_img)
+    max_v_width = 0
+    # image_v_checking.append(h_plot_img)
+    for y_y in list_start_point_h:
+        image_vo = gray[y_y[0]:y_y[1], :]
+        h_image_empty = True
+        for x in range(0, width):
+            if not h_image_empty:
+                break
+            for y in range(y_y[0], y_y[1]):
+                if bw_image[y, x] < 1:
+                    h_image_empty = False
+                    break
+        if h_image_empty:
+            print('_Horizontal Image is Empty_')
+            continue
+        image_v = image_vo.copy()
+        font_object.vertical_projection(image_v)
+        font_object.detect_vertical_line(image_v.copy(), 5)
+        start_point_v = font_object.start_point_v
+        max_v = max(np.diff(start_point_v))
+        if max_v > max_v_width:
+            max_v_width = max_v
+        # print('start point v:', start_point_v)
+        for x in range(len(start_point_v)):
+            if x % 2 == 0:
+                cv2.line(image_v, (start_point_v[x], 0),
+                         (start_point_v[x], height), (0, 0, 0), 2)
+            else:
+                cv2.line(image_v, (start_point_v[x], 0),
+                         (start_point_v[x], height), (100, 100, 100), 2)
+        image_v_checking.append(image_v)
+        # cv2.imshow('line', image_v)
+        # print('>')
+        # cv2.waitKey(0)
+
+        v_point_thresh = 8
+        if len(start_point_v) >= v_point_thresh \
+                or (len(start_point_v) < v_point_thresh and max_v_width < max_width):  # if vpoint is smaller than largest w char
+            # Go to the normal match
+            normal_processing.append(True)
+        else:
+            # Just crop the next char by ratio
+            normal_processing.append(False)
+            print(len(start_point_v), 'is not enough')
+    # cv2.destroyAllWindows()
+
+    # In[25]:
+    print('normal processing:', normal_processing)
+    normal_processing = most_frequent(normal_processing)
+    print(normal_processing)
+
+    # In[24]:
+
+    # img = cv2.imread(imagePath)
+    # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    # gray_copy = gray.copy()
+    # height, width = gray_copy.shape
+    # normal_processing = []
+    # image_v_checking = []
+    # for y_y in list_start_point_h:
+    #     image_vo = gray[y_y[0]:y_y[1], :]
+    #     image_v = image_vo.copy()
+    #     font_object.vertical_projection(image_v)
+    #     font_object.detect_vertical_line(image_v.copy(), 5)
+    #     start_point_v = font_object.start_point_v
+    #     # print('start point v:', start_point_v)
+    #     for x in range(len(start_point_v)):
+    #         if x % 2 == 0:
+    #             cv2.line(image_v, (start_point_v[x], 0),
+    #                      (start_point_v[x], height), (0, 0, 0), 2)
+    #         else:
+    #             cv2.line(image_v, (start_point_v[x], 0),
+    #                      (start_point_v[x], height), (100, 100, 100), 2)
+    #     image_v_checking.append(image_v)
+    #     # cv2.imshow('line', image_v)
+    #     # print('>')
+    #     # cv2.waitKey(0)
+
+    #     if len(start_point_v) > 8:
+    #         # Go to the normal match
+    #         normal_processing.append(True)
+    #     else:
+    #         # Just crop the next char by ratio
+    #         normal_processing.append(False)
+    #         print(len(start_point_v), 'is not enough')
+    # # cv2.destroyAllWindows()
+
+    # # In[25]:
+    # print('normal processing:', normal_processing)
+    # normal_processing = most_frequent(normal_processing)
+    # print(normal_processing)
+
+    # Adding horizontal checking point
+    horizontal_line_is_good = True  # bypass horizontal checking
+    # h_projection = font_object.horizontal_projection(gray_copy)
+    # check_start_point_h = detect_horizontal_line(h_projection, 3, 3)
+    # line_count = get_number_of_lines_by_result(temp_object, max_id, height)
+    # print('number of h:', int(len(check_start_point_h)/2))
+    # if int(len(check_start_point_h)/2) < line_count:
+    #     horizontal_line_is_good = False
+    # else:
+    #     horizontal_line_is_good = True
+    # In[26]:
 
     temp_gray_copy = []
     temp_image_process = []
@@ -1321,13 +1476,13 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
         # print(temp_object[max_id])
         save_state, imagelist_perchar_marker, imagelist_final_word_img, imagelist_final_segmented_char,\
          imagelist_bag_of_h_with_baseline, imagelist_image_final_body, imagelist_image_final_marker,\
-             horizontal_image = normal_image_processing_blok(imagePath, temp_object[max_id], bw_method)
+             horizontal_image = normal_image_processing_blok(imagePath, temp_object[max_id], bw_method, list_for_mpclass)
 
         normal_processing_result = [imagelist_perchar_marker,
                                     imagelist_final_word_img,
-                                    imagelist_final_segmented_char, 
-                                    imagelist_bag_of_h_with_baseline, 
-                                    imagelist_image_final_body, 
+                                    imagelist_final_segmented_char,
+                                    imagelist_bag_of_h_with_baseline,
+                                    imagelist_image_final_body,
                                     imagelist_image_final_marker,
                                     horizontal_image]
     else:
@@ -1344,7 +1499,13 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
                     for c in temp_object[max_id][key]:
                         y1_c = c[1]
                         arr_count += 1
-                        oneline_coordinat = list_start_point_h[arr_count]
+                        c_mid = c[1] + int((c[3]-c[1])/2)
+                        for y_point in list_start_point_h:
+                            if y_point[0] <= c_mid <= y_point[1]:
+                                selected_line = y_point
+                                break
+                        # oneline_coordinat = list_start_point_h[arr_count]
+                        oneline_coordinat = selected_line
                         oneline_bw_image = bw_image[oneline_coordinat[0]:
                                                     oneline_coordinat[1], :]
                         cv2.rectangle(gray_copy,
@@ -1482,7 +1643,13 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
                     print(name)
                     for c in temp_object[max_id][key]:
                         arr_count += 1
-                        oneline_coordinat = list_start_point_h[arr_count]
+                        c_mid = c[1] + int((c[3]-c[1])/2)
+                        for y_point in list_start_point_h:
+                            if y_point[0] <= c_mid <= y_point[1]:
+                                selected_line = y_point
+                                break
+                        # oneline_coordinat = list_start_point_h[arr_count]
+                        oneline_coordinat = selected_line
                         oneline_bw_image = bw_image[oneline_coordinat[0]:
                                                     oneline_coordinat[1], :]
                         cv2.rectangle(gray_copy,
@@ -1845,3 +2012,6 @@ def character_recognition(save_state, imagePath, model):
     return final_image_result, pred_result, saved_char_recog
 
 # DONE!!!
+
+
+# %%

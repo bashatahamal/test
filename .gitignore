@@ -1,4 +1,7 @@
 Colab/
 Training_Files/
 lost_files/
+static/img/
+__pycache__/
+temp/
 
