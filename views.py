@@ -1,3 +1,5 @@
+import flask
+from tensorflow.keras.models import model_from_json
 from flask import Response
 import subprocess
 import pickle
@@ -16,7 +18,6 @@ import write_html
 
 # model_name = '/home/mhbrt/Desktop/Wind/Multiscale/Colab/best_model_DenseNet_DD.pkl'
 # model = pickle.load(open(model_name, 'rb'))
-from tensorflow.keras.models import model_from_json
 json_file = open('/home/mhbrt/Desktop/Wind/Multiscale/Colab/model.json', 'r')
 loaded_model_json = json_file.read()
 json_file.close()
@@ -53,6 +54,8 @@ listof_input_image = []
 listof_max_id = []
 listof_detected_and_segmented = []
 processed_font = []
+skip_index = []
+
 
 @app.after_request
 def add_header(r):
@@ -84,7 +87,7 @@ def yieldd():
         )
 
         for line in iter(proc.stdout.readline, b''):
-        # print(line.decode("utf-8"))
+            # print(line.decode("utf-8"))
             # yield line.decode("utf-8").rstrip() + '<br/>\n'
             yield line.decode("utf-8").rstrip() + '$'
 
@@ -92,7 +95,7 @@ def yieldd():
     return Response(inner(), mimetype='text/event-stream')
     # return Response(inner(), mimetype='text/html')
 
-import flask
+
 @app.route('/processing_page')
 def get_page():
     # if from_sketch_button:
@@ -100,18 +103,75 @@ def get_page():
     return render_template('public/page.html')
 
 
+def draw_bounding_box(img, coordinat, label, color, font_scale=0.5, font=cv2.FONT_HERSHEY_PLAIN):
+    x1 = coordinat[0]
+    y1 = coordinat[1]
+    x2 = coordinat[2]
+    y2 = coordinat[3]
+    cv2.rectangle(
+        img,
+        (int(x1), int(y1)),
+        (int(x2), int(y2)),
+        color=color,
+        thickness=1
+    )
+    ((label_width, label_height), _) = cv2.getTextSize(
+        label,
+        fontFace=font,
+        fontScale=font_scale,
+        thickness=1
+    )
+
+    cv2.rectangle(
+        img,
+        (int(x1), int(y2)),
+        (int(x1 + label_width + label_width * 0.05),
+         #  int(y1 - label_height - label_height * 0.25)),
+         int(y2 + label_height + label_height * 0.25)),
+        color=color,
+        thickness=cv2.FILLED
+    )
+    cv2.putText(
+        img,
+        label,
+        # org=(int(x1), int(y1 - label_height - label_height * 0.25)),
+        # org=(int(x1), int(y1)),
+        org=(int(x1), int(y2 + label_height + label_height * 0.25)),
+        fontFace=font,
+        fontScale=font_scale,
+        color=(255, 255, 255),
+        thickness=1
+    )
+    return img
+
+
 def detected_and_segmented_image(save_state, bw_image):
+    global skip_index
     bw_copy = bw_image.copy()
+    count = 0
     for x in save_state:
-        if len(save_state[x]) < 2:
+        skip = False
+        for index in skip_index:
+            if x == index:
+                skip = True
+                break
+        if len(save_state[x]) < 2 or skip:
             continue
-        cv2.rectangle(bw_copy, (save_state[x][3][0], save_state[x][3][1]),
-                      (save_state[x][3][2], save_state[x][3][3]),
-                      (0, 0, 0), 1)
-        cv2.rectangle(bw_copy, save_state[x][6][0], save_state[x][6][1],
-                      (200, 150, 0), 1)
-    
+        count += 1
+        coordinat = [save_state[x][3][0], save_state[x][3][1],
+                     save_state[x][3][2], save_state[x][3][3]]
+        bw_copy = draw_bounding_box(bw_copy, coordinat, str(count), (0, 0, 0))
+        # cv2.rectangle(bw_copy, (coordinat[0], coordinat[1]),
+        #               (coordinat[2], coordinat[3]),
+        #               (0, 0, 0), 1)
+        coordinat = [save_state[x][6][0][0], save_state[x][6][0][1],
+                     save_state[x][6][1][0], save_state[x][6][1][1]]
+        bw_copy = draw_bounding_box(bw_copy, coordinat, str(count), (100, 100, 100))
+        # cv2.rectangle(bw_copy, save_state[x][6][0], save_state[x][6][1],
+        #               (200, 150, 0), 1)
+
     return bw_copy
+
 
 @app.route('/processing')
 def processing():
@@ -120,6 +180,7 @@ def processing():
     if from_sketch_button:
         # resetting all global variable
         from_sketch_button = False
+
         def runner():
             global list_image_files
             global setting
@@ -141,11 +202,12 @@ def processing():
             global processed_font
             global model
             global global_count
+            global skip_index
             font_folder = ['AlKareem', 'AlQalam', 'KFGQPC', 'LPMQ', 'PDMS',
-                        'amiri', 'meQuran', 'norehidayat', 'norehira', 'norehuda']
+                           'amiri', 'meQuran', 'norehidayat', 'norehira', 'norehuda']
             global processed_font
             for global_count in range(len(list_image_files)):
-                
+
                 font_list = 0
                 loc_path = 0
                 numfiles = 0
@@ -155,7 +217,7 @@ def processing():
                 gray = 0
                 font_object = 0
                 imagelist_horizontal_line_by_eight_conn = []
-                imagelist_template_matching_result= []
+                imagelist_template_matching_result = []
                 imagelist_template_scale_visualize = []
                 imagelist_visualize_white_block = []
                 temp_object = []
@@ -170,12 +232,12 @@ def processing():
                 processed_font = []
                 save_state = 0
                 normal_processing_result = []
+                skip_index = []
                 crop_ratio_processing_result = []
                 bw_method = 0   # 0 = Otshu's threshold
-                                # 1 = Simple threshold
-                                # 2 = Adaptive mean of neighbourhood area
-                                # 3 = Adaptive weighted sum of neighb area 
-                
+                # 1 = Simple threshold
+                # 2 = Adaptive mean of neighbourhood area
+                # 3 = Adaptive weighted sum of neighb area
 
                 numfiles = len(list_image_files)
                 imagePath = list_image_files[global_count]
@@ -183,25 +245,25 @@ def processing():
                 img = cv2.imread(imagePath)
                 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
                 if bw_method == 0:
-                # Otsu threshold
+                    # Otsu threshold
                     print('using otsu threshold')
                     _, bw_image = cv2.threshold(gray, 0, 255,
                                                 cv2.THRESH_BINARY
                                                 + cv2.THRESH_OTSU)
                 if bw_method == 1:
-                # Simple threshold
+                    # Simple threshold
                     print('using simple threshold')
                     _, bw_image = cv2.threshold(gray, 127, 255,
                                                 cv2.THRESH_BINARY)
                 if bw_method == 2:
-                # Adaptive threshold value is the mean of neighbourhood area
+                    # Adaptive threshold value is the mean of neighbourhood area
                     print('using adaptive mean threshold')
                     bw_image = cv2.adaptiveThreshold(gray, 255,
-                                                    cv2.ADAPTIVE_THRESH_MEAN_C,
-                                                    cv2.THRESH_BINARY, 11, 2)
+                                                     cv2.ADAPTIVE_THRESH_MEAN_C,
+                                                     cv2.THRESH_BINARY, 11, 2)
                 if bw_method == 3:
-                # Adaptive threshold value is the weighted sum of neighbourhood
-                # values where weights are a gaussian window
+                    # Adaptive threshold value is the weighted sum of neighbourhood
+                    # values where weights are a gaussian window
                     print('using adaptive sum threshold')
                     bw_image = cv2.adaptiveThreshold(gray, 255,
                                                      cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
@@ -217,7 +279,7 @@ def processing():
                         continue
                     else:
                         processed_font.append(font_folder[local_count])
-                    yield str(global_count+1)+'_'+font_folder[local_count]+'_'+ str(numfiles) + '$'
+                    yield str(global_count+1)+'_'+font_folder[local_count]+'_' + str(numfiles) + '$'
                     skip_marker = []
                     for sm in setting[font_folder[local_count]][3]:
                         split = sm.split(' ')
@@ -228,19 +290,26 @@ def processing():
                             else:
                                 marker += split[x].lower()
                         skip_marker.append(marker)
-                    font_object.run(bw_method=bw_method, skip_marker=skip_marker)
-                    imagelist_template_scale_visualize.append(font_object.imagelist_visualize)
-                    imagelist_visualize_white_block.append(font_object.imagelist_visualize_white_blok)
+                    font_object.run(bw_method=bw_method,
+                                    skip_marker=skip_marker)
+                    imagelist_template_scale_visualize.append(
+                        font_object.imagelist_visualize)
+                    imagelist_visualize_white_block.append(
+                        font_object.imagelist_visualize_white_blok)
                     temp_object.append(font_object.get_object_result())
-                    imagelist_template_matching_result.append(font_object.display_marker_result(img, skip_marker))
+                    imagelist_template_matching_result.append(
+                        font_object.display_marker_result(img, skip_marker))
                 # print(temp_object)
                 yield str(global_count+1) + '_Doing BIG BLOK_' + str(numfiles) + '$'
                 max_id = flow.most_marker(temp_object)
                 if max_id is None:
                     yield str(global_count+1) + '_empty_' + str(numfiles) + '$'
-                    listof_imagelist_template_matching_result.append(imagelist_template_matching_result)
-                    listof_imagelist_template_scale_visualize.append(imagelist_template_scale_visualize)
-                    listof_imagelist_visualize_white_block.append(imagelist_visualize_white_block)
+                    listof_imagelist_template_matching_result.append(
+                        imagelist_template_matching_result)
+                    listof_imagelist_template_scale_visualize.append(
+                        imagelist_template_scale_visualize)
+                    listof_imagelist_visualize_white_block.append(
+                        imagelist_visualize_white_block)
                     listof_final_image_result.append(final_image_result)
                     listof_prediction_result.append(pred_result)
                     listof_image_v_checking.append(image_v_checking)
@@ -248,25 +317,32 @@ def processing():
                     listof_input_image.append(input_image)
                     listof_max_id.append([])
                     listof_detected_and_segmented.append([])
-                    listof_normal_processing_result.append(normal_processing_result)
-                    listof_crop_ratio_processing_result.append(crop_ratio_processing_result)
-                    listof_imagelist_horizontal_line_by_eight_conn.append(imagelist_horizontal_line_by_eight_conn)
+                    listof_normal_processing_result.append(
+                        normal_processing_result)
+                    listof_crop_ratio_processing_result.append(
+                        crop_ratio_processing_result)
+                    listof_imagelist_horizontal_line_by_eight_conn.append(
+                        imagelist_horizontal_line_by_eight_conn)
                 else:
                     yield str(global_count+1) + '_Image Processing_' + str(numfiles) + '$'
                     save_state, normal_processing_result, crop_ratio_processing_result,\
-                    imagelist_horizontal_line_by_eight_conn, image_v_checking\
-                         = flow.define_normal_or_crop_processing(
+                        imagelist_horizontal_line_by_eight_conn, image_v_checking\
+                        = flow.define_normal_or_crop_processing(
                             imagePath, temp_object, max_id, font_object, font_list, bw_method
-                         )
-                    yield  str(global_count+1) + '_Recognition_' + str(numfiles) + '$'
-                    final_image_result, pred_result, char_recog = flow.character_recognition(
+                        )
+                    yield str(global_count+1) + '_Recognition_' + str(numfiles) + '$'
+                    final_image_result, pred_result, char_recog, skip_index = flow.character_recognition(
                         save_state, imagePath, model
                     )
-                    yield  str(global_count+1) + '_Saving Result_' + str(numfiles) + '$'
-                    ds_image = detected_and_segmented_image(save_state, bw_image)
-                    listof_imagelist_template_matching_result.append(imagelist_template_matching_result)
-                    listof_imagelist_template_scale_visualize.append(imagelist_template_scale_visualize)
-                    listof_imagelist_visualize_white_block.append(imagelist_visualize_white_block)
+                    yield str(global_count+1) + '_Saving Result_' + str(numfiles) + '$'
+                    ds_image = detected_and_segmented_image(
+                        save_state, bw_image)
+                    listof_imagelist_template_matching_result.append(
+                        imagelist_template_matching_result)
+                    listof_imagelist_template_scale_visualize.append(
+                        imagelist_template_scale_visualize)
+                    listof_imagelist_visualize_white_block.append(
+                        imagelist_visualize_white_block)
                     listof_final_image_result.append(final_image_result)
                     listof_prediction_result.append(pred_result)
                     listof_image_v_checking.append(image_v_checking)
@@ -274,18 +350,22 @@ def processing():
                     listof_input_image.append(input_image)
                     listof_max_id.append(processed_font[max_id])
                     listof_detected_and_segmented.append(ds_image)
-                    listof_normal_processing_result.append(normal_processing_result)
-                    listof_crop_ratio_processing_result.append(crop_ratio_processing_result)
-                    listof_imagelist_horizontal_line_by_eight_conn.append(imagelist_horizontal_line_by_eight_conn)
+                    listof_normal_processing_result.append(
+                        normal_processing_result)
+                    listof_crop_ratio_processing_result.append(
+                        crop_ratio_processing_result)
+                    listof_imagelist_horizontal_line_by_eight_conn.append(
+                        imagelist_horizontal_line_by_eight_conn)
                     if global_count+1 == numfiles:
                         yield str(global_count+1) + '_DONE!_' + str(numfiles) + '$'
             print('processed font: ', processed_font)
-        time.sleep(2)  #wait for class init done
+        time.sleep(2)  # wait for class init done
         return Response(runner(), mimetype='text/event-stream')
         # return render_template('public/sketch_.html', next='/number1', req=req)
 
     # return render_template('public/sketch.html')
     return redirect('/processing_result')
+
 
 def save_image_to_disk():
     store_folder_mr = app.root_path + '/static/img/result/matching_result'
@@ -369,8 +449,7 @@ def save_image_to_disk():
             count2 += 1
         pathof_imagelist_template_matching_result.append(path_image)
         count1 += 1
-    
-    
+
     pathof_imagelist_template_scale_visualize = []
     count1 = 0
     for list_image in listof_imagelist_template_scale_visualize:
@@ -395,7 +474,8 @@ def save_image_to_disk():
             for marker in font:
                 for image in marker:
                     if image != []:
-                        file = store_folder_wb+'/'+str(count1)+'_'+str(count2)+'.png'
+                        file = store_folder_wb+'/' + \
+                            str(count1)+'_'+str(count2)+'.png'
                         if image != []:
                             cv2.imwrite(file, image)
                             path_image.append(file[35:])
@@ -403,7 +483,7 @@ def save_image_to_disk():
         pathof_imagelist_visualize_white_block.append(path_image)
         count1 += 1
 
-    pathof_imagelist_horizontal_line_by_eight_conn= []
+    pathof_imagelist_horizontal_line_by_eight_conn = []
     count1 = 0
     for list_image in listof_imagelist_horizontal_line_by_eight_conn:
         count2 = 0
@@ -416,7 +496,6 @@ def save_image_to_disk():
             count2 += 1
         pathof_imagelist_horizontal_line_by_eight_conn.append(path_image)
         count1 += 1
-
 
     pathof_normal_processing_result = []
     count1 = 0
@@ -473,7 +552,8 @@ def save_image_to_disk():
             path_image = []
             for result in list_image[0]:
                 for image in result:
-                    file = store_folder_np+'/'+str(count1)+'_'+str(count2)+'.png'
+                    file = store_folder_np+'/' + \
+                        str(count1)+'_'+str(count2)+'.png'
                     if image != []:
                         cv2.imwrite(file, image)
                         path_image.append(file[35:])
@@ -559,7 +639,7 @@ def save_image_to_disk():
             count1 += 1
         else:
             pathof_crop_ratio_processing_result.append([])
-    
+
     pathof_imagelist_input_image = []
     count1 = 0
     for list_image in listof_input_image:
@@ -573,7 +653,7 @@ def save_image_to_disk():
             count2 += 1
         pathof_imagelist_input_image.append(path_image)
         count1 += 1
-    
+
     pathof_imagelist_v_checking = []
     count1 = 0
     for list_image in listof_image_v_checking:
@@ -601,9 +681,7 @@ def save_image_to_disk():
             count2 += 1
         pathof_imagelist_char_recog.append(path_image)
         count1 += 1
-    
-    
-    
+
     pathof_final_image_result = []
     count1 = 0
     for image in listof_final_image_result:
@@ -614,7 +692,7 @@ def save_image_to_disk():
         else:
             pathof_final_image_result.append([])
         count1 += 1
-    
+
     pathof_detected_and_segmented_image = []
     count1 = 0
     for image in listof_detected_and_segmented:
@@ -628,13 +706,15 @@ def save_image_to_disk():
 
     return pathof_crop_ratio_processing_result, pathof_imagelist_horizontal_line_by_eight_conn,\
         pathof_imagelist_template_matching_result, pathof_imagelist_template_scale_visualize, \
-            pathof_imagelist_visualize_white_block, pathof_normal_processing_result, \
-                pathof_final_image_result, pathof_imagelist_input_image, \
-                    pathof_imagelist_v_checking, pathof_imagelist_char_recog, \
-                        pathof_detected_and_segmented_image
+        pathof_imagelist_visualize_white_block, pathof_normal_processing_result, \
+        pathof_final_image_result, pathof_imagelist_input_image, \
+        pathof_imagelist_v_checking, pathof_imagelist_char_recog, \
+        pathof_detected_and_segmented_image
 
 
 print('processed font: ', processed_font)
+
+
 @app.route("/processing_result")
 def processing_result():
     global from_sketch_button
@@ -665,14 +745,14 @@ def processing_result():
 
     pathof_crop_ratio_processing_result, pathof_imagelist_horizontal_line_by_eight_conn,\
         pathof_imagelist_template_matching_result, pathof_imagelist_template_scale_visualize, \
-            pathof_imagelist_visualize_white_block, pathof_normal_processing_result, \
-                pathof_final_image_result, pathof_imagelist_input_image, \
-                    pathof_imagelist_v_checking, pathof_imagelist_char_recog, \
-                        pathof_detected_and_segmented_image = save_image_to_disk()
-    
+        pathof_imagelist_visualize_white_block, pathof_normal_processing_result, \
+        pathof_final_image_result, pathof_imagelist_input_image, \
+        pathof_imagelist_v_checking, pathof_imagelist_char_recog, \
+        pathof_detected_and_segmented_image = save_image_to_disk()
+
     dumpPath = [pathof_crop_ratio_processing_result, pathof_imagelist_horizontal_line_by_eight_conn,
-                pathof_imagelist_template_matching_result, pathof_imagelist_template_scale_visualize, 
-                pathof_imagelist_visualize_white_block, pathof_normal_processing_result, 
+                pathof_imagelist_template_matching_result, pathof_imagelist_template_scale_visualize,
+                pathof_imagelist_visualize_white_block, pathof_normal_processing_result,
                 pathof_final_image_result, listof_prediction_result, pathof_imagelist_input_image,
                 pathof_imagelist_v_checking, pathof_imagelist_char_recog, listof_max_id,
                 pathof_detected_and_segmented_image]
@@ -713,6 +793,7 @@ def processing_result():
     processed_font = []
     # return 'OK'
     return render_template('public/test_result.html', marker_type=app.config['MARKER_TYPE'])
+
 
 @app.route("/guestbook/create-entry", methods=["POST"])
 def create_entry():
@@ -784,9 +865,11 @@ def dataset():
     print(app.root_path)
     return render_template('public/dataset.html', marker_folder=app.config['MARKER_FOLDER'], marker_type=app.config['MARKER_TYPE'])
 
+
 @app.route('/marker/<path:filename>')
 def base_static(filename):
     return send_from_directory(app.root_path + '/marker/', filename)
+
 
 def check_image_size(path, threshold):
     image = cv2.imread(path)
@@ -801,6 +884,8 @@ def check_image_size(path, threshold):
         cv2.imwrite(path, image)
 
 # res = ''
+
+
 @app.route('/sketch', methods=["GET", "POST"])
 def sketch():
     global from_sketch_button
@@ -822,7 +907,8 @@ def sketch():
                 print(len(res))
                 now = datetime.now()
                 dt_string = now.strftime("%y%m%d%H%M%S")
-                thefile = open('/home/mhbrt/Desktop/Wind/Multiscale/templates/Saved Configuration_'+dt_string+'.dcfg', 'w')
+                thefile = open(
+                    '/home/mhbrt/Desktop/Wind/Multiscale/templates/Saved Configuration_'+dt_string+'.dcfg', 'w')
                 thefile.write(str(res).replace("'", '"'))
                 response = make_response(jsonify(res), 200)
                 return response
@@ -858,7 +944,7 @@ def sketch():
                 app.config["IMAGE_UPLOADS"], image.filename)
             list_image_files.append(saved_path)
             image.save(saved_path)
-            check_image_size(saved_path, 1200)
+            check_image_size(saved_path, 2000)
             print("Image saved")
             print(list_image_files)
             res = make_response(jsonify(saved_path), 200)
@@ -869,8 +955,6 @@ def sketch():
     print('outside if')
 
     return render_template('public/sketch.html', marker_type=app.config['MARKER_TYPE'])
-
-
 
 
 req = {}
@@ -940,9 +1024,11 @@ def do_something_and_again_final():
     # return render_template('public/sketch_.html', next='/sketch', req=req)
     return render_template('public/sketch.html', marker_type=app.config['MARKER_TYPE'])
 
+
 @app.route('/training_result')
 def training_result():
     return render_template('public/training_result.html')
+
 
 @app.route('/temp_result')
 def temp_result():

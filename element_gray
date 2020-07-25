@@ -1,0 +1,6 @@
+#!/usr/bin/zsh
+source virtualenvwrapper.sh
+workon noQt
+sudo /opt/lampp/lampp start
+python element_gray.py
+

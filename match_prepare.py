@@ -6,6 +6,7 @@ import glob
 import cv2
 import copy
 
+
 class Marker:
     def __init__(self, **kwargs):
         self._Data = kwargs
@@ -462,21 +463,31 @@ class ImageProcessing():
             if diff[x] > temp:
                 temp = diff[x]
                 self.base_end = x
+
         # Get the 2nd greatest to base_start
         temp = 0
-        for x in range(len(diff)):
+        how_far = int(1/4*cut_at)
+        if self.base_end - how_far >= 0:
+            start_2 = self.base_end - how_far
+        else:
+            start_2 = 0
+        if self.base_end + how_far <= len(diff):
+            end_2 = self.base_end + how_far
+        else:
+            end_2 = len(diff)
+        for x in range(start_2, end_2):
             if x == self.base_end:
                 continue
-            if diff[x] > temp:
+            if diff[x] >= temp:
                 temp = diff[x]
                 self.base_start = x + start_at
         self.base_end = x + start_at
 
         if view:
             cv2.line(self.one_line_image, (0, self.base_start),
-                    (self.width, self.base_start), (0, 255, 0), 2)
+                     (self.width, self.base_start), (0, 255, 0), 2)
             cv2.line(self.one_line_image, (0, self.base_end),
-                    (self.width, self.base_end), (0, 255, 0), 2)
+                     (self.width, self.base_end), (50, 255, 0), 2)
 
     def detect_vertical_line(self, image, pixel_limit_ste, view=True):
         # Detect line vertical
@@ -529,27 +540,53 @@ class ImageProcessing():
 #             cv2.waitKey(0)
 #             # print(self.start_point_v)
 
+    def detect_horizontal_line_up_down(self, h_projection):
+        # Detect line horizontal
+        start_point = []
+        for x in range(len(h_projection)):
+            if h_projection[x] > 0:
+                start_point.append(x)
+                break
+
+        for x in range(len(h_projection))[::-1]:
+            if h_projection[x] > 0:
+                start_point.append(x)
+                break
+
+        if len(start_point) % 2 != 0:
+            if h_projection[len(h_projection) - 1] > 0:
+                start_point.append(len(h_projection) - 1)
+
+        return start_point
+
     def crop_image(self, input_image, h_point=False, v_point=False, view=True):
         if h_point:
             start_point = h_point
             original_image = input_image
-#             print('>')
-#             cv2.waitKey(0)
+            gray = cv2.cvtColor(original_image, cv2.COLOR_BGR2GRAY)
+            self.horizontal_image = input_image.copy()
+            height, width, _ = original_image.shape
+
             bag_of_h_crop = {}
             for x in range(len(start_point)):
                 if x + 2 > len(start_point):
                     # print('x')
                     continue
                 if x % 2 == 0:
+                    bag_of_h_crop[x] = gray[
+                        start_point[x]:start_point[x+1] + 1, :]
+                    self.horizontal_projection(bag_of_h_crop[x])
+                    up_down_point = self.detect_horizontal_line_up_down(
+                        self.h_projection)
+                    this_point = [start_point[x] + up_down_point[0],
+                                  start_point[x] + up_down_point[1]]
                     bag_of_h_crop[x] = original_image[
-                                        start_point[x]:start_point[x+1] + 1, :]
-            # print(bag_of_h_crop)
-#             if view:
-#                 for image in bag_of_h_crop:
-#                     cv2.imshow('bag_h'+str(image), bag_of_h_crop[image])
-#                     print('>')
-#                     cv2.waitKey(0)
-#                     cv2.destroyWindow('bag_h'+str(image))
+                        this_point[0]:this_point[1], :]
+                    cv2.line(self.horizontal_image, (0, this_point[0]),
+                             (width, this_point[0]), (0, 0, 255), 2)
+                    cv2.line(self.horizontal_image, (0, this_point[1]),
+                             (width, this_point[1]), (100, 100, 255), 2)
+
             self.bag_of_h_crop = bag_of_h_crop
 
         if v_point:
@@ -691,7 +728,7 @@ class ImageProcessing():
                                                 'region_{:03d}'.format(reg)]:
                                             self.conn_pack[
                                                 'region_{:03d}'.format(reg)
-                                                ].append(vl)
+                                            ].append(vl)
                         init = False
                         if sub:
                             # print(self.conn_pack['region_{:03d}'.format(reg)])
@@ -713,7 +750,7 @@ class ImageProcessing():
                                                 'region_{:03d}'.format(reg)]:
                                             self.conn_pack[
                                                 'region_{:03d}'.format(reg)
-                                                ].append(vl)
+                                            ].append(vl)
                         sub = False
 
                         if not sub and not init:
@@ -815,7 +852,7 @@ class ImageProcessing():
                     # NB. why just not using the longest reg to sort? coz when
                     # it does there's a case where two separate words
                     # overlapping each other by a tiny margin (no white space)
-                    elif len(self.conn_pack_sorted[x]) < 1/4*max_length:
+                    elif len(self.conn_pack_sorted[x]) < 1/6*max_length:
                         self.conn_pack_minus_body[x] = self.conn_pack_sorted[x]
                         del(self.conn_pack_sorted[x])
 
@@ -892,7 +929,7 @@ class ImageProcessing():
                                       self.start_point_h[1], :]
             self.vertical_projection(one_marker)
             self.detect_vertical_line(one_marker.copy(), 0, False)
-            if len(self.start_point_v) >1:
+            if len(self.start_point_v) > 1:
                 x1 = self.start_point_v[0]
                 x2 = self.start_point_v[1]
                 one_marker = one_marker[:, x1:x2]
@@ -908,7 +945,7 @@ class ImageProcessing():
             # Square, Portrait or Landscape image
             if width < scale * height:
                 if height < scale * width:
-    #                 print('_square_')
+                    #                 print('_square_')
                     black = False
                     white = False
                     middle_hole = False
@@ -921,7 +958,7 @@ class ImageProcessing():
                         if white and one_marker[y, round(width/2)] == 0:
                             middle_hole = True
                     if middle_hole:
-    #                     print('_white hole in the middle_')
+                        #                     print('_white hole in the middle_')
                         write_canvas = False
                     else:
                         # Checking all pixel
@@ -943,7 +980,7 @@ class ImageProcessing():
                                     white_hole = True
                                     break
                         if white_hole:
-    #                         print('_there is a hole_')
+                            #                         print('_there is a hole_')
                             write_canvas = False
                         else:
                             # Check on 1/4 till 3/4 region
@@ -968,10 +1005,10 @@ class ImageProcessing():
                                         too_many_whites = True
                                         break
                                 if too_many_whites:
-    #                                 print('_too many white value in 1/5 till 1/2_')
+                                    #                                 print('_too many white value in 1/5 till 1/2_')
                                     write_canvas = False
                                 else:
-    #                                 print('_DOT CONFIRM_')
+                                    #                                 print('_DOT CONFIRM_')
                                     write_canvas = True
     #                         else:
     #                             print('not touching')
@@ -1033,13 +1070,13 @@ class ImageProcessing():
                             if bw_count > bw_max:
                                 bw_max = bw_count
                         if bwb_count >= bwb_thresh and bwb_down and bw_max < 3:
-    #                         print('_KAF HAMZAH CONFIRM_')
+                            #                         print('_KAF HAMZAH CONFIRM_')
                             write_canvas = True
                         else:
-    #                         print('_also not kaf hamzah_')
+                            #                         print('_also not kaf hamzah_')
                             write_canvas = False
                 else:
-    #                 print('_portrait image_')
+                    #                 print('_portrait image_')
                     # Split image into two vertically and looking for bwb
                     # (Kaf Hamzah)
                     bwb_up = False
@@ -1071,12 +1108,12 @@ class ImageProcessing():
                                 bwb_down = True
                                 break
                     if bwb_up and bwb_down:
-    #                     print('_KAF HAMZAH CONFIRM_')
+                        #                     print('_KAF HAMZAH CONFIRM_')
                         write_canvas = True
                     else:
                         write_canvas = False
             else:
-    #             print('_landscape image_')
+                #             print('_landscape image_')
                 black = False
                 white = False
                 wbw_confirm = False
@@ -1093,10 +1130,10 @@ class ImageProcessing():
                         over_pattern = True
                         break
                 if over_pattern:
-    #                 print('_too many wbw + b_')
+                    #                 print('_too many wbw + b_')
                     write_canvas = False
                 elif wbw_confirm:
-    #                 print('_mid is wbw_')
+                    #                 print('_mid is wbw_')
                     too_many_white_val = False
                     # cut in the middle up vertically wether the pixel all white
                     for x in range(round(width/5), round(width/3)):
@@ -1108,12 +1145,13 @@ class ImageProcessing():
                             too_many_white_val = True
                             break
                     if too_many_white_val:
-    #                     print('_too many white val in 1/5 till 1/3_')
+                        #                     print('_too many white val in 1/5 till 1/3_')
                         write_canvas = False
                     else:
                         half_img = one_marker[:, 0:round(width/2)]
                         self.horizontal_projection(half_img)
-                        self.detect_horizontal_line(half_img.copy(), 0, 0, True)
+                        self.detect_horizontal_line(
+                            half_img.copy(), 0, 0, True)
                         half_img = one_marker[
                             self.start_point_h[0]:self.start_point_h[1],
                             0:round(width/2)
@@ -1140,13 +1178,13 @@ class ImageProcessing():
                                 if touch_up and touch_down:
                                     break
                         if touch_up and touch_down:
-    #                         print('_DOT CONFIRM_')
+                            # print('_DOT CONFIRM_')
                             write_canvas = True
                         else:
-    #                         print('_not touching_')
+                            # print('_not touching_')
                             write_canvas = False
                 else:
-    #                 print('_middle is not wbw_')
+                    #                 print('_middle is not wbw_')
                     write_canvas = False
                     # Split image into two vertically and looking for bwb
                     # (Kaf Hamzah)
@@ -1179,7 +1217,7 @@ class ImageProcessing():
                                 bwb_down = True
                                 break
                     if bwb_up and bwb_down:
-    #                     print('_KAF HAMZAH CONFIRM_')
+                        # print('_KAF HAMZAH CONFIRM_')
                         write_canvas = True
                     else:
                         write_canvas = False
@@ -1436,7 +1474,7 @@ class ImageProcessing():
             for x in range(len(body_v_proj)):
                 if x < len(body_v_proj) - 1:
                     temp_diff = int(body_v_proj[x + 1])\
-                                - int(body_v_proj[x])
+                        - int(body_v_proj[x])
                     diff.append(temp_diff)
 
 #             print(diff)
@@ -1500,8 +1538,8 @@ class ImageProcessing():
                         + round(cut * save_sistent[the_sistent])
                     # + the_sistent \
                     final_segmented_char = final_segmented_char_candidate[
-                            :, x1_char:wall[1]
-                        ]
+                        :, x1_char:wall[1]
+                    ]
                     pass_x1 += x1_char
                     self.fsc_coordinate = (pass_x1, wall[1])
 #                     print('1/2 of the most consistent')

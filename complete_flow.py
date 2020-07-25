@@ -30,6 +30,7 @@ def horizontal_projection(image_h):
 
     return h_projection
 
+
 def detect_horizontal_line_up_down(h_projection):
     # Detect line horizontal
     start_point = []
@@ -48,6 +49,7 @@ def detect_horizontal_line_up_down(h_projection):
             start_point.append(len(h_projection) - 1)
 
     return start_point
+
 
 def detect_horizontal_line(h_projection, pixel_limit_ste, pixel_limit_ets):
     # Detect line horizontal
@@ -202,7 +204,8 @@ def region_tanwin(coordinat, image, font_list, view=True):
         cv2.waitKey(0)
     # cv2.destroyAllWindows()
     font_object.horizontal_projection(image_process)
-    h_image = font_object.detect_horizontal_line(image.copy(), int(1/2*saved_tanwin_width), int(1/2*saved_tanwin_width))
+    h_image = font_object.detect_horizontal_line(image.copy(), int(
+        1/2*saved_tanwin_width), int(1/2*saved_tanwin_width))
     start_point_h = font_object.start_point_h
     font_object.vertical_projection(image_process)
     h_image = font_object.detect_vertical_line(image.copy(), 0)
@@ -593,12 +596,13 @@ def eight_conn_by_seed(coordinat, img, font_list, view=True):
             image.copy(), starting_height, 0)
         start_point_h = font_object.start_point_h
         font_object.vertical_projection(image_process)
-        h_image = font_object.detect_vertical_line(image.copy(), saved_starting_width)
+        h_image = font_object.detect_vertical_line(
+            image.copy(), saved_starting_width)
         start_point_v = font_object.start_point_v
 
         if len(start_point_v) > 1 and len(start_point_h) > 1:
             coordinat_candidate = [start_point_v[0], start_point_h[0],
-                                start_point_v[1], start_point_h[1]]
+                                   start_point_v[1], start_point_h[1]]
             cc_count = black_pixel_count(image, coordinat_candidate)
 
             if cc_count < 2 * marker_only_count:
@@ -721,19 +725,19 @@ def normal_image_processing_blok(imagePath, object_result, bw_method, list_start
     gray = cv2.cvtColor(original_image, cv2.COLOR_BGR2GRAY)
     # template = cv2.Canny(gray, 50, 200)
     if bw_method == 0:
-    # Otsu threshold
+        # Otsu threshold
         ret_img, image = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY
-                                    + cv2.THRESH_OTSU)
+                                       + cv2.THRESH_OTSU)
     if bw_method == 1:
-    # Simple threshold
+        # Simple threshold
         ret_img, image = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)
     if bw_method == 2:
-    # Adaptive threshold value is the mean of neighbourhood area
+        # Adaptive threshold value is the mean of neighbourhood area
         image = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_MEAN_C,
                                       cv2.THRESH_BINARY, 11, 2)
     if bw_method == 3:
-    # Adaptive threshold value is the weighted sum of neighbourhood
-    # values where weights are a gaussian window
+        # Adaptive threshold value is the weighted sum of neighbourhood
+        # values where weights are a gaussian window
         image = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                       cv2.THRESH_BINARY, 11, 2)
 
@@ -761,15 +765,15 @@ def normal_image_processing_blok(imagePath, object_result, bw_method, list_start
     #     pixel_limit_ste=5,  # Start to end
     #     pixel_limit_ets=5   # End to start
     # )  # Got self.start_point_h
-    horizontal_image = original_image.copy()
-    for x in range(len(list_start_point_h)):
-        if x % 2 == 0:     # Start_point
-            cv2.line(horizontal_image, (0, list_start_point_h[x]),
-                        (width, list_start_point_h[x]), (0, 0, 255), 2)
-            # print(x)
-        else:         # End_point
-            cv2.line(horizontal_image, (0, list_start_point_h[x]),
-                        (width, list_start_point_h[x]), (100, 100, 255), 2)
+    # horizontal_image = original_image.copy()
+    # for x in range(len(list_start_point_h)):
+    #     if x % 2 == 0:     # Start_point
+    #         cv2.line(horizontal_image, (0, list_start_point_h[x]),
+    #                  (width, list_start_point_h[x]), (0, 0, 255), 2)
+    #         # print(x)
+    #     else:         # End_point
+    #         cv2.line(horizontal_image, (0, list_start_point_h[x]),
+    #                  (width, list_start_point_h[x]), (100, 100, 255), 2)
     # cv2.imshow('from main', input_image.original_image)
     # cv2.imshow('h_image', horizontal_image)
     # cv2.waitKey(0)
@@ -778,7 +782,7 @@ def normal_image_processing_blok(imagePath, object_result, bw_method, list_start
     bag_h_original = list_start_point_h
     input_image.crop_image(h_point=list_start_point_h,
                            input_image=original_image.copy())  # crop ori
-
+    horizontal_image = input_image.horizontal_image.copy()
 #     marker_height_list = []
 #     font_list = mess.font(imagePath=imagePath, image=gray)
 #     for font_object in font_list:
@@ -912,7 +916,7 @@ def normal_image_processing_blok(imagePath, object_result, bw_method, list_start
                         y_mid = (temp_x)[arr][1] + int((y2-y1)/2)
                         if bag_h_original[image] <= y1 <= bag_h_original[image+1] \
                                 or bag_h_original[image] <= y2 <= bag_h_original[image+1]\
-                                    or bag_h_original[image] <= y_mid <= bag_h_original[image+1]:
+                            or bag_h_original[image] <= y_mid <= bag_h_original[image+1]:
                             print('processing:', name)
                             pass
                         else:
@@ -984,7 +988,7 @@ def normal_image_processing_blok(imagePath, object_result, bw_method, list_start
         # Looking for final segmented character
         # print(crop_words_final)
         # for key in crop_words_final:
-        
+
         print('CROP WORDS = ', crop_words)
         for key in crop_words:
             name = key.split('_')
@@ -1031,14 +1035,15 @@ def normal_image_processing_blok(imagePath, object_result, bw_method, list_start
                         continue
                     else:
                         save_state[count-1].append(scale)
-                        save_state[count-1].append((bag_h_original[image], bag_h_original[image+1]))
+                        save_state[count -
+                                   1].append((bag_h_original[image], bag_h_original[image+1]))
                         save_state[count-1].append(
                             crop_words['ordinat_' + join]
                         )
                         save_state[count-1].append(final_segmented_char)
                         save_state[count-1].append(pass_x1)
                         save_state[count-1].append([(input_image.fsc_coordinate[0], bag_h_original[image]),
-                                                   (input_image.fsc_coordinate[1], bag_h_original[image+1])])
+                                                    (input_image.fsc_coordinate[1], bag_h_original[image+1])])
 
                 if name[1] == 'inside':
                     x1_ordinat = crop_words['ordinat_' + join][0]
@@ -1062,48 +1067,51 @@ def normal_image_processing_blok(imagePath, object_result, bw_method, list_start
                         continue
                     else:
                         save_state[count-1].append(scale)
-                        save_state[count-1].append((bag_h_original[image], bag_h_original[image+1]))
+                        save_state[count -
+                                   1].append((bag_h_original[image], bag_h_original[image+1]))
                         save_state[count-1].append(
                             crop_words['ordinat_' + join]
                         )
                         save_state[count-1].append(final_segmented_char)
                         save_state[count-1].append(pass_x1)
                         save_state[count-1].append([(input_image.fsc_coordinate[0], bag_h_original[image]),
-                                                   (input_image.fsc_coordinate[1], bag_h_original[image+1])])
-                
-                imagelist_perchar_marker.append(input_image.imagelist_perchar_marker)
+                                                    (input_image.fsc_coordinate[1], bag_h_original[image+1])])
+
+                imagelist_perchar_marker.append(
+                    input_image.imagelist_perchar_marker)
                 # print('_________________________________', imagelist_perchar_marker)
                 imagelist_final_word_img.append(final_img)
                 # print('sd', imagelist_final_word_img)
                 imagelist_final_segmented_char.append(final_segmented_char)
+                # imagelist_final_segmented_char = []
                 # print('l', imagelist_final_segmented_char)
     return save_state, imagelist_perchar_marker, imagelist_final_word_img, imagelist_final_segmented_char,\
         imagelist_bag_of_h_with_baseline, imagelist_image_final_body, imagelist_image_final_marker,\
-            horizontal_image
+        horizontal_image
 
 
 def get_number_of_lines_by_result(temp_object, max_id, h):
     y_marker = []
     # get y marker coordinat
     for key in temp_object[max_id].keys():
-            if type(temp_object[max_id][key]) == type(np.array([])):
-                split = key.split('_')
-                name = get_marker_name(key)
-                if split[1] == 'tanwin':
-                    for c in temp_object[max_id][key]:
-                        upper, lower = get_ul_coordinat(c, h)
-                        y_marker.append((upper[1], lower[3]))
-                else:
-                    for c in temp_object[max_id][key]:
-                        y_marker.append((c[1], c[3]))
+        if type(temp_object[max_id][key]) == type(np.array([])):
+            split = key.split('_')
+            name = get_marker_name(key)
+            if split[1] == 'tanwin':
+                for c in temp_object[max_id][key]:
+                    upper, lower = get_ul_coordinat(c, h)
+                    y_marker.append((upper[1], lower[3]))
+            else:
+                for c in temp_object[max_id][key]:
+                    y_marker.append((c[1], c[3]))
     # append overlapped
     y_dict = {}
     for y in y_marker:
         y_dict[y] = [y]
         for y_ in y_marker:
-            if y==y_:
+            if y == y_:
                 continue
-            if y[0] <= y_[0] <= y[1] or y[0] <= y_[1] <=y[1]:
+            if y[0] <= y_[0] <= y[1] or y[0] <= y_[1] <= y[1]:
                 y_dict[y].append(y_)
     # append all overlapped and mark the same index
     temp_dict = copy.deepcopy(y_dict)
@@ -1165,7 +1173,6 @@ def get_number_of_lines_by_result(temp_object, max_id, h):
             line_count += 1
     print('number of lines: ', line_count)
 
-
     return line_count
 
 
@@ -1186,7 +1193,7 @@ def most_frequent(List):
 # gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 def font_list(imagePath, image, setting, markerPath):
     font_list, loc_path = mess.font(imagePath=imagePath, image=image,
-                          setting=setting, markerPath=markerPath)
+                                    setting=setting, markerPath=markerPath)
 
     return font_list, loc_path
 
@@ -1222,25 +1229,25 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
     img = cv2.imread(imagePath)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     if bw_method == 0:
-    # Otsu threshold
+        # Otsu threshold
         _, bw_image = cv2.threshold(gray, 0, 255,
                                     cv2.THRESH_BINARY
                                     + cv2.THRESH_OTSU)
     if bw_method == 1:
-    # Simple threshold
+        # Simple threshold
         _, bw_image = cv2.threshold(gray, 127, 255,
                                     cv2.THRESH_BINARY)
     if bw_method == 2:
-    # Adaptive threshold value is the mean of neighbourhood area
+        # Adaptive threshold value is the mean of neighbourhood area
         bw_image = cv2.adaptiveThreshold(gray, 255,
                                          cv2.ADAPTIVE_THRESH_MEAN_C,
                                          cv2.THRESH_BINARY, 11, 2)
     if bw_method == 3:
-    # Adaptive threshold value is the weighted sum of neighbourhood
-    # values where weights are a gaussian window
+        # Adaptive threshold value is the weighted sum of neighbourhood
+        # values where weights are a gaussian window
         bw_image = cv2.adaptiveThreshold(gray, 255,
-                                        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                        cv2.THRESH_BINARY, 11, 2)
+                                         cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                         cv2.THRESH_BINARY, 11, 2)
     height, width = gray.shape
     # list_start_point_h = []
     imagelist_horizontal_line_by_eight_conn = []
@@ -1351,7 +1358,7 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
         list_of_h_point.append(h_point[x])
         list_of_h_point.append(h_point[x+1])
 
-    list_start_point_h  = list_h_list
+    list_start_point_h = list_h_list
     list_for_mpclass = list_of_h_point
     gray_copy = gray.copy()
     height, width = gray_copy.shape
@@ -1475,8 +1482,9 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
         #     pass
         # print(temp_object[max_id])
         save_state, imagelist_perchar_marker, imagelist_final_word_img, imagelist_final_segmented_char,\
-         imagelist_bag_of_h_with_baseline, imagelist_image_final_body, imagelist_image_final_marker,\
-             horizontal_image = normal_image_processing_blok(imagePath, temp_object[max_id], bw_method, list_for_mpclass)
+            imagelist_bag_of_h_with_baseline, imagelist_image_final_body, imagelist_image_final_marker,\
+            horizontal_image = normal_image_processing_blok(
+                imagePath, temp_object[max_id], bw_method, list_for_mpclass)
 
         normal_processing_result = [imagelist_perchar_marker,
                                     imagelist_final_word_img,
@@ -1485,6 +1493,14 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
                                     imagelist_image_final_body,
                                     imagelist_image_final_marker,
                                     horizontal_image]
+        normal_processing_result[2] = []
+        temp = []
+        for x in save_state:
+            if len(save_state[x]) < 2:
+                continue
+            temp.append(copy.deepcopy(save_state[x][4]))
+        normal_processing_result[2] = temp
+
     else:
         print('\n___CROP PROCESSING___\n')
         arr_count = -1
@@ -1550,7 +1566,8 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
                         crop_image = bw[next_c[1]+crop_by:next_c[3]  # -crop_by
                                         , next_c[0]:next_c[2]]
                         h_crop, w_crop = crop_image.shape
-                        check_ci = black_pixel_count(crop_image, [0, 0, w_crop, h_crop])
+                        check_ci = black_pixel_count(
+                            crop_image, [0, 0, w_crop, h_crop])
                         if check_ci < 1:
                             print('crop image is empty')
                             continue
@@ -1597,12 +1614,13 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
                         save_state[arr_count] = []
                         save_state[arr_count].append(name)
                         save_state[arr_count].append(1)  # scale
-                        save_state[arr_count].append((next_c[1]+crop_by, next_c[3]))  # y_origin
+                        save_state[arr_count].append(
+                            (next_c[1]+crop_by, next_c[3]))  # y_origin
                         save_state[arr_count].append(c)  # marker_coordinat
                         save_state[arr_count].append(final_img)
                         save_state[arr_count].append(next_c[0])
                         save_state[arr_count].append([(next_c[0], next_c[1]+crop_by),
-                                                     (next_c[2], next_c[3])])
+                                                      (next_c[2], next_c[3])])
 
                         temp_gray_copy.append(gray_copy)
                         temp_image_process.append(image_process)
@@ -1689,7 +1707,8 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
                         crop_image = bw[next_c[1]+crop_by:next_c[3]  # -crop_by
                                         , next_c[0]:next_c[2]]
                         h_crop, w_crop = crop_image.shape
-                        check_ci = black_pixel_count(crop_image, [0, 0, w_crop, h_crop])
+                        check_ci = black_pixel_count(
+                            crop_image, [0, 0, w_crop, h_crop])
                         if check_ci < 1:
                             print('crop image is empty')
                             continue
@@ -1736,15 +1755,16 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
                         save_state[arr_count] = []
                         save_state[arr_count].append(name)
                         save_state[arr_count].append(1)  # scale
-                        save_state[arr_count].append((next_c[1]+crop_by, next_c[3]))  # y_origin
+                        save_state[arr_count].append(
+                            (next_c[1]+crop_by, next_c[3]))  # y_origin
                         save_state[arr_count].append(c)  # marker_coordinat
                         save_state[arr_count].append(final_img)
                         save_state[arr_count].append(
                             next_c[0] + int(1/2*w_next))
                         save_state[arr_count].append([(next_c[0] + int(1/2*w_next),
-                                                      next_c[1]+crop_by),
+                                                       next_c[1]+crop_by),
                                                       (next_c[2], next_c[3])])
-                
+
                         temp_gray_copy.append(gray_copy)
                         temp_image_process.append(image_process)
                         temp_sub_image.append(sub_image)
@@ -1788,8 +1808,49 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
     #                     cv2.imshow('image final body', font_object.image_final_sorted)
     #                     cv2.waitKey(0)
 
-
     return save_state, normal_processing_result, crop_ratio_processing_result, imagelist_horizontal_line_by_eight_conn, image_v_checking
+
+
+def draw_bounding_box(img, coordinat, label, color, font_scale=0.5, font=cv2.FONT_HERSHEY_PLAIN):
+    x1 = coordinat[0]
+    y1 = coordinat[1]
+    x2 = coordinat[2]
+    y2 = coordinat[3]
+    cv2.rectangle(
+        img,
+        (int(x1), int(y1)),
+        (int(x2), int(y2)),
+        color=color,
+        thickness=1
+    )
+    ((label_width, label_height), _) = cv2.getTextSize(
+        label,
+        fontFace=font,
+        fontScale=font_scale,
+        thickness=1
+    )
+
+    cv2.rectangle(
+        img,
+        (int(x1), int(y2)),
+        (int(x1 + label_width + label_width * 0.05),
+         #  int(y1 - label_height - label_height * 0.25)),
+         int(y2 + label_height + label_height * 0.25)),
+        color=color,
+        thickness=cv2.FILLED
+    )
+    cv2.putText(
+        img,
+        label,
+        # org=(int(x1), int(y1 - label_height - label_height * 0.25)),
+        # org=(int(x1), int(y1)),
+        org=(int(x1), int(y2 + label_height + label_height * 0.25)),
+        fontFace=font,
+        fontScale=font_scale,
+        color=(255, 255, 255),
+        thickness=1
+    )
+    return img
 
 
 def character_recognition(save_state, imagePath, model):
@@ -1832,12 +1893,12 @@ def character_recognition(save_state, imagePath, model):
             skip_index.append(x)
             continue
         elif len(start_point) >= 2:
-            if start_point[1] - start_point[0] < 1:
+            if start_point[1] - start_point[0] < 3:
                 skip_index.append(x)
-                continue 
+                continue
         cut_image = save_state[x][4][start_point[0]:start_point[1], :]
         character_y[x] = (save_state[x][2][0]+start_point[0],
-                       save_state[x][2][0]+start_point[1])
+                          save_state[x][2][0]+start_point[1])
 
     #     cv2.imshow('r', cut_image)
     #     cv2.waitKey(0)
@@ -1862,20 +1923,24 @@ def character_recognition(save_state, imagePath, model):
 
     count = -1
     char_list_nameonly = [
-    'Alif‬', 'Bā’', 'Tā’', 'Ṡā’‬', 'Jīm', 'h_Ḥā’‬', 'Khā’‬',
-    'Dāl‬', 'Żāl‬', 'Rā’‬', 'zai‬', 'sīn‬', 'syīn‬', 's_ṣād',
-    'd_ḍād', 't_ṭā’‬', 'z_ẓȧ’‬', '‘ain', 'gain‬', 'fā’‬', 'qāf‬',
-    'kāf‬', 'lām‬', 'mīm‬', 'nūn‬', 'wāw‬', 'hā’‬', 'yā’‬'
+        'Alif‬', 'Bā’', 'Tā’', 'Ṡā’‬', 'Jīm', 'h_Ḥā’‬', 'Khā’‬',
+        'Dāl‬', 'Żāl‬', 'Rā’‬', 'zai‬', 'sīn‬', 'syīn‬', 's_ṣād',
+        'd_ḍād', 't_ṭā’‬', 'z_ẓȧ’‬', '‘ain', 'gain‬', 'fā’‬', 'qāf‬',
+        'kāf‬', 'lām‬', 'mīm‬', 'nūn‬', 'wāw‬', 'hā’‬', 'yā’‬'
     ]
     pred_result = []
     for x in save_state:
         # skipping
         skip = False
         for index in skip_index:
-            if  x == index:
+            if x == index:
                 skip = True
                 break
-        if len(save_state[x]) < 2 or skip:
+        if len(save_state[x]) < 2:
+            # pred_result.append('n/a')
+            # skip_index.append(x)
+            continue
+        elif skip:
             pred_result.append('n/a')
             continue
         else:
@@ -1885,7 +1950,6 @@ def character_recognition(save_state, imagePath, model):
             pred_result.append(char_list_nameonly[y_pred[count]])
             # print(pred_result)
             # print(char_list_nameonly[y_pred[count]])
-
 
         h, w = save_state[x][4].shape
         marker = save_state[x][0].split('_')
@@ -1927,21 +1991,22 @@ def character_recognition(save_state, imagePath, model):
             int(char_box[2]), y2
         ]
         found = False
+        coordinat = [final_box[0], final_box[1], final_box[2], final_box[3]]
         if marker[0] == 'nun' or marker[0] == 'tanwin':
             if y_pred[count] == iqlab[0]:
-                cv2.rectangle(original_image, (final_box[0], final_box[1]),
-                              (final_box[2], final_box[3]), GREEN, 2)
-                cv2.putText(original_image, 'iqlab',
-                            (final_box[0], final_box[3] + 5), font_text, 1, WHITE)
+                original_image = draw_bounding_box(original_image,
+                                                   coordinat,
+                                                   'IQB',
+                                                   (8, 0, 255))
                 print('iqlab')
                 continue
             for c in idgham_bilagunnah:
                 if y_pred[count] == c:
                     print('idgham bilagunnah')
-                    cv2.rectangle(original_image, (final_box[0], final_box[1]),
-                                  (final_box[2], final_box[3]), GREEN, 2)
-                    cv2.putText(original_image, 'idgham bilagunnah',
-                                (final_box[0], final_box[3] + 5), font_text, 1, WHITE)
+                    original_image = draw_bounding_box(original_image,
+                                                       coordinat,
+                                                       'IDL',
+                                                       (0, 153, 0))
                     found = True
                     break
             if found:
@@ -1949,10 +2014,10 @@ def character_recognition(save_state, imagePath, model):
             for c in idgham_bigunnah:
                 if y_pred[count] == c:
                     print('idgham bigunnah')
-                    cv2.rectangle(original_image, (final_box[0], final_box[1]),
-                                  (final_box[2], final_box[3]), GREEN, 2)
-                    cv2.putText(original_image, 'idgham bigunnah',
-                                (final_box[0], final_box[3] + 5), font_text, 1, WHITE)
+                    original_image = draw_bounding_box(original_image,
+                                                       coordinat,
+                                                       'IDG',
+                                                       (0, 255, 0))
                     found = True
                     break
             if found:
@@ -1960,10 +2025,10 @@ def character_recognition(save_state, imagePath, model):
             for c in idzhar_halqi:
                 if y_pred[count] == c:
                     print('idzhar halqi')
-                    cv2.rectangle(original_image, (final_box[0], final_box[1]),
-                                  (final_box[2], final_box[3]), GREEN, 2)
-                    cv2.putText(original_image, 'idzhar halqi',
-                                (final_box[0], final_box[3] + 5), font_text, 1, WHITE)
+                    original_image = draw_bounding_box(original_image,
+                                                       coordinat,
+                                                       'IZH',
+                                                       (204, 0, 0))
                     found = True
                     break
             if found:
@@ -1971,10 +2036,10 @@ def character_recognition(save_state, imagePath, model):
             for c in ikhfa_hakiki:
                 if y_pred[count] == c:
                     print('ikhfa hakiki')
-                    cv2.rectangle(original_image, (final_box[0], final_box[1]),
-                                  (final_box[2], final_box[3]), GREEN, 2)
-                    cv2.putText(original_image, 'ikhfa hakiki',
-                                (final_box[0], final_box[3] + 5), font_text, 1, WHITE)
+                    original_image = draw_bounding_box(original_image,
+                                                       coordinat,
+                                                       'IKH',
+                                                       (96, 96, 96))
                     found = True
                     break
             if found:
@@ -1983,24 +2048,24 @@ def character_recognition(save_state, imagePath, model):
         elif marker[0] == 'mim':
             if y_pred[count] == ikhfa_syafawi[0]:
                 print('ikfha syafawi')
-                cv2.rectangle(original_image, (final_box[0], final_box[1]),
-                              (final_box[2], final_box[3]), GREEN, 2)
-                cv2.putText(original_image, 'ikhfa syafawi',
-                            (final_box[0], final_box[3] + 5), font_text, 1, WHITE)
+                original_image = draw_bounding_box(original_image,
+                                                   coordinat,
+                                                   'IKS',
+                                                   (128, 128, 128))
                 continue
             elif y_pred[count] == idgham_mimi[0]:
                 print('idgham mimi')
-                cv2.rectangle(original_image, (final_box[0], final_box[1]),
-                              (final_box[2], final_box[3]), GREEN, 2)
-                cv2.putText(original_image, 'idgham mimi',
-                            (final_box[0], final_box[3] + 5), font_text, 1, WHITE)
+                original_image = draw_bounding_box(original_image,
+                                                   coordinat,
+                                                   'IDM',
+                                                   (102, 255, 102))
                 continue
             else:
                 print('idzhar syafawi')
-                cv2.rectangle(original_image, (final_box[0], final_box[1]),
-                              (final_box[2], final_box[3]), GREEN, 2)
-                cv2.putText(original_image, 'idzhar syafawi',
-                            (final_box[0], final_box[3] + 5), font_text, 1, WHITE)
+                original_image = draw_bounding_box(original_image,
+                                                   coordinat,
+                                                   'IZS',
+                                                   (255, 102, 102))
 
     # cv2.imshow('Final Result', original_image)
     # cv2.waitKey(0)
@@ -2008,8 +2073,7 @@ def character_recognition(save_state, imagePath, model):
     print(pred_result)
     final_image_result = original_image
 
-
-    return final_image_result, pred_result, saved_char_recog
+    return final_image_result, pred_result, saved_char_recog, skip_index
 
 # DONE!!!
 

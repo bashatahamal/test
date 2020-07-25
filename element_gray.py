@@ -1,4 +1,7 @@
+# coding=utf-8
+
 import PySimpleGUIQt as sg
+#import PySimpleGUI as sg
 import mysql.connector
 import concatenate_gray as ct
 import os
@@ -7,6 +10,7 @@ import cv2
 from datetime import datetime
 # from PIL import Image
 # import io
+
 
 char_list_symbol = [
     'Alif          ‫ا‬',
