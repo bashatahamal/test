@@ -144,22 +144,22 @@ class Marker:
             # Cannyedge
             # edged = cv2.Canny(resized, 50, 200)
             if bw_method == 0:
-            # Otsu threshold
+                # Otsu threshold
                 ret_img, resized = cv2.threshold(resized, 0, 255,
-                                                cv2.THRESH_BINARY
-                                                + cv2.THRESH_OTSU)
+                                                 cv2.THRESH_BINARY
+                                                 + cv2.THRESH_OTSU)
             if bw_method == 1:
-            # Simple threshold
+                # Simple threshold
                 ret_img, resized = cv2.threshold(resized, 127, 255,
                                                  cv2.THRESH_BINARY)
             if bw_method == 2:
-            # Adaptive threshold value is the mean of neighbourhood area
+                # Adaptive threshold value is the mean of neighbourhood area
                 resized = cv2.adaptiveThreshold(resized, 255,
                                                 cv2.ADAPTIVE_THRESH_MEAN_C,
                                                 cv2.THRESH_BINARY, 11, 2)
             if bw_method == 3:
-            # Adaptive threshold value is the weighted sum of neighbourhood
-            # values where weights are a gaussian window
+                # Adaptive threshold value is the weighted sum of neighbourhood
+                # values where weights are a gaussian window
                 resized = cv2.adaptiveThreshold(resized, 255,
                                                 cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                                 cv2.THRESH_BINARY, 11, 2)
@@ -193,6 +193,7 @@ class Marker:
                               (int(maxLoc[0] + tW), int(maxLoc[1] + tH)),
                               (255, 255, 255), -1)
                 while(maxVal > self.get_template_thresh()):
+                    print('checking in scale size: ', scale)
                     result = cv2.matchTemplate(resized, template,
                                                cv2.TM_CCOEFF_NORMED)
                     (_, maxVal, _, maxLoc) = cv2.minMaxLoc(result)
@@ -229,6 +230,7 @@ class Marker:
         # cv2.imshow('IMAGE MATCH ()',image)
         return pick, max_local_value
 
+
 class FontWrapper(Marker):
     def __init__(self, nms_thresh=0.3, visualize=False, **kwargs):
         # print("INIT!")
@@ -256,11 +258,11 @@ class FontWrapper(Marker):
         ]
         colour_nun = [
             (0, 255, 0), (0, 204, 0), (51, 255, 51),
-            (102, 255, 102), (0, 153, 0)
+            # (102, 255, 102), (0, 153, 0)
         ]
         colour_mim = [
             (0, 255, 255), (0, 0, 204), (51, 51, 255),
-            (102, 102, 255), (0, 0, 153)
+            # (102, 102, 255), (0, 0, 153)
         ]
         t = 0
         m = 0
@@ -310,11 +312,62 @@ class FontWrapper(Marker):
     def get_object_name(self):
         return self.get_marker_location()[0].split('/')[2]
 
+    def draw_bounding_box(self, img, coordinat, label, color, font_scale=0.5, font=cv2.FONT_HERSHEY_PLAIN):
+        x1 = coordinat[0]
+        y1 = coordinat[1]
+        x2 = coordinat[2]
+        y2 = coordinat[3]
+        cv2.rectangle(
+            img,
+            (int(x1), int(y1)),
+            (int(x2), int(y2)),
+            color=color,
+            thickness=2
+        )
+        ((label_width, label_height), _) = cv2.getTextSize(
+            label,
+            fontFace=font,
+            fontScale=font_scale,
+            thickness=1
+        )
+
+        cv2.rectangle(
+            img,
+            (int(x1), int(y2)),
+            (int(x1 + label_width + label_width * 0.05),
+             #  int(y1 - label_height - label_height * 0.25)),
+             int(y2 + label_height + label_height * 0.25)),
+            color=color,
+            thickness=cv2.FILLED
+        )
+        cv2.putText(
+            img,
+            label,
+            # org=(int(x1), int(y1 - label_height - label_height * 0.25)),
+            # org=(int(x1), int(y1)),
+            org=(int(x1), int(y2 + label_height + label_height * 0.25)),
+            fontFace=font,
+            fontScale=font_scale,
+            color=(255, 255, 255),
+            thickness=1
+        )
+        return img
+
     def display_marker_result(self, input_image, skip_marker):
         # rectangle_image = self.get_original_image()
         rectangle_image = input_image.copy()
         found = False
         for key in self.get_marker_thresh().keys():
+            x = key.split('_')
+            if x[0] == 'tanwin':
+                label = '0'
+                colour = (255, 51, 51)
+            if x[0] == 'nun':
+                label = '1'
+                colour = (51, 255, 51)
+            if x[0] == 'mim':
+                label = '2'
+                colour = (51, 51, 255)
             # split = key.split('_')
             # marker_name = split[0] + '_' + split[1]
             marker_name = key
@@ -324,10 +377,17 @@ class FontWrapper(Marker):
                           type(np.array([]))):
                 for (startX, startY, endX, endY) in \
                         self.get_object_result()['box_' + key]:
-                    cv2.rectangle(rectangle_image, (startX, startY),
-                                  (endX, endY), self.temp_colour[key], 2)
+                    # cv2.rectangle(rectangle_image, (startX, startY),
+                    #               (endX, endY), self.temp_colour[key], 2)
+                    rectangle_image = self.draw_bounding_box(
+                        rectangle_image,
+                        [startX, startY, endX, endY],
+                        label,
+                        colour,
+                        font_scale=1
+                    )
                 # print(self.pick_colour[x])
-                found = True
+                # found = True
         # if found:
         #     print('<<<<<<<< View Result >>>>>>>>')
         #     cv2.imshow("Detected Image_" + self.get_object_name(),
@@ -351,6 +411,7 @@ class FontWrapper(Marker):
             numstep = self.numstep
         print("numstep = ", numstep)
         pocketData = {}
+        first = True
         for x in range(len(self.get_marker_thresh())):
             # print(len(template_thresh))
             # print(list(template_thresh.values())[x])
@@ -368,8 +429,11 @@ class FontWrapper(Marker):
             (pocketData[x], pocketData[x+len(self.get_marker_thresh())]) \
                 = super().match_template(visualize=self.visualize,
                                          numstep=numstep, bw_method=bw_method)
-            self.imagelist_visualize_white_blok.append(self.image_visualize_white_block)
-            
+            if first:
+                first = False
+                self.imagelist_visualize_white_blok.append(
+                    self.image_visualize_white_block)
+
             # print(type(pocketData[x]))
 
         # Change the name by +id
@@ -451,7 +515,6 @@ class FontWrapper(Marker):
 
         return x_y
 
-
     def eight_connectivity(self, image, seed, left=False, right=False,
                            y1_limit=0, y2_limit=10000, view=False):
         height, width = image.shape
@@ -490,10 +553,10 @@ class FontWrapper(Marker):
 #                     if w_count > width:
 #                         continue
                     while(True):
-#                         w_count += 1
-#                         print('wcount:', w_count)
+                        # w_count += 1
+                        # print('wcount:', w_count)
                         if w_count > width:  # stop if it's to large
-#                             print('_more than width_')
+                            # print('_more than width_')
                             break
                         if first:
                             length_ = length_
@@ -528,7 +591,7 @@ class FontWrapper(Marker):
                                                 'region_{:03d}'.format(reg)]:
                                             self.conn_pack[
                                                 'region_{:03d}'.format(reg)
-                                                ].append(vl)
+                                            ].append(vl)
                         init = False
                         if sub:
                             # print(self.conn_pack['region_{:03d}'.format(reg)])
@@ -559,7 +622,7 @@ class FontWrapper(Marker):
                                                 'region_{:03d}'.format(reg)]:
                                             self.conn_pack[
                                                 'region_{:03d}'.format(reg)
-                                                ].append(vl)
+                                            ].append(vl)
                         sub = False
 
                         if not sub and not init:
@@ -577,7 +640,7 @@ class FontWrapper(Marker):
                                 = self.conn_pack['region_{:03d}'.format(reg)]
                     if not right and not left:
                         final_conn_pack['region_{:03d}'.format(reg)] \
-                                = self.conn_pack['region_{:03d}'.format(reg)]
+                            = self.conn_pack['region_{:03d}'.format(reg)]
                     reg += 1
                     if view:
                         cv2.imshow('eight conn process', image_process)
@@ -585,8 +648,7 @@ class FontWrapper(Marker):
                         cv2.waitKey(0)
 
         return final_conn_pack
-    
-    
+
     def vertical_projection(self, image_v):
         image = image_v.copy()
         image[image < 127] = 1
@@ -603,140 +665,24 @@ class FontWrapper(Marker):
 
         return self.h_projection
 
-#     def detect_horizontal_line(self, image, pixel_limit_ste, pixel_limit_ets,
-#                                view=True):
-#         # Detect line horizontal
-#         if len(image.shape) == 3:
-#             height, width, _ = image.shape
-#             # color_temp = image.copy()
-#         else:
-#             height, width = image.shape
-#         h_projection = self.h_projection
-#         up_flag = 0
-#         down_flag = 0
-#         # pixel_limit = 5
-#         start_to_end = 0
-#         end_to_start = pixel_limit_ets + 1
-#         start_point = []
-#         for x in range(len(h_projection)):
-#             if h_projection[x] > 0 and up_flag == 1:
-#                 start_to_end += 1
+    def detect_horizontal_line_up_down(self, h_projection):
+        # Detect line horizontal
+        start_point = []
+        for x in range(len(h_projection)):
+            if h_projection[x] > 0:
+                start_point.append(x)
+                break
 
-#             if h_projection[x] == 0 and up_flag == 1:
-# #                 print(start_to_end)
-#                 start_point.append(x)
-# #                 print(start_point)
-#                 if start_to_end < pixel_limit_ste:
-#                     del(start_point[len(start_point) - 1])
-# #                     print('delete ste')
-#                     down_flag = 0
-#                     up_flag = 1
-#                 else:
-#                     down_flag = 1
-#                     up_flag = 0
-#                     start_to_end = 0
+        for x in range(len(h_projection))[::-1]:
+            if h_projection[x] > 0:
+                start_point.append(x)
+                break
 
-#             if h_projection[x] == 0 and down_flag == 1:
-#                 end_to_start += 1
+        if len(start_point) % 2 != 0:
+            if h_projection[len(h_projection) - 1] > 0:
+                start_point.append(len(h_projection) - 1)
 
-#             if h_projection[x] > 0 and up_flag == 0:
-#                 start_point.append(x)
-# #                 print(start_point)
-#                 if end_to_start < pixel_limit_ets:
-# #                     print('ff')
-#                     del(start_point[len(start_point)-1])
-#                     del(start_point[len(start_point)-1])
-#                 up_flag = 1
-#                 down_flag = 0
-#                 end_to_start = 0
-
-#         if len(start_point) % 2 != 0:
-#             if h_projection[len(h_projection) - 1] > 0 or len(start_point)==1:
-#                 start_point.append(len(h_projection) - 1)
-#         print('start point from mess:', start_point)
-#         self.start_point_h = [start_point[0], start_point[1]]
-
-#         # Even is begining of line and Odd is end of line
-#         if view:
-#             for x in range(0, 2):
-#                 if x % 2 == 0:     # Start_point
-#                     cv2.line(image, (0, start_point[x]),
-#                              (width, start_point[x]), (100, 150, 0), 2)
-#                     # print(x)
-#                 else:         # End_point
-#                     cv2.line(image, (0, start_point[x]),
-#                              (width, start_point[x]), (100, 150, 0), 2)
-# #             cv2.imshow('horizontal line', image)
-# #             cv2.waitKey(0)
-        
-#         return image
-    
-#     def detect_horizontal_line(self, image, pixel_limit_ste, pixel_limit_ets,
-#                                view=True):
-#         # Detect line horizontal
-#         if len(image.shape) == 3:
-#             height, width, _ = image.shape
-#             # color_temp = image.copy()
-#         else:
-#             height, width = image.shape
-#         h_projection = self.h_projection
-#         up_flag = 0
-#         down_flag = 0
-#         # pixel_limit = 5
-#         start_to_end = 0
-#         end_to_start = pixel_limit_ets + 1
-#         start_point = []
-#         for x in range(len(h_projection)):
-#             if up_flag == 1:
-#                 start_to_end += 1
-
-#             if h_projection[x] == 0 and up_flag == 1:
-# #                 print(start_to_end)
-#                 start_point.append(x)
-# #                 print(start_point)
-#                 if start_to_end < pixel_limit_ste:
-#                     del(start_point[len(start_point) - 1])
-# #                     print('delete ste')
-#                     down_flag = 0
-#                     up_flag = 1
-#                 else:
-#                     down_flag = 1
-#                     up_flag = 0
-#                     start_to_end = 0
-
-#             if down_flag == 1:
-#                 end_to_start += 1
-
-#             if h_projection[x] > 0 and up_flag == 0:
-#                 start_point.append(x)
-# #                 print(start_point)
-#                 up_flag = 1
-#                 down_flag = 0
-#                 end_to_start = 0
-
-#         if len(start_point) % 2 != 0:
-#             if h_projection[len(h_projection) - 1] > 0 or len(start_point)==1:
-#                 start_point.append(len(h_projection) - 1)
-#         print('start point from mess:', start_point)
-#         if len(start_point) > 0:
-#             self.start_point_h = [start_point[0], start_point[1]]
-#         else:
-#             self.start_point_h = []
-
-#         # Even is begining of line and Odd is end of line
-#         if view and len(start_point) > 0:
-#             for x in range(0, 2):
-#                 if x % 2 == 0:     # Start_point
-#                     cv2.line(image, (0, start_point[x]),
-#                              (width, start_point[x]), (100, 150, 0), 2)
-#                     # print(x)
-#                 else:         # End_point
-#                     cv2.line(image, (0, start_point[x]),
-#                              (width, start_point[x]), (100, 150, 0), 2)
-# #             cv2.imshow('horizontal line', image)
-# #             cv2.waitKey(0)
-        
-#         return image
+        return start_point
 
     def detect_horizontal_line(self, image, pixel_limit_ste, pixel_limit_ets,
                                view=True):
@@ -766,7 +712,7 @@ class FontWrapper(Marker):
 #             if h_projection[len(h_projection) - 1] > 0 or len(start_point)==1:
 #                 start_point.append(len(h_projection) - 1)
         if len(start_point) % 2 != 0:
-            if h_projection[len(h_projection) - 1] > 0 or len(start_point)==1:
+            if h_projection[len(h_projection) - 1] > 0 or len(start_point) == 1:
                 start_point.append(len(h_projection) - 1)
         # print('start point from mess:', start_point)
         if len(start_point) > 0:
@@ -786,9 +732,9 @@ class FontWrapper(Marker):
                              (width, start_point[x]), (100, 150, 0), 2)
 #             cv2.imshow('horizontal line', image)
 #             cv2.waitKey(0)
-        
+
         return image
-    
+
     def base_line(self, one_line_image, view=True):
         # Got self.base_start, self.base_end, self.one_line_image
         self.base_end = 0
@@ -821,9 +767,9 @@ class FontWrapper(Marker):
 
         if view:
             cv2.line(self.one_line_image, (0, self.base_start),
-                    (self.width, self.base_start), (0, 255, 0), 2)
+                     (self.width, self.base_start), (0, 255, 0), 2)
             cv2.line(self.one_line_image, (0, self.base_end),
-                    (self.width, self.base_end), (0, 255, 0), 2)
+                     (self.width, self.base_end), (0, 255, 0), 2)
 
     def detect_vertical_line(self, image, pixel_limit_ste, view=True):
         # Detect line vertical
@@ -888,7 +834,7 @@ class FontWrapper(Marker):
                     continue
                 if x % 2 == 0:
                     bag_of_h_crop[x] = original_image[
-                                        start_point[x]:start_point[x+1] + 1, :]
+                        start_point[x]:start_point[x+1] + 1, :]
             # print(bag_of_h_crop)
 #             if view:
 #                 for image in bag_of_h_crop:
@@ -922,457 +868,461 @@ class FontWrapper(Marker):
 #                     cv2.waitKey(0)
                     # cv2.destroyAllWindows()
             self.bag_of_v_crop = bag_of_v_crop
-        
-    def match_normal_eight_connectivity(self, image, oneline_baseline):
-        height, width = image.shape
-        image_process = image.copy()
-        # For image flag
-        image_process[:] = 255
-        oneline_height = oneline_baseline[1] - oneline_baseline[0]
-        if oneline_height <= 1:
-            oneline_height_sorted = 3
-        else:
-            oneline_height_sorted = oneline_height
-        self.conn_pack = {}
-        reg = 1
-        # Doing eight conn on every pixel one by one
-        for x in range(width):
-            for y in range(height):
-                if image_process[y, x] == 0:
-                    continue
-                if image[y, x] == 0:
-                    self.conn_pack['region_{:03d}'.format(reg)] = []
-                    x_y = self.find_connectivity(x, y, height, width, image)
-                    length_ = len(self.conn_pack['region_{:03d}'.format(reg)])
-                    for val in x_y:
-                        self.conn_pack['region_{:03d}'.format(reg)].append(val)
-                    # print(self.conn_pack['region_{:03d}'.format(reg)])
-                    # cv2.waitKey(0)
-                    first = True
-                    sub = False
-                    init = True
-                    while(True):
-                        if first:
-                            length_ = length_
-                            first = False
-                        else:
-                            length_ = l_after_sub
 
-                        if init:
-                            l_after_init = len(self.conn_pack[
-                                'region_{:03d}'.format(reg)])
-                            for k in range(length_, l_after_init):
-                                x_y_sub = self.find_connectivity(
-                                    self.conn_pack[
-                                        'region_{:03d}'.format(reg)][k][1],
-                                    self.conn_pack[
-                                        'region_{:03d}'.format(reg)][k][0],
-                                    height, width, image
-                                )
-                                if len(x_y_sub) > 1:
-                                    sub = True
-                                    for vl in x_y_sub:
-                                        if vl not in self.conn_pack[
-                                                'region_{:03d}'.format(reg)]:
-                                            self.conn_pack[
-                                                'region_{:03d}'.format(reg)
-                                                ].append(vl)
-                        init = False
-                        if sub:
-                            # print(self.conn_pack['region_{:03d}'.format(reg)])
-                            # cv2.waitKey(0)
-                            l_after_sub = len(self.conn_pack[
-                                'region_{:03d}'.format(reg)])
-                            for k in range(l_after_init, l_after_sub):
-                                x_y_sub = self.find_connectivity(
-                                    self.conn_pack[
-                                        'region_{:03d}'.format(reg)][k][1],
-                                    self.conn_pack[
-                                        'region_{:03d}'.format(reg)][k][0],
-                                    height, width, image
-                                )
-                                if len(x_y_sub) > 1:
-                                    init = True
-                                    for vl in x_y_sub:
-                                        if vl not in self.conn_pack[
-                                                'region_{:03d}'.format(reg)]:
-                                            self.conn_pack[
-                                                'region_{:03d}'.format(reg)
-                                                ].append(vl)
-                        sub = False
+#     def match_normal_eight_connectivity(self, image, oneline_baseline):
+#         height, width = image.shape
+#         image_process = image.copy()
+#         # For image flag
+#         image_process[:] = 255
+#         oneline_height = oneline_baseline[1] - oneline_baseline[0]
+#         if oneline_height <= 1:
+#             oneline_height_sorted = 3
+#         else:
+#             oneline_height_sorted = oneline_height
+#         self.conn_pack = {}
+#         reg = 1
+#         # Doing eight conn on every pixel one by one
+#         for x in range(width):
+#             for y in range(height):
+#                 if image_process[y, x] == 0:
+#                     continue
+#                 if image[y, x] == 0:
+#                     self.conn_pack['region_{:03d}'.format(reg)] = []
+#                     x_y = self.find_connectivity(x, y, height, width, image)
+#                     length_ = len(self.conn_pack['region_{:03d}'.format(reg)])
+#                     for val in x_y:
+#                         self.conn_pack['region_{:03d}'.format(reg)].append(val)
+#                     # print(self.conn_pack['region_{:03d}'.format(reg)])
+#                     # cv2.waitKey(0)
+#                     first = True
+#                     sub = False
+#                     init = True
+#                     while(True):
+#                         if first:
+#                             length_ = length_
+#                             first = False
+#                         else:
+#                             length_ = l_after_sub
 
-                        if not sub and not init:
-                            break
+#                         if init:
+#                             l_after_init = len(self.conn_pack[
+#                                 'region_{:03d}'.format(reg)])
+#                             for k in range(length_, l_after_init):
+#                                 x_y_sub = self.find_connectivity(
+#                                     self.conn_pack[
+#                                         'region_{:03d}'.format(reg)][k][1],
+#                                     self.conn_pack[
+#                                         'region_{:03d}'.format(reg)][k][0],
+#                                     height, width, image
+#                                 )
+#                                 if len(x_y_sub) > 1:
+#                                     sub = True
+#                                     for vl in x_y_sub:
+#                                         if vl not in self.conn_pack[
+#                                                 'region_{:03d}'.format(reg)]:
+#                                             self.conn_pack[
+#                                                 'region_{:03d}'.format(reg)
+#                                             ].append(vl)
+#                         init = False
+#                         if sub:
+#                             # print(self.conn_pack['region_{:03d}'.format(reg)])
+#                             # cv2.waitKey(0)
+#                             l_after_sub = len(self.conn_pack[
+#                                 'region_{:03d}'.format(reg)])
+#                             for k in range(l_after_init, l_after_sub):
+#                                 x_y_sub = self.find_connectivity(
+#                                     self.conn_pack[
+#                                         'region_{:03d}'.format(reg)][k][1],
+#                                     self.conn_pack[
+#                                         'region_{:03d}'.format(reg)][k][0],
+#                                     height, width, image
+#                                 )
+#                                 if len(x_y_sub) > 1:
+#                                     init = True
+#                                     for vl in x_y_sub:
+#                                         if vl not in self.conn_pack[
+#                                                 'region_{:03d}'.format(reg)]:
+#                                             self.conn_pack[
+#                                                 'region_{:03d}'.format(reg)
+#                                             ].append(vl)
+#                         sub = False
 
-                    for val in self.conn_pack['region_{:03d}'.format(reg)]:
-                        image_process[val] = 0
-                    reg += 1
-                    # cv2.imshow('eight conn process', image_process)
-                    # print(self.conn_pack)
-                    # cv2.waitKey(0)
+#                         if not sub and not init:
+#                             break
 
-        temp_marker = []
-        temp_delete = []
-        # Noise cancelation
-        k = 3
-        for key in self.conn_pack:
-            if len(self.conn_pack[key]) > k * oneline_height_sorted:
-                temp_marker.append(key)
-        self.conn_pack_sorted = {}
-        for mark in temp_marker:
-            self.conn_pack_sorted[mark] = (self.conn_pack[mark])
-        # If region is not in the baseline then it's not a body image
-        for key in self.conn_pack_sorted:
-            found = False
-            for reg in self.conn_pack_sorted[key]:
-                if found:
-                    break
-                # Catch region in range 2x the oneline baseline height
-                # for a better image body detection
-                for base in range(oneline_baseline[0] - oneline_height_sorted,
-                                  oneline_baseline[1]+1):
-                    if reg[0] == base:
-                        found = True
-                        break
-            if found is False:
-                temp_delete.append(key)
-        self.conn_pack_minus_body = {}
-        # Get body only and minus body region
-        for delt in temp_delete:
-            self.conn_pack_minus_body[delt] = self.conn_pack_sorted[delt]
-            del(self.conn_pack_sorted[delt])
-        # Paint body only region
-        self.image_body = image.copy()
-        self.image_body[:] = 255
-        for region in self.conn_pack_sorted:
-            value = self.conn_pack_sorted[region]  # imagebody region dict
-            for x in value:
-                self.image_body[x] = 0
+#                     for val in self.conn_pack['region_{:03d}'.format(reg)]:
+#                         image_process[val] = 0
+#                     reg += 1
+#                     # cv2.imshow('eight conn process', image_process)
+#                     # print(self.conn_pack)
+#                     # cv2.waitKey(0)
 
-        self.image_join = self.image_body.copy()
-        for region in self.conn_pack_minus_body:
-            value = self.conn_pack_minus_body[region]
-            for x in value:
-                self.image_join[x] = 0
+#         temp_marker = []
+#         temp_delete = []
+#         # Noise cancelation
+#         k = 3
+#         for key in self.conn_pack:
+#             if len(self.conn_pack[key]) > k * oneline_height_sorted:
+#                 temp_marker.append(key)
+#         self.conn_pack_sorted = {}
+#         for mark in temp_marker:
+#             self.conn_pack_sorted[mark] = (self.conn_pack[mark])
+#         # If region is not in the baseline then it's not a body image
+#         for key in self.conn_pack_sorted:
+#             found = False
+#             for reg in self.conn_pack_sorted[key]:
+#                 if found:
+#                     break
+#                 # Catch region in range 2x the oneline baseline height
+#                 # for a better image body detection
+#                 for base in range(oneline_baseline[0] - oneline_height_sorted,
+#                                   oneline_baseline[1]+1):
+#                     if reg[0] == base:
+#                         found = True
+#                         break
+#             if found is False:
+#                 temp_delete.append(key)
+#         self.conn_pack_minus_body = {}
+#         # Get body only and minus body region
+#         for delt in temp_delete:
+#             self.conn_pack_minus_body[delt] = self.conn_pack_sorted[delt]
+#             del(self.conn_pack_sorted[delt])
+#         # Paint body only region
+#         self.image_body = image.copy()
+#         self.image_body[:] = 255
+#         for region in self.conn_pack_sorted:
+#             value = self.conn_pack_sorted[region]  # imagebody region dict
+#             for x in value:
+#                 self.image_body[x] = 0
 
-        self.vertical_projection(self.image_body)
-        self.detect_vertical_line(
-            image=self.image_body.copy(),
-            pixel_limit_ste=0,
-            view=True
-        )
-        # print(self.start_point_v)
-        # Make sure every start point has an end
-        len_h = len(self.start_point_v)
-        if len_h % 2 != 0:
-            del(self.start_point_v[len_h - 1])
-        group_body_by_wall = {}
-        for x in range(len(self.start_point_v)):
-            if x % 2 == 0:
-                wall = (self.start_point_v[x], self.start_point_v[x+1])
-                group_body_by_wall[wall] = []
-                for region in self.conn_pack_sorted:
-                    value = self.conn_pack_sorted[region]
-                    for y_x in value:
-                        # Grouping image body region by its wall (x value)
-                        if self.start_point_v[x] <= y_x[1] \
-                                <= self.start_point_v[x+1]:
-                            group_body_by_wall[wall].append(region)
-                            break
-        # print(group_body_by_wall)
-        for region in group_body_by_wall.values():
-            max_length = 0
-            if len(region) > 1:
-                for x in region:
-                    if len(self.conn_pack_sorted[x]) > max_length:
-                        max_length = len(self.conn_pack_sorted[x])
-                for x in region:
-                    # Fixing hamzah dumping out from image body problem
-                    sorted_region_val = sorted(self.conn_pack_sorted[x])
-                    y_up_region = sorted_region_val[0][0]
-                    region_height = oneline_baseline[0] - y_up_region
-                    # Check how long the char from above the baseline
-                    if region_height > 3 * oneline_height_sorted:
-                        continue
-                    # If region is not 1/4 of the max length then move it
-                    # from image body to marker only
-                    # NB. why just not using the longest reg to sort? coz when
-                    # it does there's a case where two separate words
-                    # overlapping each other by a tiny margin (no white space)
-                    elif len(self.conn_pack_sorted[x]) < 1/4*max_length:
-                        self.conn_pack_minus_body[x] = self.conn_pack_sorted[x]
-                        del(self.conn_pack_sorted[x])
+#         self.image_join = self.image_body.copy()
+#         for region in self.conn_pack_minus_body:
+#             value = self.conn_pack_minus_body[region]
+#             for x in value:
+#                 self.image_join[x] = 0
 
-        self.image_final_sorted = image.copy()
-        self.image_final_sorted[:] = 255
-        for region in self.conn_pack_sorted:
-            value = self.conn_pack_sorted[region]
-            for x in value:
-                self.image_final_sorted[x] = 0
-#         cv2.imshow('image final sorted', self.image_final_sorted)
-        self.image_final_marker = image.copy()
-        self.image_final_marker[:] = 255
-        for region in self.conn_pack_minus_body:
-            value = self.conn_pack_minus_body[region]
-            for x in value:
-                self.image_final_marker[x] = 0
-#         cv2.imshow('image final marker', self.image_final_marker)
-#         cv2.waitKey(0)
+#         self.vertical_projection(self.image_body)
+#         self.detect_vertical_line(
+#             image=self.image_body.copy(),
+#             pixel_limit_ste=0,
+#             view=True
+#         )
+#         # print(self.start_point_v)
+#         # Make sure every start point has an end
+#         len_h = len(self.start_point_v)
+#         if len_h % 2 != 0:
+#             del(self.start_point_v[len_h - 1])
+#         group_body_by_wall = {}
+#         for x in range(len(self.start_point_v)):
+#             if x % 2 == 0:
+#                 wall = (self.start_point_v[x], self.start_point_v[x+1])
+#                 group_body_by_wall[wall] = []
+#                 for region in self.conn_pack_sorted:
+#                     value = self.conn_pack_sorted[region]
+#                     for y_x in value:
+#                         # Grouping image body region by its wall (x value)
+#                         if self.start_point_v[x] <= y_x[1] \
+#                                 <= self.start_point_v[x+1]:
+#                             group_body_by_wall[wall].append(region)
+#                             break
+#         # print(group_body_by_wall)
+#         for region in group_body_by_wall.values():
+#             max_length = 0
+#             if len(region) > 1:
+#                 for x in region:
+#                     if len(self.conn_pack_sorted[x]) > max_length:
+#                         max_length = len(self.conn_pack_sorted[x])
+#                 for x in region:
+#                     # Fixing hamzah dumping out from image body problem
+#                     sorted_region_val = sorted(self.conn_pack_sorted[x])
+#                     y_up_region = sorted_region_val[0][0]
+#                     region_height = oneline_baseline[0] - y_up_region
+#                     # Check how long the char from above the baseline
+#                     if region_height > 3 * oneline_height_sorted:
+#                         continue
+#                     # If region is not 1/4 of the max length then move it
+#                     # from image body to marker only
+#                     # NB. why just not using the longest reg to sort? coz when
+#                     # it does there's a case where two separate words
+#                     # overlapping each other by a tiny margin (no white space)
+#                     elif len(self.conn_pack_sorted[x]) < 1/4*max_length:
+#                         self.conn_pack_minus_body[x] = self.conn_pack_sorted[x]
+#                         del(self.conn_pack_sorted[x])
 
-    def grouping_marker(self):
-        img_body_v_proj = self.start_point_v
-        # Make sure every start point has an end
-        len_h = len(img_body_v_proj)
-        if len_h % 2 != 0:
-            del(img_body_v_proj[len_h - 1])
-        self.group_marker_by_wall = {}
-        for x_x in range(len(img_body_v_proj)):
-            if x_x % 2 == 0:
-                wall = (img_body_v_proj[x_x], img_body_v_proj[x_x+1])
-                self.group_marker_by_wall[wall] = []
-        for region in self.conn_pack_minus_body:
-            value = self.conn_pack_minus_body[region]
-            x_y_value = []
-            # Flip (y,x) to (x,y) and sort
-            for x in value:
-                x_y_value.append(x[::-1])
-            x_y_value = sorted(x_y_value)
-            # print(x_y_value)
-            x_y_value_l = []
-            for val in range(round(len(x_y_value)/2)):
-                x_y_value_l.append(x_y_value[0])
-                del(x_y_value[0])
-            x_y_value_l = x_y_value_l[::-1]
-            # print(x_y_value_l)
-            # print('_________________')
-            # print(x_y_value)
-            x_y_value_from_mid = []
-            count = -1
-            for x_1 in x_y_value:
-                count += 1
-                x_y_value_from_mid.append(x_1)
-                for x_2 in x_y_value_l:
-                    if count < len(x_y_value_l):
-                        x_y_value_from_mid.append(x_y_value_l[count])
-                    break
+#         self.image_final_sorted = image.copy()
+#         self.image_final_sorted[:] = 255
+#         for region in self.conn_pack_sorted:
+#             value = self.conn_pack_sorted[region]
+#             for x in value:
+#                 self.image_final_sorted[x] = 0
+# #         cv2.imshow('image final sorted', self.image_final_sorted)
+#         self.image_final_marker = image.copy()
+#         self.image_final_marker[:] = 255
+#         for region in self.conn_pack_minus_body:
+#             value = self.conn_pack_minus_body[region]
+#             for x in value:
+#                 self.image_final_marker[x] = 0
+# #         cv2.imshow('image final marker', self.image_final_marker)
+# #         cv2.waitKey(0)
 
-            for x_x in range(len(img_body_v_proj)):
-                if x_x % 2 == 0:
-                    wall = (img_body_v_proj[x_x], img_body_v_proj[x_x+1])
-                    for x in x_y_value_from_mid:
-                        if wall[0] <= x[0] <= wall[1]:
-                            self.group_marker_by_wall[wall].append(region)
-                            break
-#         print('Group marker by wall')
-#         print(self.group_marker_by_wall)
+#     def grouping_marker(self):
+#         img_body_v_proj = self.start_point_v
+#         # Make sure every start point has an end
+#         len_h = len(img_body_v_proj)
+#         if len_h % 2 != 0:
+#             del(img_body_v_proj[len_h - 1])
+#         self.group_marker_by_wall = {}
+#         for x_x in range(len(img_body_v_proj)):
+#             if x_x % 2 == 0:
+#                 wall = (img_body_v_proj[x_x], img_body_v_proj[x_x+1])
+#                 self.group_marker_by_wall[wall] = []
+#         for region in self.conn_pack_minus_body:
+#             value = self.conn_pack_minus_body[region]
+#             x_y_value = []
+#             # Flip (y,x) to (x,y) and sort
+#             for x in value:
+#                 x_y_value.append(x[::-1])
+#             x_y_value = sorted(x_y_value)
+#             # print(x_y_value)
+#             x_y_value_l = []
+#             for val in range(round(len(x_y_value)/2)):
+#                 x_y_value_l.append(x_y_value[0])
+#                 del(x_y_value[0])
+#             x_y_value_l = x_y_value_l[::-1]
+#             # print(x_y_value_l)
+#             # print('_________________')
+#             # print(x_y_value)
+#             x_y_value_from_mid = []
+#             count = -1
+#             for x_1 in x_y_value:
+#                 count += 1
+#                 x_y_value_from_mid.append(x_1)
+#                 for x_2 in x_y_value_l:
+#                     if count < len(x_y_value_l):
+#                         x_y_value_from_mid.append(x_y_value_l[count])
+#                     break
 
-    def modified_eight_connectivity(self, image, oneline_baseline):
-        height, width = image.shape
-        image_process = image.copy()
-        # For image flag
-        image_process[:] = 255
-        oneline_height = oneline_baseline[1] - oneline_baseline[0]
-        if oneline_height <= 1:
-            oneline_height_sorted = 3
-        else:
-            oneline_height_sorted = oneline_height
-        self.conn_pack = {}
-        reg = 1
-        # Doing eight conn on every pixel one by one
-        for x in range(width):
-            for y in range(height):
-                if image_process[y, x] == 0:
-                    continue
-                if image[y, x] == 0:
-                    self.conn_pack['region_{:03d}'.format(reg)] = []
-                    x_y = self.find_connectivity(x, y, height, width, image)
-                    length_ = len(self.conn_pack['region_{:03d}'.format(reg)])
-                    for val in x_y:
-                        self.conn_pack['region_{:03d}'.format(reg)].append(val)
-                    # print(self.conn_pack['region_{:03d}'.format(reg)])
-                    # cv2.waitKey(0)
-                    first = True
-                    sub = False
-                    init = True
-                    while(True):
-                        if first:
-                            length_ = length_
-                            first = False
-                        else:
-                            length_ = l_after_sub
+#             for x_x in range(len(img_body_v_proj)):
+#                 if x_x % 2 == 0:
+#                     wall = (img_body_v_proj[x_x], img_body_v_proj[x_x+1])
+#                     for x in x_y_value_from_mid:
+#                         if wall[0] <= x[0] <= wall[1]:
+#                             self.group_marker_by_wall[wall].append(region)
+#                             break
+# #         print('Group marker by wall')
+# #         print(self.group_marker_by_wall)
 
-                        if init:
-                            l_after_init = len(self.conn_pack[
-                                'region_{:03d}'.format(reg)])
-                            for k in range(length_, l_after_init):
-                                x_y_sub = self.find_connectivity(
-                                    self.conn_pack[
-                                        'region_{:03d}'.format(reg)][k][1],
-                                    self.conn_pack[
-                                        'region_{:03d}'.format(reg)][k][0],
-                                    height, width, image
-                                )
-                                if len(x_y_sub) > 1:
-                                    sub = True
-                                    for vl in x_y_sub:
-                                        if vl not in self.conn_pack[
-                                                'region_{:03d}'.format(reg)]:
-                                            self.conn_pack[
-                                                'region_{:03d}'.format(reg)
-                                                ].append(vl)
-                        init = False
-                        if sub:
-                            # print(self.conn_pack['region_{:03d}'.format(reg)])
-                            # cv2.waitKey(0)
-                            l_after_sub = len(self.conn_pack[
-                                'region_{:03d}'.format(reg)])
-                            for k in range(l_after_init, l_after_sub):
-                                x_y_sub = self.find_connectivity(
-                                    self.conn_pack[
-                                        'region_{:03d}'.format(reg)][k][1],
-                                    self.conn_pack[
-                                        'region_{:03d}'.format(reg)][k][0],
-                                    height, width, image
-                                )
-                                if len(x_y_sub) > 1:
-                                    init = True
-                                    for vl in x_y_sub:
-                                        if vl not in self.conn_pack[
-                                                'region_{:03d}'.format(reg)]:
-                                            self.conn_pack[
-                                                'region_{:03d}'.format(reg)
-                                                ].append(vl)
-                        sub = False
+#     def modified_eight_connectivity(self, image, oneline_baseline):
+#         height, width = image.shape
+#         image_process = image.copy()
+#         # For image flag
+#         image_process[:] = 255
+#         oneline_height = oneline_baseline[1] - oneline_baseline[0]
+#         if oneline_height <= 1:
+#             oneline_height_sorted = 3
+#         else:
+#             oneline_height_sorted = oneline_height
+#         self.conn_pack = {}
+#         reg = 1
+#         # Doing eight conn on every pixel one by one
+#         for x in range(width):
+#             for y in range(height):
+#                 if image_process[y, x] == 0:
+#                     continue
+#                 if image[y, x] == 0:
+#                     self.conn_pack['region_{:03d}'.format(reg)] = []
+#                     x_y = self.find_connectivity(x, y, height, width, image)
+#                     length_ = len(self.conn_pack['region_{:03d}'.format(reg)])
+#                     for val in x_y:
+#                         self.conn_pack['region_{:03d}'.format(reg)].append(val)
+#                     # print(self.conn_pack['region_{:03d}'.format(reg)])
+#                     # cv2.waitKey(0)
+#                     first = True
+#                     sub = False
+#                     init = True
+#                     while(True):
+#                         if first:
+#                             length_ = length_
+#                             first = False
+#                         else:
+#                             length_ = l_after_sub
 
-                        if not sub and not init:
-                            break
+#                         if init:
+#                             l_after_init = len(self.conn_pack[
+#                                 'region_{:03d}'.format(reg)])
+#                             for k in range(length_, l_after_init):
+#                                 x_y_sub = self.find_connectivity(
+#                                     self.conn_pack[
+#                                         'region_{:03d}'.format(reg)][k][1],
+#                                     self.conn_pack[
+#                                         'region_{:03d}'.format(reg)][k][0],
+#                                     height, width, image
+#                                 )
+#                                 if len(x_y_sub) > 1:
+#                                     sub = True
+#                                     for vl in x_y_sub:
+#                                         if vl not in self.conn_pack[
+#                                                 'region_{:03d}'.format(reg)]:
+#                                             self.conn_pack[
+#                                                 'region_{:03d}'.format(reg)
+#                                             ].append(vl)
+#                         init = False
+#                         if sub:
+#                             # print(self.conn_pack['region_{:03d}'.format(reg)])
+#                             # cv2.waitKey(0)
+#                             l_after_sub = len(self.conn_pack[
+#                                 'region_{:03d}'.format(reg)])
+#                             for k in range(l_after_init, l_after_sub):
+#                                 x_y_sub = self.find_connectivity(
+#                                     self.conn_pack[
+#                                         'region_{:03d}'.format(reg)][k][1],
+#                                     self.conn_pack[
+#                                         'region_{:03d}'.format(reg)][k][0],
+#                                     height, width, image
+#                                 )
+#                                 if len(x_y_sub) > 1:
+#                                     init = True
+#                                     for vl in x_y_sub:
+#                                         if vl not in self.conn_pack[
+#                                                 'region_{:03d}'.format(reg)]:
+#                                             self.conn_pack[
+#                                                 'region_{:03d}'.format(reg)
+#                                             ].append(vl)
+#                         sub = False
 
-                    for val in self.conn_pack['region_{:03d}'.format(reg)]:
-                        image_process[val] = 0
-                    reg += 1
-                    # cv2.imshow('eight conn process', image_process)
-                    # print(self.conn_pack)
-                    # cv2.waitKey(0)
+#                         if not sub and not init:
+#                             break
 
-        temp_marker = []
-        temp_delete = []
-        # Noise cancelation
-        k = 3
-        for key in self.conn_pack:
-            if len(self.conn_pack[key]) > k * oneline_height_sorted:
-                temp_marker.append(key)
-        self.conn_pack_sorted = {}
-        for mark in temp_marker:
-            self.conn_pack_sorted[mark] = (self.conn_pack[mark])
-        # If region is not in the baseline then it's not a body image
-        for key in self.conn_pack_sorted:
-            found = False
-            for reg in self.conn_pack_sorted[key]:
-                if found:
-                    break
-                # Catch region in range 2x the oneline baseline height
-                # for a better image body detection
-                for base in range(oneline_baseline[0],
-                                  oneline_baseline[1]+1):
-                    if reg[0] == base:
-                        found = True
-                        break
-            if found is False:
-                temp_delete.append(key)
-        self.conn_pack_minus_body = {}
-        # Get body only and minus body region
-        for delt in temp_delete:
-            self.conn_pack_minus_body[delt] = self.conn_pack_sorted[delt]
-            del(self.conn_pack_sorted[delt])
-        # Paint body only region
-        self.image_body = image.copy()
-        self.image_body[:] = 255
-        for region in self.conn_pack_sorted:
-            value = self.conn_pack_sorted[region]  # imagebody region dict
-            for x in value:
-                self.image_body[x] = 0
+#                     for val in self.conn_pack['region_{:03d}'.format(reg)]:
+#                         image_process[val] = 0
+#                     reg += 1
+#                     # cv2.imshow('eight conn process', image_process)
+#                     # print(self.conn_pack)
+#                     # cv2.waitKey(0)
 
-        self.image_join = self.image_body.copy()
-        for region in self.conn_pack_minus_body:
-            value = self.conn_pack_minus_body[region]
-            for x in value:
-                self.image_join[x] = 0
+#         temp_marker = []
+#         temp_delete = []
+#         # Noise cancelation
+#         k = 3
+#         for key in self.conn_pack:
+#             if len(self.conn_pack[key]) > k * oneline_height_sorted:
+#                 temp_marker.append(key)
+#         self.conn_pack_sorted = {}
+#         for mark in temp_marker:
+#             self.conn_pack_sorted[mark] = (self.conn_pack[mark])
+#         # If region is not in the baseline then it's not a body image
+#         for key in self.conn_pack_sorted:
+#             found = False
+#             for reg in self.conn_pack_sorted[key]:
+#                 if found:
+#                     break
+#                 # Catch region in range 2x the oneline baseline height
+#                 # for a better image body detection
+#                 for base in range(oneline_baseline[0],
+#                                   oneline_baseline[1]+1):
+#                     if reg[0] == base:
+#                         found = True
+#                         break
+#             if found is False:
+#                 temp_delete.append(key)
+#         self.conn_pack_minus_body = {}
+#         # Get body only and minus body region
+#         for delt in temp_delete:
+#             self.conn_pack_minus_body[delt] = self.conn_pack_sorted[delt]
+#             del(self.conn_pack_sorted[delt])
+#         # Paint body only region
+#         self.image_body = image.copy()
+#         self.image_body[:] = 255
+#         for region in self.conn_pack_sorted:
+#             value = self.conn_pack_sorted[region]  # imagebody region dict
+#             for x in value:
+#                 self.image_body[x] = 0
 
-        self.vertical_projection(self.image_body)
-        self.detect_vertical_line(
-            image=self.image_body.copy(),
-            pixel_limit_ste=0,
-            view=True
-        )
-        # print(self.start_point_v)
-        # Make sure every start point has an end
-        len_h = len(self.start_point_v)
-        if len_h % 2 != 0:
-            del(self.start_point_v[len_h - 1])
-        group_body_by_wall = {}
-        for x in range(len(self.start_point_v)):
-            if x % 2 == 0:
-                wall = (self.start_point_v[x], self.start_point_v[x+1])
-                group_body_by_wall[wall] = []
-                for region in self.conn_pack_sorted:
-                    value = self.conn_pack_sorted[region]
-                    for y_x in value:
-                        # Grouping image body region by its wall (x value)
-                        if self.start_point_v[x] <= y_x[1] \
-                                <= self.start_point_v[x+1]:
-                            group_body_by_wall[wall].append(region)
-                            break
-        # print(group_body_by_wall)
-        for region in group_body_by_wall.values():
-            max_length = 0
-            if len(region) > 1:
-                for x in region:
-                    if len(self.conn_pack_sorted[x]) > max_length:
-                        max_length = len(self.conn_pack_sorted[x])
-                for x in region:
-                    # Fixing hamzah dumping out from image body problem
-                    sorted_region_val = sorted(self.conn_pack_sorted[x])
-                    y_up_region = sorted_region_val[0][0]
-                    region_height = oneline_baseline[0] - y_up_region
-                    # Check how long the char from above the baseline
-                    if region_height > 3 * oneline_height_sorted:
-                        continue
-                    # If region is not 1/4 of the max length then move it
-                    # from image body to marker only
-                    # NB. why just not using the longest reg to sort? coz when
-                    # it does there's a case where two separate words
-                    # overlapping each other by a tiny margin (no white space)
-                    elif len(self.conn_pack_sorted[x]) < 1/4*max_length:
-                        self.conn_pack_minus_body[x] = self.conn_pack_sorted[x]
-                        del(self.conn_pack_sorted[x])
+#         self.image_join = self.image_body.copy()
+#         for region in self.conn_pack_minus_body:
+#             value = self.conn_pack_minus_body[region]
+#             for x in value:
+#                 self.image_join[x] = 0
 
-        self.image_final_sorted = image.copy()
-        self.image_final_sorted[:] = 255
-        for region in self.conn_pack_sorted:
-            value = self.conn_pack_sorted[region]
-            for x in value:
-                self.image_final_sorted[x] = 0
-#         cv2.imshow('image final sorted', self.image_final_sorted)
-        self.image_final_marker = image.copy()
-        self.image_final_marker[:] = 255
-        for region in self.conn_pack_minus_body:
-            value = self.conn_pack_minus_body[region]
-            for x in value:
-                self.image_final_marker[x] = 0
-#         cv2.imshow('image final marker', self.image_final_marker)
-#         cv2.waitKey(0)
+#         self.vertical_projection(self.image_body)
+#         self.detect_vertical_line(
+#             image=self.image_body.copy(),
+#             pixel_limit_ste=0,
+#             view=True
+#         )
+#         # print(self.start_point_v)
+#         # Make sure every start point has an end
+#         len_h = len(self.start_point_v)
+#         if len_h % 2 != 0:
+#             del(self.start_point_v[len_h - 1])
+#         group_body_by_wall = {}
+#         for x in range(len(self.start_point_v)):
+#             if x % 2 == 0:
+#                 wall = (self.start_point_v[x], self.start_point_v[x+1])
+#                 group_body_by_wall[wall] = []
+#                 for region in self.conn_pack_sorted:
+#                     value = self.conn_pack_sorted[region]
+#                     for y_x in value:
+#                         # Grouping image body region by its wall (x value)
+#                         if self.start_point_v[x] <= y_x[1] \
+#                                 <= self.start_point_v[x+1]:
+#                             group_body_by_wall[wall].append(region)
+#                             break
+#         # print(group_body_by_wall)
+#         for region in group_body_by_wall.values():
+#             max_length = 0
+#             if len(region) > 1:
+#                 for x in region:
+#                     if len(self.conn_pack_sorted[x]) > max_length:
+#                         max_length = len(self.conn_pack_sorted[x])
+#                 for x in region:
+#                     # Fixing hamzah dumping out from image body problem
+#                     sorted_region_val = sorted(self.conn_pack_sorted[x])
+#                     y_up_region = sorted_region_val[0][0]
+#                     region_height = oneline_baseline[0] - y_up_region
+#                     # Check how long the char from above the baseline
+#                     if region_height > 3 * oneline_height_sorted:
+#                         continue
+#                     # If region is not 1/4 of the max length then move it
+#                     # from image body to marker only
+#                     # NB. why just not using the longest reg to sort? coz when
+#                     # it does there's a case where two separate words
+#                     # overlapping each other by a tiny margin (no white space)
+#                     elif len(self.conn_pack_sorted[x]) < 1/4*max_length:
+#                         self.conn_pack_minus_body[x] = self.conn_pack_sorted[x]
+#                         del(self.conn_pack_sorted[x])
+
+#         self.image_final_sorted = image.copy()
+#         self.image_final_sorted[:] = 255
+#         for region in self.conn_pack_sorted:
+#             value = self.conn_pack_sorted[region]
+#             for x in value:
+#                 self.image_final_sorted[x] = 0
+# #         cv2.imshow('image final sorted', self.image_final_sorted)
+#         self.image_final_marker = image.copy()
+#         self.image_final_marker[:] = 255
+#         for region in self.conn_pack_minus_body:
+#             value = self.conn_pack_minus_body[region]
+#             for x in value:
+#                 self.image_final_marker[x] = 0
+# #         cv2.imshow('image final marker', self.image_final_marker)
+# #         cv2.waitKey(0)
 
     def dot_checker(self, image_marker):
         # Dot detection
         next_step = False
         self.horizontal_projection(image_marker)
-        self.detect_horizontal_line(image_marker.copy(), 0, 0, False)
-        if len(self.start_point_h) > 1:
-            one_marker = image_marker[self.start_point_h[0]:
-                                      self.start_point_h[1], :]
+        # self.detect_horizontal_line(image_marker.copy(), 0, 0, False)
+        start_point = self.detect_horizontal_line_up_down(self.h_projection)
+        # if len(self.start_point_h) > 1:
+        if len(start_point) > 1:
+            # one_marker = image_marker[self.start_point_h[0]:
+            #                           self.start_point_h[1], :]
+            one_marker = image_marker[start_point[0]:
+                                      start_point[1], :]
             self.vertical_projection(one_marker)
             self.detect_vertical_line(one_marker.copy(), 0, False)
-            if len(self.start_point_v) >1:
+            if len(self.start_point_v) > 1:
                 x1 = self.start_point_v[0]
                 x2 = self.start_point_v[1]
                 one_marker = one_marker[:, x1:x2]
@@ -1388,7 +1338,7 @@ class FontWrapper(Marker):
             # Square, Portrait or Landscape image
             if width < scale * height:
                 if height < scale * width:
-    #                 print('_square_')
+                    #                 print('_square_')
                     black = False
                     white = False
                     middle_hole = False
@@ -1401,7 +1351,7 @@ class FontWrapper(Marker):
                         if white and one_marker[y, round(width/2)] == 0:
                             middle_hole = True
                     if middle_hole:
-    #                     print('_white hole in the middle_')
+                        #                     print('_white hole in the middle_')
                         write_canvas = False
                     else:
                         # Checking all pixel
@@ -1423,7 +1373,7 @@ class FontWrapper(Marker):
                                     white_hole = True
                                     break
                         if white_hole:
-    #                         print('_there is a hole_')
+                            #                         print('_there is a hole_')
                             write_canvas = False
                         else:
                             # Check on 1/4 till 3/4 region
@@ -1448,10 +1398,10 @@ class FontWrapper(Marker):
                                         too_many_whites = True
                                         break
                                 if too_many_whites:
-    #                                 print('_too many white value in 1/5 till 1/2_')
+                                    #                                 print('_too many white value in 1/5 till 1/2_')
                                     write_canvas = False
                                 else:
-    #                                 print('_DOT CONFIRM_')
+                                    #                                 print('_DOT CONFIRM_')
                                     write_canvas = True
     #                         else:
     #                             print('not touching')
@@ -1513,13 +1463,13 @@ class FontWrapper(Marker):
                             if bw_count > bw_max:
                                 bw_max = bw_count
                         if bwb_count >= bwb_thresh and bwb_down and bw_max < 3:
-    #                         print('_KAF HAMZAH CONFIRM_')
+                            #                         print('_KAF HAMZAH CONFIRM_')
                             write_canvas = True
                         else:
-    #                         print('_also not kaf hamzah_')
+                            #                         print('_also not kaf hamzah_')
                             write_canvas = False
                 else:
-    #                 print('_portrait image_')
+                    #                 print('_portrait image_')
                     # Split image into two vertically and looking for bwb
                     # (Kaf Hamzah)
                     bwb_up = False
@@ -1551,12 +1501,12 @@ class FontWrapper(Marker):
                                 bwb_down = True
                                 break
                     if bwb_up and bwb_down:
-    #                     print('_KAF HAMZAH CONFIRM_')
+                        #                     print('_KAF HAMZAH CONFIRM_')
                         write_canvas = True
                     else:
                         write_canvas = False
             else:
-    #             print('_landscape image_')
+                #             print('_landscape image_')
                 black = False
                 white = False
                 wbw_confirm = False
@@ -1573,10 +1523,10 @@ class FontWrapper(Marker):
                         over_pattern = True
                         break
                 if over_pattern:
-    #                 print('_too many wbw + b_')
+                    #                 print('_too many wbw + b_')
                     write_canvas = False
                 elif wbw_confirm:
-    #                 print('_mid is wbw_')
+                    #                 print('_mid is wbw_')
                     too_many_white_val = False
                     # cut in the middle up vertically wether the pixel all white
                     for x in range(round(width/5), round(width/3)):
@@ -1588,12 +1538,13 @@ class FontWrapper(Marker):
                             too_many_white_val = True
                             break
                     if too_many_white_val:
-    #                     print('_too many white val in 1/5 till 1/3_')
+                        #                     print('_too many white val in 1/5 till 1/3_')
                         write_canvas = False
                     else:
                         half_img = one_marker[:, 0:round(width/2)]
                         self.horizontal_projection(half_img)
-                        self.detect_horizontal_line(half_img.copy(), 0, 0, True)
+                        self.detect_horizontal_line(
+                            half_img.copy(), 0, 0, True)
                         half_img = one_marker[
                             self.start_point_h[0]:self.start_point_h[1],
                             0:round(width/2)
@@ -1615,13 +1566,13 @@ class FontWrapper(Marker):
                             if touch_up and touch_down:
                                 break
                         if touch_up and touch_down:
-    #                         print('_DOT CONFIRM_')
+                            #                         print('_DOT CONFIRM_')
                             write_canvas = True
                         else:
-    #                         print('_not touching_')
+                            #                         print('_not touching_')
                             write_canvas = False
                 else:
-    #                 print('_middle is not wbw_')
+                    #                 print('_middle is not wbw_')
                     write_canvas = False
                     # Split image into two vertically and looking for bwb
                     # (Kaf Hamzah)
@@ -1654,7 +1605,7 @@ class FontWrapper(Marker):
                                 bwb_down = True
                                 break
                     if bwb_up and bwb_down:
-    #                     print('_KAF HAMZAH CONFIRM_')
+                        #                     print('_KAF HAMZAH CONFIRM_')
                         write_canvas = True
                     else:
                         write_canvas = False
@@ -1728,7 +1679,7 @@ class FontWrapper(Marker):
 #                                          'mim_end': 0.65},
 #                             loc_list=loc_list_PDMS, image_loc=imagePath,
 #                             image=image, visualize=False, nms_thresh=0.3)
-    
+
 #     # AlKareem_Font
 #     loc_list_AlKareem = sorted(glob.glob('./marker/AlKareem/*.png'))
 #     font_AlKareem = FontWrapper(thresh_list={'tanwin_1': 0.7,
@@ -1778,7 +1729,7 @@ class FontWrapper(Marker):
 #                                          'mim_end': 0.8},
 #                             loc_list=loc_list_Amiri, image_loc=imagePath,
 #                             image=image, visualize=False, nms_thresh=0.3)
-    
+
 #     # Norehidayat_Font
 #     loc_list_Norehidayat = sorted(glob.glob('./marker/norehidayat/*.png'))
 #     font_Norehidayat = FontWrapper(thresh_list={'tanwin_1': 0.7,
@@ -1793,7 +1744,7 @@ class FontWrapper(Marker):
 #                                          'mim_end': 0.65},
 #                             loc_list=loc_list_Norehidayat, image_loc=imagePath,
 #                             image=image, visualize=False, nms_thresh=0.3)
-    
+
 #     # Norehira_Font
 #     loc_list_Norehira = sorted(glob.glob('./marker/norehira/*.png'))
 #     font_Norehira = FontWrapper(thresh_list={'tanwin_1': 0.9,
@@ -1809,7 +1760,7 @@ class FontWrapper(Marker):
 #                                          'mim_end': 0.65},
 #                             loc_list=loc_list_Norehira, image_loc=imagePath,
 #                             image=image, visualize=False, nms_thresh=0.3)
-    
+
 #     # Norehuda_Font
 #     loc_list_Norehuda = sorted(glob.glob('./marker/norehuda/*.png'))
 #     font_Norehuda = FontWrapper(thresh_list={'tanwin_1': 0.9,
@@ -1832,6 +1783,197 @@ class FontWrapper(Marker):
 
 #     return list_object_font
 
+# def font(imagePath, image, setting, markerPath):
+#     # LPMQ_Font
+#     # print("LPMQ")
+#     loc_list_LPMQ = sorted(glob.glob(markerPath + '/LPMQ/*.png'))
+#     font_LPMQ = FontWrapper(thresh_list={'tanwin_1': float(setting['LPMQ'][0][0]),
+#                                          'tanwin_2': float(setting['LPMQ'][0][1]),
+#                                          'nun_isolated': float(setting['LPMQ'][0][2]),
+#                                          'nun_begin_1': float(setting['LPMQ'][0][3]),
+#                                          'nun_begin_2': float(setting['LPMQ'][0][4]),
+#                                          'nun_middle': float(setting['LPMQ'][0][5]),
+#                                          'nun_end': float(setting['LPMQ'][0][6]),
+#                                          'mim_isolated': float(setting['LPMQ'][0][7]),
+#                                          'mim_begin': float(setting['LPMQ'][0][8]),
+#                                          'mim_middle': float(setting['LPMQ'][0][9]),
+#                                          'mim_end_1': float(setting['LPMQ'][0][10]),
+#                                          'mim_end_2': float(setting['LPMQ'][0][11]),},
+#                             loc_list=loc_list_LPMQ, image_loc=imagePath,
+#                             image=image, visualize=True, nms_thresh=0.3,
+#                             numstep=int(setting['LPMQ'][1]))
+#     # AlQalam_Font
+#     # print("AlQalam")
+#     loc_list_AlQalam = sorted(glob.glob(markerPath + '/AlQalam/*.png'))
+#     font_AlQalam = FontWrapper(thresh_list={'tanwin_1': float(setting['AlQalam'][0][0]),
+#                                             'tanwin_2': float(setting['AlQalam'][0][1]),
+#                                             'nun_isolated': float(setting['AlQalam'][0][2]),
+#                                             'nun_begin': float(setting['AlQalam'][0][3]),
+#                                             'nun_middle': float(setting['AlQalam'][0][4]),
+#                                             'nun_end': float(setting['AlQalam'][0][5]),
+#                                             'mim_isolated': float(setting['AlQalam'][0][6]),
+#                                             'mim_begin': float(setting['AlQalam'][0][7]),
+#                                             'mim_middle': float(setting['AlQalam'][0][8]),
+#                                             'mim_end': float(setting['AlQalam'][0][9])},
+#                                loc_list=loc_list_AlQalam, image_loc=imagePath,
+#                                image=image, visualize=True, nms_thresh=0.3,
+#                                numstep=int(setting['AlQalam'][1]))
+#     # meQuran_Font
+#     # print("meQuran")
+#     loc_list_meQuran = sorted(glob.glob(markerPath + '/meQuran/*.png'))
+#     font_meQuran = FontWrapper(thresh_list={'tanwin_1': float(setting['meQuran'][0][0]),
+#                                             'tanwin_2': float(setting['meQuran'][0][1]),
+#                                             'nun_isolated': float(setting['meQuran'][0][2]),
+#                                             'nun_begin_1': float(setting['meQuran'][0][3]),
+#                                             'nun_begin_2': float(setting['meQuran'][0][4]),
+#                                             'nun_middle': float(setting['meQuran'][0][5]),
+#                                             'nun_end': float(setting['meQuran'][0][6]),
+#                                             'mim_isolated': float(setting['meQuran'][0][7]),
+#                                             'mim_begin': float(setting['meQuran'][0][8]),
+#                                             'mim_middle': float(setting['meQuran'][0][9]),
+#                                             'mim_end_1': float(setting['meQuran'][0][10]),
+#                                             'mim_end_2': float(setting['meQuran'][0][11])},
+#                                loc_list=loc_list_meQuran, image_loc=imagePath,
+#                                image=image, visualize=True, nms_thresh=0.3,
+#                                numstep=int(setting['meQuran'][1]))
+#     # PDMS_Font
+#     # print("PDMS")
+#     loc_list_PDMS = sorted(glob.glob(markerPath + '/PDMS/*.png'))
+#     font_PDMS = FontWrapper(thresh_list={'tanwin_1': float(setting['PDMS'][0][0]),
+#                                          'tanwin_2': float(setting['PDMS'][0][1]),
+#                                          'nun_isolated': float(setting['PDMS'][0][2]),
+#                                          'nun_begin': float(setting['PDMS'][0][3]),
+#                                          'nun_middle': float(setting['PDMS'][0][4]),
+#                                          'nun_end': float(setting['PDMS'][0][5]),
+#                                          'mim_isolated': float(setting['PDMS'][0][6]),
+#                                          'mim_begin': float(setting['PDMS'][0][7]),
+#                                          'mim_middle': float(setting['PDMS'][0][8]),
+#                                          'mim_end': float(setting['PDMS'][0][9])},
+#                             loc_list=loc_list_PDMS, image_loc=imagePath,
+#                             image=image, visualize=True, nms_thresh=0.3,
+#                             numstep=int(setting['PDMS'][1]))
+
+#     # AlKareem_Font
+#     loc_list_AlKareem = sorted(glob.glob(markerPath + '/AlKareem/*.png'))
+#     font_AlKareem = FontWrapper(thresh_list={'tanwin_1': float(setting['AlKareem'][0][0]),
+#                                          'tanwin_2': float(setting['AlKareem'][0][1]),
+#                                          'nun_isolated': float(setting['AlKareem'][0][2]),
+#                                          'nun_begin': float(setting['AlKareem'][0][3]),
+#                                          'nun_middle': float(setting['AlKareem'][0][4]),
+#                                          'nun_end': float(setting['AlKareem'][0][5]),
+#                                          'mim_isolated': float(setting['AlKareem'][0][6]),
+#                                          'mim_begin': float(setting['AlKareem'][0][7]),
+#                                          'mim_middle': float(setting['AlKareem'][0][8]),
+#                                          'mim_end_1': float(setting['AlKareem'][0][9]),
+#                                          'mim_end_2': float(setting['AlKareem'][0][10])},
+#                             loc_list=loc_list_AlKareem, image_loc=imagePath,
+#                             image=image, visualize=True, nms_thresh=0.3,
+#                             numstep=int(setting['AlKareem'][1]))
+
+#     # KFGQPC_Font
+#     loc_list_KFGQPC = sorted(glob.glob(markerPath + '/KFGQPC/*.png'))
+#     font_KFGQPC = FontWrapper(thresh_list={'tanwin_1': float(setting['KFGQPC'][0][0]),
+#                                          'tanwin_2': float(setting['KFGQPC'][0][1]),
+#                                          'nun_isolated': float(setting['KFGQPC'][0][2]),
+#                                          'nun_begin_1': float(setting['KFGQPC'][0][3]),
+#                                          'nun_begin_2': float(setting['KFGQPC'][0][4]),
+#                                          'nun_middle': float(setting['KFGQPC'][0][5]),
+#                                          'nun_end': float(setting['KFGQPC'][0][6]),
+#                                          'mim_isolated': float(setting['KFGQPC'][0][7]),
+#                                          'mim_begin': float(setting['KFGQPC'][0][8]),
+#                                          'mim_middle': float(setting['KFGQPC'][0][9]),
+#                                          'mim_end': float(setting['KFGQPC'][0][10])},
+#                             loc_list=loc_list_KFGQPC, image_loc=imagePath,
+#                             image=image, visualize=True, nms_thresh=0.3,
+#                             numstep=int(setting['KFGQPC'][1]))
+
+#     # Amiri_Font
+#     loc_list_Amiri = sorted(glob.glob(markerPath + '/amiri/*.png'))
+#     font_Amiri = FontWrapper(thresh_list={'tanwin_1': float(setting['amiri'][0][0]),
+#                                          'tanwin_2': float(setting['amiri'][0][1]),
+#                                          'nun_isolated': float(setting['amiri'][0][2]),
+#                                          'nun_begin_1': float(setting['amiri'][0][3]),
+#                                          'nun_begin_2': float(setting['amiri'][0][4]),
+#                                          'nun_begin_3': float(setting['amiri'][0][5]),
+#                                          'nun_middle': float(setting['amiri'][0][6]),
+#                                          'nun_end': float(setting['amiri'][0][7]),
+#                                          'mim_isolated': float(setting['amiri'][0][8]),
+#                                          'mim_begin': float(setting['amiri'][0][9]),
+#                                          'mim_middle': float(setting['amiri'][0][10]),
+#                                          'mim_end_1': float(setting['amiri'][0][11]),
+#                                          'mim_end_2': float(setting['amiri'][0][12])},
+#                             loc_list=loc_list_Amiri, image_loc=imagePath,
+#                             image=image, visualize=True, nms_thresh=0.3,
+#                             numstep=int(setting['amiri'][1]))
+
+#     # Norehidayat_Font
+#     loc_list_Norehidayat = sorted(glob.glob(markerPath + '/norehidayat/*.png'))
+#     font_Norehidayat = FontWrapper(thresh_list={'tanwin_1': float(setting['norehidayat'][0][0]),
+#                                          'tanwin_2': float(setting['norehidayat'][0][1]),
+#                                          'nun_isolated': float(setting['norehidayat'][0][2]),
+#                                          'nun_begin_1': float(setting['norehidayat'][0][3]),
+#                                          'nun_begin_2': float(setting['norehidayat'][0][4]),
+#                                          'nun_end': float(setting['norehidayat'][0][5]),
+#                                          'mim_isolated': float(setting['norehidayat'][0][6]),
+#                                          'mim_begin': float(setting['norehidayat'][0][7]),
+#                                          'mim_middle': float(setting['norehidayat'][0][8]),
+#                                          'mim_end': float(setting['norehidayat'][0][9])},
+#                             loc_list=loc_list_Norehidayat, image_loc=imagePath,
+#                             image=image, visualize=True, nms_thresh=0.3,
+#                             numstep=int(setting['norehidayat'][1]))
+
+#     # Norehira_Font
+#     loc_list_Norehira = sorted(glob.glob(markerPath + '/norehira/*.png'))
+#     font_Norehira = FontWrapper(thresh_list={'tanwin_1': float(setting['norehira'][0][0]),
+#                                          'tanwin_2': float(setting['norehira'][0][1]),
+#                                          'nun_isolated': float(setting['norehira'][0][2]),
+#                                          'nun_begin': float(setting['norehira'][0][3]),
+#                                          'nun_middle': float(setting['norehira'][0][4]),
+#                                          'nun_end': float(setting['norehira'][0][5]),
+#                                          'mim_isolated': float(setting['norehira'][0][6]),
+#                                          'mim_begin': float(setting['norehira'][0][7]),
+#                                          'mim_middle': float(setting['norehira'][0][8]),
+#                                          'mim_end_1': float(setting['norehira'][0][9]),
+#                                          'mim_end_2': float(setting['norehira'][0][10]),},
+#                             loc_list=loc_list_Norehira, image_loc=imagePath,
+#                             image=image, visualize=True, nms_thresh=0.3,
+#                             numstep=int(setting['norehira'][1]))
+
+#     # Norehuda_Font
+#     loc_list_Norehuda = sorted(glob.glob(markerPath + '/norehuda/*.png'))
+#     font_Norehuda = FontWrapper(thresh_list={'tanwin_1': float(setting['norehuda'][0][0]),
+#                                          'tanwin_2': float(setting['norehuda'][0][1]),
+#                                          'nun_isolated': float(setting['norehuda'][0][2]),
+#                                          'nun_begin': float(setting['norehuda'][0][3]),
+#                                          'nun_middle': float(setting['norehuda'][0][4]),
+#                                          'nun_end': float(setting['norehuda'][0][5]),
+#                                          'mim_isolated': float(setting['norehuda'][0][6]),
+#                                          'mim_begin': float(setting['norehuda'][0][7]),
+#                                          'mim_middle': float(setting['norehuda'][0][8]),
+#                                          'mim_end': float(setting['norehuda'][0][9])},
+#                             loc_list=loc_list_Norehuda, image_loc=imagePath,
+#                             image=image, visualize=True, nms_thresh=0.3,
+#                             numstep=int(setting['norehuda'][1]))
+
+#     # list_object_font = [font_LPMQ, font_AlQalam, font_meQuran, font_PDMS]
+#     # list_object_font = [font_LPMQ, font_AlQalam, font_meQuran, font_PDMS,
+#     #                     font_AlKareem, font_KFGQPC, font_Amiri, font_Norehidayat,
+#     #                     font_Norehira, font_Norehuda]
+#     list_object_font = [font_AlKareem, font_AlQalam, font_KFGQPC, font_LPMQ,
+#                         font_PDMS, font_Amiri, font_meQuran, font_Norehidayat,
+#                         font_Norehira, font_Norehuda]
+#     font_name = ['AlKareem', 'AlQalam', 'KFGQPC', 'LPMQ', 'PDMS',
+#                 'amiri', 'meQuran', 'norehidayat', 'norehira', 'norehuda']
+#     temp_path = [loc_list_AlKareem, loc_list_AlQalam, loc_list_KFGQPC,
+#                  loc_list_LPMQ, loc_list_PDMS, loc_list_Amiri,loc_list_meQuran,
+#                  loc_list_Norehidayat, loc_list_Norehira, loc_list_Norehuda]
+#     loc_path = {}
+#     for x in range(len(font_name)):
+#         loc_path[font_name[x]] = temp_path[x]
+
+
+#     return list_object_font, loc_path
+
 def font(imagePath, image, setting, markerPath):
     # LPMQ_Font
     # print("LPMQ")
@@ -1841,13 +1983,18 @@ def font(imagePath, image, setting, markerPath):
                                          'nun_isolated': float(setting['LPMQ'][0][2]),
                                          'nun_begin_1': float(setting['LPMQ'][0][3]),
                                          'nun_begin_2': float(setting['LPMQ'][0][4]),
-                                         'nun_middle': float(setting['LPMQ'][0][5]),
+                                         'nun_begin_3': float(setting['LPMQ'][0][3]),
+                                         'nun_begin_4': float(setting['LPMQ'][0][4]),
+                                         'nun_middle_1': float(setting['LPMQ'][0][5]),
+                                         'nun_middle_2': float(setting['LPMQ'][0][5]),
+                                         'nun_middle_3': float(setting['LPMQ'][0][5]),
                                          'nun_end': float(setting['LPMQ'][0][6]),
-                                         'mim_isolated': float(setting['LPMQ'][0][7]),
-                                         'mim_begin': float(setting['LPMQ'][0][8]),
-                                         'mim_middle': float(setting['LPMQ'][0][9]),
-                                         'mim_end_1': float(setting['LPMQ'][0][10]),
-                                         'mim_end_2': float(setting['LPMQ'][0][11]),},
+                                         'mim_isolated': float(setting['LPMQ'][0][11]),
+                                         'mim_begin': float(setting['LPMQ'][0][11]),
+                                         'mim_middle_1': float(setting['LPMQ'][0][11]),
+                                         'mim_middle_2': float(setting['LPMQ'][0][11]),
+                                         'mim_end_1': float(setting['LPMQ'][0][11]),
+                                         'mim_end_2': float(setting['LPMQ'][0][11]), },
                             loc_list=loc_list_LPMQ, image_loc=imagePath,
                             image=image, visualize=True, nms_thresh=0.3,
                             numstep=int(setting['LPMQ'][1]))
@@ -1883,7 +2030,7 @@ def font(imagePath, image, setting, markerPath):
                                             'mim_end_1': float(setting['meQuran'][0][10]),
                                             'mim_end_2': float(setting['meQuran'][0][11])},
                                loc_list=loc_list_meQuran, image_loc=imagePath,
-                               image=image, visualize=True, nms_thresh=0.3, 
+                               image=image, visualize=True, nms_thresh=0.3,
                                numstep=int(setting['meQuran'][1]))
     # PDMS_Font
     # print("PDMS")
@@ -1901,108 +2048,108 @@ def font(imagePath, image, setting, markerPath):
                             loc_list=loc_list_PDMS, image_loc=imagePath,
                             image=image, visualize=True, nms_thresh=0.3,
                             numstep=int(setting['PDMS'][1]))
-    
+
     # AlKareem_Font
     loc_list_AlKareem = sorted(glob.glob(markerPath + '/AlKareem/*.png'))
     font_AlKareem = FontWrapper(thresh_list={'tanwin_1': float(setting['AlKareem'][0][0]),
-                                         'tanwin_2': float(setting['AlKareem'][0][1]),
-                                         'nun_isolated': float(setting['AlKareem'][0][2]),
-                                         'nun_begin': float(setting['AlKareem'][0][3]),
-                                         'nun_middle': float(setting['AlKareem'][0][4]),
-                                         'nun_end': float(setting['AlKareem'][0][5]),
-                                         'mim_isolated': float(setting['AlKareem'][0][6]),
-                                         'mim_begin': float(setting['AlKareem'][0][7]),
-                                         'mim_middle': float(setting['AlKareem'][0][8]),
-                                         'mim_end_1': float(setting['AlKareem'][0][9]),
-                                         'mim_end_2': float(setting['AlKareem'][0][10])},
-                            loc_list=loc_list_AlKareem, image_loc=imagePath,
-                            image=image, visualize=True, nms_thresh=0.3,
-                            numstep=int(setting['AlKareem'][1]))
+                                             'tanwin_2': float(setting['AlKareem'][0][1]),
+                                             'nun_isolated': float(setting['AlKareem'][0][2]),
+                                             'nun_begin': float(setting['AlKareem'][0][3]),
+                                             'nun_middle': float(setting['AlKareem'][0][4]),
+                                             'nun_end': float(setting['AlKareem'][0][5]),
+                                             'mim_isolated': float(setting['AlKareem'][0][6]),
+                                             'mim_begin': float(setting['AlKareem'][0][7]),
+                                             'mim_middle': float(setting['AlKareem'][0][8]),
+                                             'mim_end_1': float(setting['AlKareem'][0][9]),
+                                             'mim_end_2': float(setting['AlKareem'][0][10])},
+                                loc_list=loc_list_AlKareem, image_loc=imagePath,
+                                image=image, visualize=True, nms_thresh=0.3,
+                                numstep=int(setting['AlKareem'][1]))
 
     # KFGQPC_Font
     loc_list_KFGQPC = sorted(glob.glob(markerPath + '/KFGQPC/*.png'))
     font_KFGQPC = FontWrapper(thresh_list={'tanwin_1': float(setting['KFGQPC'][0][0]),
-                                         'tanwin_2': float(setting['KFGQPC'][0][1]),
-                                         'nun_isolated': float(setting['KFGQPC'][0][2]),
-                                         'nun_begin_1': float(setting['KFGQPC'][0][3]),
-                                         'nun_begin_2': float(setting['KFGQPC'][0][4]),
-                                         'nun_middle': float(setting['KFGQPC'][0][5]),
-                                         'nun_end': float(setting['KFGQPC'][0][6]),
-                                         'mim_isolated': float(setting['KFGQPC'][0][7]),
-                                         'mim_begin': float(setting['KFGQPC'][0][8]),
-                                         'mim_middle': float(setting['KFGQPC'][0][9]),
-                                         'mim_end': float(setting['KFGQPC'][0][10])},
-                            loc_list=loc_list_KFGQPC, image_loc=imagePath,
-                            image=image, visualize=True, nms_thresh=0.3,
-                            numstep=int(setting['KFGQPC'][1]))
+                                           'tanwin_2': float(setting['KFGQPC'][0][1]),
+                                           'nun_isolated': float(setting['KFGQPC'][0][2]),
+                                           'nun_begin_1': float(setting['KFGQPC'][0][3]),
+                                           'nun_begin_2': float(setting['KFGQPC'][0][4]),
+                                           'nun_middle': float(setting['KFGQPC'][0][5]),
+                                           'nun_end': float(setting['KFGQPC'][0][6]),
+                                           'mim_isolated': float(setting['KFGQPC'][0][7]),
+                                           'mim_begin': float(setting['KFGQPC'][0][8]),
+                                           'mim_middle': float(setting['KFGQPC'][0][9]),
+                                           'mim_end': float(setting['KFGQPC'][0][10])},
+                              loc_list=loc_list_KFGQPC, image_loc=imagePath,
+                              image=image, visualize=True, nms_thresh=0.3,
+                              numstep=int(setting['KFGQPC'][1]))
 
     # Amiri_Font
     loc_list_Amiri = sorted(glob.glob(markerPath + '/amiri/*.png'))
     font_Amiri = FontWrapper(thresh_list={'tanwin_1': float(setting['amiri'][0][0]),
-                                         'tanwin_2': float(setting['amiri'][0][1]),
-                                         'nun_isolated': float(setting['amiri'][0][2]),
-                                         'nun_begin_1': float(setting['amiri'][0][3]),
-                                         'nun_begin_2': float(setting['amiri'][0][4]),
-                                         'nun_begin_3': float(setting['amiri'][0][5]),
-                                         'nun_middle': float(setting['amiri'][0][6]),
-                                         'nun_end': float(setting['amiri'][0][7]),
-                                         'mim_isolated': float(setting['amiri'][0][8]),
-                                         'mim_begin': float(setting['amiri'][0][9]),
-                                         'mim_middle': float(setting['amiri'][0][10]),
-                                         'mim_end_1': float(setting['amiri'][0][11]),
-                                         'mim_end_2': float(setting['amiri'][0][12])},
-                            loc_list=loc_list_Amiri, image_loc=imagePath,
-                            image=image, visualize=True, nms_thresh=0.3,
-                            numstep=int(setting['amiri'][1]))
-    
+                                          'tanwin_2': float(setting['amiri'][0][1]),
+                                          'nun_isolated': float(setting['amiri'][0][2]),
+                                          'nun_begin_1': float(setting['amiri'][0][3]),
+                                          'nun_begin_2': float(setting['amiri'][0][4]),
+                                          'nun_begin_3': float(setting['amiri'][0][5]),
+                                          'nun_middle': float(setting['amiri'][0][6]),
+                                          'nun_end': float(setting['amiri'][0][7]),
+                                          'mim_isolated': float(setting['amiri'][0][8]),
+                                          'mim_begin': float(setting['amiri'][0][9]),
+                                          'mim_middle': float(setting['amiri'][0][10]),
+                                          'mim_end_1': float(setting['amiri'][0][11]),
+                                          'mim_end_2': float(setting['amiri'][0][12])},
+                             loc_list=loc_list_Amiri, image_loc=imagePath,
+                             image=image, visualize=True, nms_thresh=0.3,
+                             numstep=int(setting['amiri'][1]))
+
     # Norehidayat_Font
     loc_list_Norehidayat = sorted(glob.glob(markerPath + '/norehidayat/*.png'))
     font_Norehidayat = FontWrapper(thresh_list={'tanwin_1': float(setting['norehidayat'][0][0]),
-                                         'tanwin_2': float(setting['norehidayat'][0][1]),
-                                         'nun_isolated': float(setting['norehidayat'][0][2]),
-                                         'nun_begin_1': float(setting['norehidayat'][0][3]),
-                                         'nun_begin_2': float(setting['norehidayat'][0][4]),
-                                         'nun_end': float(setting['norehidayat'][0][5]),
-                                         'mim_isolated': float(setting['norehidayat'][0][6]),
-                                         'mim_begin': float(setting['norehidayat'][0][7]),
-                                         'mim_middle': float(setting['norehidayat'][0][8]),
-                                         'mim_end': float(setting['norehidayat'][0][9])},
-                            loc_list=loc_list_Norehidayat, image_loc=imagePath,
-                            image=image, visualize=True, nms_thresh=0.3,
-                            numstep=int(setting['norehidayat'][1]))
-    
+                                                'tanwin_2': float(setting['norehidayat'][0][1]),
+                                                'nun_isolated': float(setting['norehidayat'][0][2]),
+                                                'nun_begin_1': float(setting['norehidayat'][0][3]),
+                                                'nun_begin_2': float(setting['norehidayat'][0][4]),
+                                                'nun_end': float(setting['norehidayat'][0][5]),
+                                                'mim_isolated': float(setting['norehidayat'][0][6]),
+                                                'mim_begin': float(setting['norehidayat'][0][7]),
+                                                'mim_middle': float(setting['norehidayat'][0][8]),
+                                                'mim_end': float(setting['norehidayat'][0][9])},
+                                   loc_list=loc_list_Norehidayat, image_loc=imagePath,
+                                   image=image, visualize=True, nms_thresh=0.3,
+                                   numstep=int(setting['norehidayat'][1]))
+
     # Norehira_Font
     loc_list_Norehira = sorted(glob.glob(markerPath + '/norehira/*.png'))
     font_Norehira = FontWrapper(thresh_list={'tanwin_1': float(setting['norehira'][0][0]),
-                                         'tanwin_2': float(setting['norehira'][0][1]),
-                                         'nun_isolated': float(setting['norehira'][0][2]),
-                                         'nun_begin': float(setting['norehira'][0][3]),
-                                         'nun_middle': float(setting['norehira'][0][4]),
-                                         'nun_end': float(setting['norehira'][0][5]),
-                                         'mim_isolated': float(setting['norehira'][0][6]),
-                                         'mim_begin': float(setting['norehira'][0][7]),
-                                         'mim_middle': float(setting['norehira'][0][8]),
-                                         'mim_end_1': float(setting['norehira'][0][9]),
-                                         'mim_end_2': float(setting['norehira'][0][10]),},
-                            loc_list=loc_list_Norehira, image_loc=imagePath,
-                            image=image, visualize=True, nms_thresh=0.3,
-                            numstep=int(setting['norehira'][1]))
-    
+                                             'tanwin_2': float(setting['norehira'][0][1]),
+                                             'nun_isolated': float(setting['norehira'][0][2]),
+                                             'nun_begin': float(setting['norehira'][0][3]),
+                                             'nun_middle': float(setting['norehira'][0][4]),
+                                             'nun_end': float(setting['norehira'][0][5]),
+                                             'mim_isolated': float(setting['norehira'][0][6]),
+                                             'mim_begin': float(setting['norehira'][0][7]),
+                                             'mim_middle': float(setting['norehira'][0][8]),
+                                             'mim_end_1': float(setting['norehira'][0][9]),
+                                             'mim_end_2': float(setting['norehira'][0][10]), },
+                                loc_list=loc_list_Norehira, image_loc=imagePath,
+                                image=image, visualize=True, nms_thresh=0.3,
+                                numstep=int(setting['norehira'][1]))
+
     # Norehuda_Font
     loc_list_Norehuda = sorted(glob.glob(markerPath + '/norehuda/*.png'))
     font_Norehuda = FontWrapper(thresh_list={'tanwin_1': float(setting['norehuda'][0][0]),
-                                         'tanwin_2': float(setting['norehuda'][0][1]),
-                                         'nun_isolated': float(setting['norehuda'][0][2]),
-                                         'nun_begin': float(setting['norehuda'][0][3]),
-                                         'nun_middle': float(setting['norehuda'][0][4]),
-                                         'nun_end': float(setting['norehuda'][0][5]),
-                                         'mim_isolated': float(setting['norehuda'][0][6]),
-                                         'mim_begin': float(setting['norehuda'][0][7]),
-                                         'mim_middle': float(setting['norehuda'][0][8]),
-                                         'mim_end': float(setting['norehuda'][0][9])},
-                            loc_list=loc_list_Norehuda, image_loc=imagePath,
-                            image=image, visualize=True, nms_thresh=0.3,
-                            numstep=int(setting['norehuda'][1]))
+                                             'tanwin_2': float(setting['norehuda'][0][1]),
+                                             'nun_isolated': float(setting['norehuda'][0][2]),
+                                             'nun_begin': float(setting['norehuda'][0][3]),
+                                             'nun_middle': float(setting['norehuda'][0][4]),
+                                             'nun_end': float(setting['norehuda'][0][5]),
+                                             'mim_isolated': float(setting['norehuda'][0][6]),
+                                             'mim_begin': float(setting['norehuda'][0][7]),
+                                             'mim_middle': float(setting['norehuda'][0][8]),
+                                             'mim_end': float(setting['norehuda'][0][9])},
+                                loc_list=loc_list_Norehuda, image_loc=imagePath,
+                                image=image, visualize=True, nms_thresh=0.3,
+                                numstep=int(setting['norehuda'][1]))
 
     # list_object_font = [font_LPMQ, font_AlQalam, font_meQuran, font_PDMS]
     # list_object_font = [font_LPMQ, font_AlQalam, font_meQuran, font_PDMS,
@@ -2012,13 +2159,12 @@ def font(imagePath, image, setting, markerPath):
                         font_PDMS, font_Amiri, font_meQuran, font_Norehidayat,
                         font_Norehira, font_Norehuda]
     font_name = ['AlKareem', 'AlQalam', 'KFGQPC', 'LPMQ', 'PDMS',
-                'amiri', 'meQuran', 'norehidayat', 'norehira', 'norehuda']
-    temp_path = [loc_list_AlKareem, loc_list_AlQalam, loc_list_KFGQPC, 
-                 loc_list_LPMQ, loc_list_PDMS, loc_list_Amiri,loc_list_meQuran,
+                 'amiri', 'meQuran', 'norehidayat', 'norehira', 'norehuda']
+    temp_path = [loc_list_AlKareem, loc_list_AlQalam, loc_list_KFGQPC,
+                 loc_list_LPMQ, loc_list_PDMS, loc_list_Amiri, loc_list_meQuran,
                  loc_list_Norehidayat, loc_list_Norehira, loc_list_Norehuda]
     loc_path = {}
     for x in range(len(font_name)):
         loc_path[font_name[x]] = temp_path[x]
-
 
     return list_object_font, loc_path

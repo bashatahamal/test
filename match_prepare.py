@@ -7,340 +7,340 @@ import cv2
 import copy
 
 
-class Marker:
-    def __init__(self, **kwargs):
-        self._Data = kwargs
+# class Marker:
+#     def __init__(self, **kwargs):
+#         self._Data = kwargs
 
-    def get_template_location(self):
-        return self._Data["template_loc"]
-    # def get_image_location(self):
-    #     return self._Data["image_loc"]
+#     def get_template_location(self):
+#         return self._Data["template_loc"]
+#     # def get_image_location(self):
+#     #     return self._Data["image_loc"]
 
-    def get_template_thresh(self):
-        return self._Data["template_thresh"]
+#     def get_template_thresh(self):
+#         return self._Data["template_thresh"]
 
-    def get_nms_thresh(self):
-        return self._Data["nms_thresh"]
+#     def get_nms_thresh(self):
+#         return self._Data["nms_thresh"]
 
-    def get_image(self):
-        return self._Data["image"]
+#     def get_image(self):
+#         return self._Data["image"]
 
-    def non_max_suppression_slow(self, boxes, overlapThresh):
-        # if there are no boxes, return an empty list
-        if len(boxes) == 0:
-            return []
+#     def non_max_suppression_slow(self, boxes, overlapThresh):
+#         # if there are no boxes, return an empty list
+#         if len(boxes) == 0:
+#             return []
 
-        # initialize the list of picked indexes
-        pick = []
+#         # initialize the list of picked indexes
+#         pick = []
 
-        # grab the coordinates of the bounding boxes
-        x1 = boxes[:, 0]
-        y1 = boxes[:, 1]
-        x2 = boxes[:, 2]
-        y2 = boxes[:, 3]
+#         # grab the coordinates of the bounding boxes
+#         x1 = boxes[:, 0]
+#         y1 = boxes[:, 1]
+#         x2 = boxes[:, 2]
+#         y2 = boxes[:, 3]
 
-        # compute the area of the bounding boxes and sort the bounding
-        # boxes by the bottom-right y-coordinate of the bounding box
-        area = (x2 - x1 + 1) * (y2 - y1 + 1)
-        idxs = np.argsort(y2)
+#         # compute the area of the bounding boxes and sort the bounding
+#         # boxes by the bottom-right y-coordinate of the bounding box
+#         area = (x2 - x1 + 1) * (y2 - y1 + 1)
+#         idxs = np.argsort(y2)
 
-        # keep looping while some indexes still remain in the indexes
-        # list
-        while len(idxs) > 0:
-            # grab the last index in the indexes list, add the index
-            # value to the list of picked indexes, then initialize
-            # the suppression list (i.e. indexes that will be deleted)
-            # using the last index
-            last = len(idxs) - 1
-            i = idxs[last]
-            pick.append(i)
-            suppress = [last]
+#         # keep looping while some indexes still remain in the indexes
+#         # list
+#         while len(idxs) > 0:
+#             # grab the last index in the indexes list, add the index
+#             # value to the list of picked indexes, then initialize
+#             # the suppression list (i.e. indexes that will be deleted)
+#             # using the last index
+#             last = len(idxs) - 1
+#             i = idxs[last]
+#             pick.append(i)
+#             suppress = [last]
 
-            # loop over all indexes in the indexes list
-            for pos in range(0, last):
-                # grab the current index
-                j = idxs[pos]
+#             # loop over all indexes in the indexes list
+#             for pos in range(0, last):
+#                 # grab the current index
+#                 j = idxs[pos]
 
-                # find the largest (x, y) coordinates for the start of
-                # the bounding box and the smallest (x, y) coordinates
-                # for the end of the bounding box
-                xx1 = max(x1[i], x1[j])
-                yy1 = max(y1[i], y1[j])
-                xx2 = min(x2[i], x2[j])
-                yy2 = min(y2[i], y2[j])
+#                 # find the largest (x, y) coordinates for the start of
+#                 # the bounding box and the smallest (x, y) coordinates
+#                 # for the end of the bounding box
+#                 xx1 = max(x1[i], x1[j])
+#                 yy1 = max(y1[i], y1[j])
+#                 xx2 = min(x2[i], x2[j])
+#                 yy2 = min(y2[i], y2[j])
 
-                # compute the width and height of the bounding box
-                w = max(0, xx2 - xx1 + 1)
-                h = max(0, yy2 - yy1 + 1)
+#                 # compute the width and height of the bounding box
+#                 w = max(0, xx2 - xx1 + 1)
+#                 h = max(0, yy2 - yy1 + 1)
 
-                # compute the ratio of overlap between the computed
-                # bounding box and the bounding box in the area list
-                overlap = float(w * h) / area[j]
+#                 # compute the ratio of overlap between the computed
+#                 # bounding box and the bounding box in the area list
+#                 overlap = float(w * h) / area[j]
 
-                # if there is sufficient overlap, suppress the
-                # current bounding box
-                if overlap > overlapThresh:
-                    suppress.append(pos)
+#                 # if there is sufficient overlap, suppress the
+#                 # current bounding box
+#                 if overlap > overlapThresh:
+#                     suppress.append(pos)
 
-            # delete all indexes from the index list that are in the
-            # suppression list
-            idxs = np.delete(idxs, suppress)
+#             # delete all indexes from the index list that are in the
+#             # suppression list
+#             idxs = np.delete(idxs, suppress)
 
-        # return only the bounding boxes that were picked
-        return boxes[pick]
+#         # return only the bounding boxes that were picked
+#         return boxes[pick]
 
-    def match_template(self, visualize=False, numstep=100):
-        # Get template
-        # print('.')
-        template = cv2.imread(self.get_template_location())
-        template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
-        # Canny edge
-        # template = cv2.Canny(template, 50, 200)
-        # Otsu threshold
-        # ret_temp, template = cv2.threshold(template, 0, 255,
-        #                                    cv2.THRESH_BINARY
-        #                                    + cv2.THRESH_OTSU)
-        # Simple threshold
-        # ret_temp, template = cv2.threshold(template, 127, 255,
-        #                                    cv2.THRESH_BINARY)
-        # Adaptive threshold value is the mean of neighbourhood area
-        # template = cv2.adaptiveThreshold(template, 255,
-        #                                  cv2.ADAPTIVE_THRESH_MEAN_C,
-        #                                  cv2.THRESH_BINARY,
-        #                                  11, 2)
-        # Adaptive threshold value is the weighted sum of neighbourhood values
-        # where weights are a gaussian window
-        template = cv2.adaptiveThreshold(template, 255,
-                                         cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                         cv2.THRESH_BINARY,
-                                         11, 2)
-        # cv2.imshow("Template", template)
-        (tH, tW) = template.shape[:2]
+#     def match_template(self, visualize=False, numstep=100):
+#         # Get template
+#         # print('.')
+#         template = cv2.imread(self.get_template_location())
+#         template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
+#         # Canny edge
+#         # template = cv2.Canny(template, 50, 200)
+#         # Otsu threshold
+#         # ret_temp, template = cv2.threshold(template, 0, 255,
+#         #                                    cv2.THRESH_BINARY
+#         #                                    + cv2.THRESH_OTSU)
+#         # Simple threshold
+#         # ret_temp, template = cv2.threshold(template, 127, 255,
+#         #                                    cv2.THRESH_BINARY)
+#         # Adaptive threshold value is the mean of neighbourhood area
+#         # template = cv2.adaptiveThreshold(template, 255,
+#         #                                  cv2.ADAPTIVE_THRESH_MEAN_C,
+#         #                                  cv2.THRESH_BINARY,
+#         #                                  11, 2)
+#         # Adaptive threshold value is the weighted sum of neighbourhood values
+#         # where weights are a gaussian window
+#         template = cv2.adaptiveThreshold(template, 255,
+#                                          cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+#                                          cv2.THRESH_BINARY,
+#                                          11, 2)
+#         # cv2.imshow("Template", template)
+#         (tH, tW) = template.shape[:2]
 
-        # Get image
-        # image = cv2.imread(self.get_image_location())
-        # print(self.get_image_location())
-        # self.image=image
-        # gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        # cv2.imshow('gray', gray)
-        image = self.get_image()
-        # boundingBoxes = np.ones((1,4), dtype=int)
-        boundingBoxes = []
-        max_value_list = []
-        # print(numstep)
-        # Loop over scaled image (start stop numstep) from the back
-        for scale in np.linspace(0.2, 2.0, numstep)[::-1]:
-            resized = imutils.resize(image, width=int(image.shape[1] * scale))
-            r = image.shape[1] / float(resized.shape[1])
-            # If resized image smaller than template, then break the loop
-            if resized.shape[0] < tH or resized.shape[1] < tW:
-                break
+#         # Get image
+#         # image = cv2.imread(self.get_image_location())
+#         # print(self.get_image_location())
+#         # self.image=image
+#         # gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+#         # cv2.imshow('gray', gray)
+#         image = self.get_image()
+#         # boundingBoxes = np.ones((1,4), dtype=int)
+#         boundingBoxes = []
+#         max_value_list = []
+#         # print(numstep)
+#         # Loop over scaled image (start stop numstep) from the back
+#         for scale in np.linspace(0.2, 2.0, numstep)[::-1]:
+#             resized = imutils.resize(image, width=int(image.shape[1] * scale))
+#             r = image.shape[1] / float(resized.shape[1])
+#             # If resized image smaller than template, then break the loop
+#             if resized.shape[0] < tH or resized.shape[1] < tW:
+#                 break
+#             print('checking in scale size: ', scale)
+#             # Preprocessing resized image and then apply template matching
+#             # Cannyedge
+#             # edged = cv2.Canny(resized, 50, 200)
+#             # Otsu threshold
+#             # ret_img, resized = cv2.threshold(resized, 0, 255,
+#             #                                  cv2.THRESH_BINARY
+#             #                                  + cv2.THRESH_OTSU)
+#             # Simple threshold
+#             # ret_img, resized = cv2.threshold(resized, 127, 255,
+#             #                                  cv2.THRESH_BINARY)
+#             # Adaptive threshold value is the mean of neighbourhood area
+#             # resized = cv2.adaptiveThreshold(resized, 255,
+#             #                                 cv2.ADAPTIVE_THRESH_MEAN_C,
+#             #                                 cv2.THRESH_BINARY, 11, 2)
+#             # Adaptive threshold value is the weighted sum of neighbourhood
+#             # values where weights are a gaussian window
+#             resized = cv2.adaptiveThreshold(resized, 255,
+#                                             cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+#                                             cv2.THRESH_BINARY, 11, 2)
+#             result = cv2.matchTemplate(resized, template, cv2.TM_CCOEFF_NORMED)
+#             (_, maxVal, _, maxLoc) = cv2.minMaxLoc(result)
+#             if visualize:
+#                 # clone = np.dstack([edged, edged, edged])
+#                 clone = np.dstack([resized, resized, resized])
+#                 print(self.get_template_location())
+#                 print(maxVal)
+#                 cv2.rectangle(clone, (maxLoc[0], maxLoc[1]),
+#                               (maxLoc[0] + tW, maxLoc[1] + tH), (0, 0, 255), 2)
+#                 cv2.imshow("Visualizing", clone)
+#                 cv2.waitKey(0)
 
-            # Preprocessing resized image and then apply template matching
-            # Cannyedge
-            # edged = cv2.Canny(resized, 50, 200)
-            # Otsu threshold
-            # ret_img, resized = cv2.threshold(resized, 0, 255,
-            #                                  cv2.THRESH_BINARY
-            #                                  + cv2.THRESH_OTSU)
-            # Simple threshold
-            # ret_img, resized = cv2.threshold(resized, 127, 255,
-            #                                  cv2.THRESH_BINARY)
-            # Adaptive threshold value is the mean of neighbourhood area
-            # resized = cv2.adaptiveThreshold(resized, 255,
-            #                                 cv2.ADAPTIVE_THRESH_MEAN_C,
-            #                                 cv2.THRESH_BINARY, 11, 2)
-            # Adaptive threshold value is the weighted sum of neighbourhood
-            # values where weights are a gaussian window
-            resized = cv2.adaptiveThreshold(resized, 255,
-                                            cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                            cv2.THRESH_BINARY, 11, 2)
-            result = cv2.matchTemplate(resized, template, cv2.TM_CCOEFF_NORMED)
-            (_, maxVal, _, maxLoc) = cv2.minMaxLoc(result)
-            if visualize:
-                # clone = np.dstack([edged, edged, edged])
-                clone = np.dstack([resized, resized, resized])
-                print(self.get_template_location())
-                print(maxVal)
-                cv2.rectangle(clone, (maxLoc[0], maxLoc[1]),
-                              (maxLoc[0] + tW, maxLoc[1] + tH), (0, 0, 255), 2)
-                cv2.imshow("Visualizing", clone)
-                cv2.waitKey(0)
+#             if maxVal > self.get_template_thresh():
+#                 (startX, startY) = (int(maxLoc[0] * r), int(maxLoc[1] * r))
+#                 (endX, endY) = (int((maxLoc[0] + tW) * r),
+#                                 int((maxLoc[1] + tH) * r))
+#                 temp = [startX, startY, endX, endY]
+#                 # boundingBoxes = np.append(boundingBoxes, [temp], axis=0)
+#                 # max_value_list = np.append(max_value_list, [maxVal], axis=0)
+#                 boundingBoxes.append(temp)
+#                 max_value_list.append(maxVal)
+#                 # print("Max val = {} location {}".format(maxVal, temp))
 
-            if maxVal > self.get_template_thresh():
-                (startX, startY) = (int(maxLoc[0] * r), int(maxLoc[1] * r))
-                (endX, endY) = (int((maxLoc[0] + tW) * r),
-                                int((maxLoc[1] + tH) * r))
-                temp = [startX, startY, endX, endY]
-                # boundingBoxes = np.append(boundingBoxes, [temp], axis=0)
-                # max_value_list = np.append(max_value_list, [maxVal], axis=0)
-                boundingBoxes.append(temp)
-                max_value_list.append(maxVal)
-                # print("Max val = {} location {}".format(maxVal, temp))
+#         # If detected on this scale size
+#         # if len(boundingBoxes) > 1:
+#         #     boundingBoxes = np.delete(boundingBoxes, 0, axis=0)
+#             # print("{} {}".format(len(pick), self.get_template_location()))
+#             # print(pick)
+#             # for (startX, startY, endX, endY) in pick:
+#             #     cv2.rectangle(image, (startX, startY),(endX, endY),
+#             #     (0, 255, 0), 2)
+#         boundingBoxes = np.array(boundingBoxes)
+#         pick = self.non_max_suppression_slow(boundingBoxes,
+#                                              self.get_nms_thresh())
 
-        # If detected on this scale size
-        # if len(boundingBoxes) > 1:
-        #     boundingBoxes = np.delete(boundingBoxes, 0, axis=0)
-            # print("{} {}".format(len(pick), self.get_template_location()))
-            # print(pick)
-            # for (startX, startY, endX, endY) in pick:
-            #     cv2.rectangle(image, (startX, startY),(endX, endY),
-            #     (0, 255, 0), 2)
-        boundingBoxes = np.array(boundingBoxes)
-        pick = self.non_max_suppression_slow(boundingBoxes,
-                                             self.get_nms_thresh())
-
-        if len(max_value_list) > 1:
-            max_local_value = max(max_value_list)
-        if len(max_value_list) == 1:
-            max_local_value = max_value_list
-        if max_value_list == []:
-            pick = 0
-            max_local_value = 0
-        # cv2.imshow('IMAGE MATCH ()',image)
-        return pick, max_local_value
+#         if len(max_value_list) > 1:
+#             max_local_value = max(max_value_list)
+#         if len(max_value_list) == 1:
+#             max_local_value = max_value_list
+#         if max_value_list == []:
+#             pick = 0
+#             max_local_value = 0
+#         # cv2.imshow('IMAGE MATCH ()',image)
+#         return pick, max_local_value
 
 
-class FontWrapper(Marker):
-    def __init__(self, nms_thresh=0.3, visualize=False, **kwargs):
-        # print("INIT!")
-        self._Data = kwargs
-        self.nms_thresh = nms_thresh
-        self.visualize = visualize
+# class FontWrapper(Marker):
+#     def __init__(self, nms_thresh=0.3, visualize=False, **kwargs):
+#         # print("INIT!")
+#         self._Data = kwargs
+#         self.nms_thresh = nms_thresh
+#         self.visualize = visualize
 
-        self.image_location = self._Data["image_loc"]
-        self.marker_location = self._Data["loc_list"]
-        self.marker_thresh = self._Data["thresh_list"]
-        self.image = self._Data["image"]
+#         self.image_location = self._Data["image_loc"]
+#         self.marker_location = self._Data["loc_list"]
+#         self.marker_thresh = self._Data["thresh_list"]
+#         self.image = self._Data["image"]
 
-        for data in self._Data:
-            if data == 'numstep':
-                self.numstep = self._Data["numstep"]
-            else:
-                self.numstep = 0
+#         for data in self._Data:
+#             if data == 'numstep':
+#                 self.numstep = self._Data["numstep"]
+#             else:
+#                 self.numstep = 0
 
-        self.pocket = {}
-        # super().__init__()
-        colour_tanwin = [
-            (255, 0, 255), (0, 0, 255), (128, 0, 128),
-            (0, 0, 128)
-        ]
-        colour_nun = [
-            (255, 0, 0), (128, 0, 0), (255, 99, 71),
-            (220, 20, 60), (139, 0, 0)
-        ]
-        colour_mim = [
-            (154, 205, 50), (107, 142, 35), (85, 107, 47),
-            (0, 128, 0), (34, 139, 34)
-        ]
-        t = 0
-        m = 0
-        n = 0
-        self.temp_colour = self.get_marker_thresh().copy()
-        for key in self.get_marker_thresh().keys():
-            # print(key)
-            x = key.split('_')
-            if x[0] == 'tanwin':
-                self.temp_colour[key] = colour_tanwin[t]
-                if t+1 > len(colour_tanwin) - 1:
-                    t = 0
-                else:
-                    t += 1
-            if x[0] == 'nun':
-                self.temp_colour[key] = colour_nun[n]
-                if n+1 > len(colour_nun) - 1:
-                    n = 0
-                else:
-                    n += 1
-            if x[0] == 'mim':
-                self.temp_colour[key] = colour_mim[m]
-                if m+1 > len(colour_mim) - 1:
-                    m = 0
-                else:
-                    m += 1
+#         self.pocket = {}
+#         # super().__init__()
+#         colour_tanwin = [
+#             (255, 0, 255), (0, 0, 255), (128, 0, 128),
+#             (0, 0, 128)
+#         ]
+#         colour_nun = [
+#             (255, 0, 0), (128, 0, 0), (255, 99, 71),
+#             (220, 20, 60), (139, 0, 0)
+#         ]
+#         colour_mim = [
+#             (154, 205, 50), (107, 142, 35), (85, 107, 47),
+#             (0, 128, 0), (34, 139, 34)
+#         ]
+#         t = 0
+#         m = 0
+#         n = 0
+#         self.temp_colour = self.get_marker_thresh().copy()
+#         for key in self.get_marker_thresh().keys():
+#             # print(key)
+#             x = key.split('_')
+#             if x[0] == 'tanwin':
+#                 self.temp_colour[key] = colour_tanwin[t]
+#                 if t+1 > len(colour_tanwin) - 1:
+#                     t = 0
+#                 else:
+#                     t += 1
+#             if x[0] == 'nun':
+#                 self.temp_colour[key] = colour_nun[n]
+#                 if n+1 > len(colour_nun) - 1:
+#                     n = 0
+#                 else:
+#                     n += 1
+#             if x[0] == 'mim':
+#                 self.temp_colour[key] = colour_mim[m]
+#                 if m+1 > len(colour_mim) - 1:
+#                     m = 0
+#                 else:
+#                     m += 1
 
-    def get_marker_thresh(self):
-        return self.marker_thresh
+#     def get_marker_thresh(self):
+#         return self.marker_thresh
 
-    def get_marker_location(self):
-        return self.marker_location
+#     def get_marker_location(self):
+#         return self.marker_location
 
-    # def get_image_location(self):
-    #     return self.image_location
+#     # def get_image_location(self):
+#     #     return self.image_location
 
-    # def get_original_image(self):
-    #     original_image = cv2.imread(self.get_image_location())
-    #     return original_image
+#     # def get_original_image(self):
+#     #     original_image = cv2.imread(self.get_image_location())
+#     #     return original_image
 
-    def get_object_result(self):
-        return self.pocket
+#     def get_object_result(self):
+#         return self.pocket
 
-    def get_image(self):
-        return self.image
+#     def get_image(self):
+#         return self.image
 
-    def get_object_name(self):
-        return self.get_marker_location()[0].split('/')[2]
+#     def get_object_name(self):
+#         return self.get_marker_location()[0].split('/')[2]
 
-    def display_marker_result(self, input_image):
-        # rectangle_image = self.get_original_image()
-        rectangle_image = input_image.copy()
-        found = False
-        for key in self.get_marker_thresh().keys():
-            if isinstance(self.get_object_result()['box_' + key],
-                          type(np.array([]))):
-                for (startX, startY, endX, endY) in \
-                        self.get_object_result()['box_' + key]:
-                    cv2.rectangle(rectangle_image, (startX, startY),
-                                  (endX, endY), self.temp_colour[key], 2)
-                # print(self.pick_colour[x])
-                found = True
-#         if found:
-#             print('<<<<<<<< View Result >>>>>>>>')
-#             cv2.imshow("Detected Image_" + self.get_object_name(),
-#                        rectangle_image)
+#     def display_marker_result(self, input_image):
+#         # rectangle_image = self.get_original_image()
+#         rectangle_image = input_image.copy()
+#         found = False
+#         for key in self.get_marker_thresh().keys():
+#             if isinstance(self.get_object_result()['box_' + key],
+#                           type(np.array([]))):
+#                 for (startX, startY, endX, endY) in \
+#                         self.get_object_result()['box_' + key]:
+#                     cv2.rectangle(rectangle_image, (startX, startY),
+#                                   (endX, endY), self.temp_colour[key], 2)
+#                 # print(self.pick_colour[x])
+#                 found = True
+# #         if found:
+# #             print('<<<<<<<< View Result >>>>>>>>')
+# #             cv2.imshow("Detected Image_" + self.get_object_name(),
+# #                        rectangle_image)
+# #         else:
+# #             cv2.imshow("Original Image", rectangle_image)
+# #             print('not found')
+# #         print('>')
+# #         cv2.waitKey(0)
+#         # cv2.destroyWindow("Detected Image_" + self.get_object_name())
+
+#     def run(self, view=False, numstep=100):
+#         # Tanwin
+#         # print(self.get_marker_thresh())
+#         print('run() Marker Font')
+
+#         # gray = cv2.cvtColor(self.get_original_image(), cv2.COLOR_BGR2GRAY)
+#         if self.numstep == 0:
+#             numstep = numstep
 #         else:
-#             cv2.imshow("Original Image", rectangle_image)
-#             print('not found')
-#         print('>')
-#         cv2.waitKey(0)
-        # cv2.destroyWindow("Detected Image_" + self.get_object_name())
+#             numstep = self.numstep
+#         print("numstep = ", numstep)
+#         pocketData = {}
+#         for x in range(len(self.get_marker_thresh())):
+#             # print(len(template_thresh))
+#             # print(list(template_thresh.values())[x])
+#             super().__init__(image=self.get_image,
+#                              template_thresh=list(
+#                                  self.get_marker_thresh().values())[x],
+#                              template_loc=self.get_marker_location()[x],
+#                              nms_thresh=self.nms_thresh)
+#             (pocketData[x], pocketData[x+len(self.get_marker_thresh())]) \
+#                 = super().match_template(visualize=self.visualize,
+#                                          numstep=numstep)
+#             # print(type(pocketData[x]))
 
-    def run(self, view=False, numstep=100):
-        # Tanwin
-        # print(self.get_marker_thresh())
-        print('run() Marker Font')
+#         for x in range(len(self.get_marker_thresh())):
+#             temp = list(self.get_marker_thresh().keys())[x]
+#             # box = 'box_'+ temp
+#             self.get_object_result()[temp] = pocketData[
+#                 x+len(self.get_marker_thresh())]
+#             self.get_object_result()['box_' + temp] = pocketData[x]
 
-        # gray = cv2.cvtColor(self.get_original_image(), cv2.COLOR_BGR2GRAY)
-        if self.numstep == 0:
-            numstep = numstep
-        else:
-            numstep = self.numstep
-        print("numstep = ", numstep)
-        pocketData = {}
-        for x in range(len(self.get_marker_thresh())):
-            # print(len(template_thresh))
-            # print(list(template_thresh.values())[x])
-            super().__init__(image=self.get_image,
-                             template_thresh=list(
-                                 self.get_marker_thresh().values())[x],
-                             template_loc=self.get_marker_location()[x],
-                             nms_thresh=self.nms_thresh)
-            (pocketData[x], pocketData[x+len(self.get_marker_thresh())]) \
-                = super().match_template(visualize=self.visualize,
-                                         numstep=numstep)
-            # print(type(pocketData[x]))
+#         if view:
+#             self.display_marker_result()
 
-        for x in range(len(self.get_marker_thresh())):
-            temp = list(self.get_marker_thresh().keys())[x]
-            # box = 'box_'+ temp
-            self.get_object_result()[temp] = pocketData[
-                x+len(self.get_marker_thresh())]
-            self.get_object_result()['box_' + temp] = pocketData[x]
-
-        if view:
-            self.display_marker_result()
-
-        # return pocket
+# return pocket
 
 
 class ImageProcessing():
@@ -923,10 +923,14 @@ class ImageProcessing():
         # Dot detection
         next_step = False
         self.horizontal_projection(image_marker)
-        self.detect_horizontal_line(image_marker.copy(), 0, 0, False)
-        if len(self.start_point_h) > 1:
-            one_marker = image_marker[self.start_point_h[0]:
-                                      self.start_point_h[1], :]
+        # self.detect_horizontal_line(image_marker.copy(), 0, 0, False)
+        start_point = self.detect_horizontal_line_up_down(self.h_projection)
+        # if len(self.start_point_h) > 1:
+        if len(start_point) > 1:
+            # one_marker = image_marker[self.start_point_h[0]:
+            #                           self.start_point_h[1], :]
+            one_marker = image_marker[start_point[0]:
+                                      start_point[1], :]
             self.vertical_projection(one_marker)
             self.detect_vertical_line(one_marker.copy(), 0, False)
             if len(self.start_point_v) > 1:
@@ -1286,8 +1290,12 @@ class ImageProcessing():
                 x1_next = marker_pos[region_next][0]
                 x2_now = marker_pos[region][1]
                 x1_now = marker_pos[region][0]
-                dist = x1_now - x1_next
+                # length_now = x2_now - x1_now
                 length_next = x2_next - x1_next
+                dist = abs(x1_now - x1_next)
+                dist_no = x1_now - x1_next
+                # dist_mid = x1_now - x1_next - int(length_next/2)
+                # dist = x2_now - x2_next
 
                 for val in self.conn_pack_minus_body[region]:
                     canvas[val] = 0
@@ -1304,10 +1312,18 @@ class ImageProcessing():
                     final_group_dot['char_{:02d}'.format(count)].append(region)
 
                 # Append next_marker in one char if overlapped
+                # if (x1_now <= x1_next <= x2_now
+                #     or x1_next <= x2_now <= x2_next)\
+                #         or (x1_now <= x2_next <= x2_now
+                #             and dist < 2/3 * length_next):
+                # if (x1_now <= x1_next <= x2_now
+                #     or x1_next <= x2_now <= x2_next)\
+                #         or (x1_now <= x2_next <= x2_now):
                 if (x1_now <= x1_next <= x2_now
-                    or x1_next <= x2_now <= x2_next)\
-                        or (x1_now <= x2_next <= x2_now
-                            and dist < 2/3 * length_next):
+                        or x1_now <= x2_next <= x2_now
+                        or x1_next <= x2_now <= x2_next
+                        or x1_next <= x1_now <= x2_next)\
+                        and dist_no <= 2/3 * length_next:
                     if region not in final_group_marker[
                             'char_{:02d}'.format(count)]:
                         final_group_marker[
@@ -1316,6 +1332,53 @@ class ImageProcessing():
                             'char_{:02d}'.format(count)]:
                         final_group_marker['char_{:02d}'.format(count)].append(
                             region_next)
+                    # if dot:
+                    #     canvas_next = self.image_final_marker.copy()
+                    #     canvas_next[:] = 255
+                    #     for val in self.conn_pack_minus_body[region_next]:
+                    #         canvas_next[val] = 0
+                    #     dot_next = self.dot_checker(canvas)
+                    #     if dot_next:
+                    #         h_now = self.horizontal_projection(canvas)
+                    #         h_next = self.horizontal_projection(canvas_next)
+                    #         h_now = self.detect_horizontal_line_up_down(h_now)
+                    #         h_next = self.detect_horizontal_line_up_down(h_next)
+                    #         height_diff = abs(h_now[0] - h_next[0])
+                    #         if height_diff > 3 * h_now[1] - h_now[0]:
+                    #             if region not in final_group_marker[
+                    #                     'char_{:02d}'.format(count)]:
+                    #                 final_group_marker[
+                    #                     'char_{:02d}'.format(count)].append(region)
+                    #             count += 1
+                    #             final_group_marker['char_{:02d}'.format(count)] = []
+                    #             final_group_dot['char_{:02d}'.format(count)] = []
+                    #         else:
+                    #             if region not in final_group_marker[
+                    #                     'char_{:02d}'.format(count)]:
+                    #                 final_group_marker[
+                    #                     'char_{:02d}'.format(count)].append(region)
+                    #             if region_next not in final_group_marker[
+                    #                     'char_{:02d}'.format(count)]:
+                    #                 final_group_marker['char_{:02d}'.format(count)].append(
+                    #                     region_next)
+                    #     else:
+                    #         if region not in final_group_marker[
+                    #                 'char_{:02d}'.format(count)]:
+                    #             final_group_marker[
+                    #                 'char_{:02d}'.format(count)].append(region)
+                    #         if region_next not in final_group_marker[
+                    #                 'char_{:02d}'.format(count)]:
+                    #             final_group_marker['char_{:02d}'.format(count)].append(
+                    #                 region_next)
+                    # else:
+                    #     if region not in final_group_marker[
+                    #             'char_{:02d}'.format(count)]:
+                    #         final_group_marker[
+                    #             'char_{:02d}'.format(count)].append(region)
+                    #     if region_next not in final_group_marker[
+                    #             'char_{:02d}'.format(count)]:
+                    #         final_group_marker['char_{:02d}'.format(count)].append(
+                    #             region_next)
                 # If not overlapped then append and create new char
                 else:
                     if region not in final_group_marker[
@@ -1342,7 +1405,7 @@ class ImageProcessing():
         # check dot if theres is two dot that parallel and the whitespace is
         # not more than 1/3 dot size then append that to char as one char if
         # it's separated and that 2 appended char only get one dot
-        '''dot_single_count = []
+        dot_single_count = []
         for char in final_group_dot:
             if len(final_group_dot[char]) == 1:
                 dot_single_count.append(char)
@@ -1353,6 +1416,9 @@ class ImageProcessing():
                     break
                 char_now = dot_single_count[x]
                 char_next = dot_single_count[x+1]
+                if char_now not in final_group_dot or \
+                        char_next not in final_group_dot:
+                    continue
                 region_now = final_group_dot[char_now][0]
                 region_next = final_group_dot[char_next][0]
                 pos_now = marker_pos[region_now]
@@ -1360,8 +1426,10 @@ class ImageProcessing():
                 dist_now = pos_now[1] - pos_now[0]
                 between_pos = pos_now[0] - pos_next[1]
 
-                if between_pos < 1/2.4 * dist_now:
-#                     print('_appending char group by its dot_')
+                # if between_pos < 1/2.4 * dist_now:
+                # if between_pos < 1/3 * dist_now:
+                if between_pos < 1/2 * dist_now:
+                    # print('_appending char group by its dot_')
                     for x in range(len(final_group_marker[char_next])):
                         final_group_marker[char_now].append(
                             final_group_marker[char_next][x]
@@ -1370,7 +1438,8 @@ class ImageProcessing():
                         final_group_dot[char_next][0]
                     )
                     del(final_group_marker[char_next])
-                    del(final_group_dot[char_next])'''
+                    del(final_group_dot[char_next])
+
         temp_marker_pos = marker_pos.copy()
         pos = sorted(marker_pos)
         marker_pos = {}
@@ -1527,15 +1596,17 @@ class ImageProcessing():
                     for key in save_sistent:
                         # compare by a/b c/d (is it close enough
                         # to be called consistent)
-                        # enough = save_sistent[key] / key
-                        enough = save_sistent[key] / (key-(round(
-                                                      save_sistent[key]/2)))
+                        enough = save_sistent[key] / key
+                        # enough = save_sistent[key] / (key-(round(
+                        #                               save_sistent[key]/2)))
                         if enough > temp:
                             the_sistent = key
                             temp = enough
+                    # x1_char = x2_2nd_marker \
+                    #     + (x1_1st_marker - x2_2nd_marker - the_sistent) \
+                    #     + round(cut * save_sistent[the_sistent])
                     x1_char = x2_2nd_marker \
-                        + (x1_1st_marker - x2_2nd_marker - the_sistent)\
-                        + round(cut * save_sistent[the_sistent])
+                        + int((x1_1st_marker - x2_2nd_marker)*cut)
                     # + the_sistent \
                     final_segmented_char = final_segmented_char_candidate[
                         :, x1_char:wall[1]

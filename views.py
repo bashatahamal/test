@@ -272,6 +272,7 @@ def processing():
                 font_list, loc_path = flow.font_list(
                     imagePath=imagePath, image=gray, setting=setting, markerPath=markerPath)
                 local_count = -1
+                first = False
                 for font_object in font_list:
                     local_count += 1
                     if setting[font_folder[local_count]][2] == 'true':
@@ -292,13 +293,21 @@ def processing():
                         skip_marker.append(marker)
                     font_object.run(bw_method=bw_method,
                                     skip_marker=skip_marker)
-                    imagelist_template_scale_visualize.append(
-                        font_object.imagelist_visualize)
-                    imagelist_visualize_white_block.append(
-                        font_object.imagelist_visualize_white_blok)
                     temp_object.append(font_object.get_object_result())
                     imagelist_template_matching_result.append(
                         font_object.display_marker_result(img, skip_marker))
+                    if not first:
+                        first = True
+                        imagelist_template_scale_visualize.append(
+                            font_object.imagelist_visualize)
+                        imagelist_visualize_white_block.append(
+                            font_object.imagelist_visualize_white_blok)
+                    # imagelist_template_scale_visualize = font_object.imagelist_visualize
+                    # imagelist_visualize_white_block = font_object.imagelist_visualize_white_blok
+                # imagelist_template_scale_visualize.append(
+                #     font_object.imagelist_visualize)
+                # imagelist_visualize_white_block.append(
+                #     font_object.imagelist_visualize_white_blok)
                 # print(temp_object)
                 yield str(global_count+1) + '_Doing BIG BLOK_' + str(numfiles) + '$'
                 max_id = flow.most_marker(temp_object)

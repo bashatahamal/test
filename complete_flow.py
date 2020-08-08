@@ -1309,7 +1309,8 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
 
     if not other_than_tanwin:
         print('max height times x')
-        max_height = max_height * 5
+        max_height = max_height * 2
+    max_height = 20
     print('line height: ', max_height)
     print('black pixel: ', bp_max)
 
@@ -1821,7 +1822,7 @@ def draw_bounding_box(img, coordinat, label, color, font_scale=0.5, font=cv2.FON
         (int(x1), int(y1)),
         (int(x2), int(y2)),
         color=color,
-        thickness=1
+        thickness=2
     )
     ((label_width, label_height), _) = cv2.getTextSize(
         label,
