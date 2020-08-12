@@ -917,10 +917,10 @@ def normal_image_processing_blok(imagePath, object_result, bw_method, list_start
                         if bag_h_original[image] <= y1 <= bag_h_original[image+1] \
                                 or bag_h_original[image] <= y2 <= bag_h_original[image+1]\
                             or bag_h_original[image] <= y_mid <= bag_h_original[image+1]:
-                            print('processing:', name)
+                            # print('processing:', name)
                             pass
                         else:
-                            print('continue:', name)
+                            # print('continue:', name)
                             continue
                         x2 = (temp_x)[arr][2]  # x2 is on the right
                         x1 = (temp_x)[arr][0]  # x1 is on the left
@@ -936,9 +936,13 @@ def normal_image_processing_blok(imagePath, object_result, bw_method, list_start
 #                         cv2.waitKey(0)
                         wall = group_marker_by_wall.keys()
                         wall = list(wall)
+                        if wall_count > len(wall)-1 or wall_count < 0:
+                            continue
                         ####
                         # print(group_marker_by_wall, wall_count)
                         ####
+                        # print('wall min 1', len(wall)-1)
+                        # print('wall count ', wall_count)
                         found_in_wall = False
                         for region in group_marker_by_wall[
                                 wall[wall_count]]:
