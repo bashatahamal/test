@@ -466,7 +466,7 @@ class ImageProcessing():
 
         # Get the 2nd greatest to base_start
         temp = 0
-        how_far = int(1/4*cut_at)
+        how_far = int(1/5*cut_at)
         if self.base_end - how_far >= 0:
             start_2 = self.base_end - how_far
         else:
@@ -1290,7 +1290,7 @@ class ImageProcessing():
                 x1_next = marker_pos[region_next][0]
                 x2_now = marker_pos[region][1]
                 x1_now = marker_pos[region][0]
-                # length_now = x2_now - x1_now
+                length_now = x2_now - x1_now
                 length_next = x2_next - x1_next
                 dist = abs(x1_now - x1_next)
                 dist_no = x1_now - x1_next
@@ -1311,6 +1311,28 @@ class ImageProcessing():
                 if dot:
                     final_group_dot['char_{:02d}'.format(count)].append(region)
 
+                def append_marker(region, region_next, count, final_group_marker,
+                                  final_group_dot, dist_no, length_next, length_now):
+                    # if dist_no <= 3/4 * length_next and dist_no <= 1/4 * length_now:
+                    if dist_no <= 3/4 * length_next:
+                    # if dist_no <= length:
+                        if region not in final_group_marker[
+                                'char_{:02d}'.format(count)]:
+                            final_group_marker[
+                                'char_{:02d}'.format(count)].append(region)
+                        if region_next not in final_group_marker[
+                                'char_{:02d}'.format(count)]:
+                            final_group_marker['char_{:02d}'.format(count)].append(
+                                region_next)
+                    else:
+                        if region not in final_group_marker[
+                                'char_{:02d}'.format(count)]:
+                            final_group_marker[
+                                'char_{:02d}'.format(count)].append(region)
+                        count += 1
+                        final_group_marker['char_{:02d}'.format(count)] = []
+                        final_group_dot['char_{:02d}'.format(count)] = []
+                    return final_group_marker, final_group_dot, count
                 # Append next_marker in one char if overlapped
                 # if (x1_now <= x1_next <= x2_now
                 #     or x1_next <= x2_now <= x2_next)\
@@ -1322,63 +1344,35 @@ class ImageProcessing():
                 if (x1_now <= x1_next <= x2_now
                         or x1_now <= x2_next <= x2_now
                         or x1_next <= x2_now <= x2_next
-                        or x1_next <= x1_now <= x2_next)\
-                        and dist_no <= 2/3 * length_next:
-                    if region not in final_group_marker[
-                            'char_{:02d}'.format(count)]:
-                        final_group_marker[
-                            'char_{:02d}'.format(count)].append(region)
-                    if region_next not in final_group_marker[
-                            'char_{:02d}'.format(count)]:
-                        final_group_marker['char_{:02d}'.format(count)].append(
-                            region_next)
-                    # if dot:
-                    #     canvas_next = self.image_final_marker.copy()
-                    #     canvas_next[:] = 255
-                    #     for val in self.conn_pack_minus_body[region_next]:
-                    #         canvas_next[val] = 0
-                    #     dot_next = self.dot_checker(canvas)
-                    #     if dot_next:
-                    #         h_now = self.horizontal_projection(canvas)
-                    #         h_next = self.horizontal_projection(canvas_next)
-                    #         h_now = self.detect_horizontal_line_up_down(h_now)
-                    #         h_next = self.detect_horizontal_line_up_down(h_next)
-                    #         height_diff = abs(h_now[0] - h_next[0])
-                    #         if height_diff > 3 * h_now[1] - h_now[0]:
-                    #             if region not in final_group_marker[
-                    #                     'char_{:02d}'.format(count)]:
-                    #                 final_group_marker[
-                    #                     'char_{:02d}'.format(count)].append(region)
-                    #             count += 1
-                    #             final_group_marker['char_{:02d}'.format(count)] = []
-                    #             final_group_dot['char_{:02d}'.format(count)] = []
-                    #         else:
-                    #             if region not in final_group_marker[
-                    #                     'char_{:02d}'.format(count)]:
-                    #                 final_group_marker[
-                    #                     'char_{:02d}'.format(count)].append(region)
-                    #             if region_next not in final_group_marker[
-                    #                     'char_{:02d}'.format(count)]:
-                    #                 final_group_marker['char_{:02d}'.format(count)].append(
-                    #                     region_next)
-                    #     else:
-                    #         if region not in final_group_marker[
-                    #                 'char_{:02d}'.format(count)]:
-                    #             final_group_marker[
-                    #                 'char_{:02d}'.format(count)].append(region)
-                    #         if region_next not in final_group_marker[
-                    #                 'char_{:02d}'.format(count)]:
-                    #             final_group_marker['char_{:02d}'.format(count)].append(
-                    #                 region_next)
-                    # else:
-                    #     if region not in final_group_marker[
-                    #             'char_{:02d}'.format(count)]:
-                    #         final_group_marker[
-                    #             'char_{:02d}'.format(count)].append(region)
-                    #     if region_next not in final_group_marker[
-                    #             'char_{:02d}'.format(count)]:
-                    #         final_group_marker['char_{:02d}'.format(count)].append(
-                    #             region_next)
+                        or x1_next <= x1_now <= x2_next):
+                    if dot:
+                        canvas_next = self.image_final_marker.copy()
+                        canvas_next[:] = 255
+                        for val in self.conn_pack_minus_body[region_next]:
+                            canvas_next[val] = 0
+                        dot_next = self.dot_checker(canvas_next)
+                        if dot_next:
+                            # h_now = self.horizontal_projection(canvas)
+                            # h_next = self.horizontal_projection(canvas_next)
+                            # h_now = self.detect_horizontal_line_up_down(h_now)
+                            # h_next = self.detect_horizontal_line_up_down(
+                            #     h_next)
+                            # height_diff = abs(h_now[0] - h_next[0])
+                            # if height_diff > 3 * h_now[1] - h_now[0]:
+                            if region not in final_group_marker[
+                                    'char_{:02d}'.format(count)]:
+                                final_group_marker[
+                                    'char_{:02d}'.format(count)].append(region)
+                            if region_next not in final_group_marker[
+                                    'char_{:02d}'.format(count)]:
+                                final_group_marker['char_{:02d}'.format(count)].append(
+                                    region_next)
+                        else:
+                            final_group_marker, final_group_dot, count = append_marker(
+                                region, region_next, count, final_group_marker, final_group_dot, dist_no, length_next, length_now)
+                    else:
+                        final_group_marker, final_group_dot, count = append_marker(
+                            region, region_next, count, final_group_marker, final_group_dot, dist_no, length_next, length_now)
                 # If not overlapped then append and create new char
                 else:
                     if region not in final_group_marker[

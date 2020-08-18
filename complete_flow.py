@@ -1314,9 +1314,9 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
     if not other_than_tanwin:
         print('max height times x')
         max_height = max_height * 2
-    max_height = 20
-    print('line height: ', max_height)
-    print('black pixel: ', bp_max)
+    # max_height = 20
+    # print('line height: ', max_height)
+    # print('black pixel: ', bp_max)
 
     image1 = gray
     body_v_proj = horizontal_projection(image1)
@@ -1395,6 +1395,8 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
         # print('start point v:', start_point_v)
         for x in range(len(start_point_v)):
             if x % 2 == 0:
+                print('line ', x, ' height :',
+                      start_point_v[x+1] - start_point_v[x], 'pixel')
                 cv2.line(image_v, (start_point_v[x], 0),
                          (start_point_v[x], height), (0, 0, 0), 2)
             else:
@@ -1404,6 +1406,7 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
         # cv2.imshow('line', image_v)
         # print('>')
         # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
 
         v_point_thresh = 8
         if len(start_point_v) >= v_point_thresh \
@@ -1816,7 +1819,7 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
     return save_state, normal_processing_result, crop_ratio_processing_result, imagelist_horizontal_line_by_eight_conn, image_v_checking
 
 
-def draw_bounding_box(img, coordinat, label, color, font_scale=0.5, font=cv2.FONT_HERSHEY_PLAIN):
+def draw_bounding_box(img, coordinat, label, color, font_scale=1, font=cv2.FONT_HERSHEY_PLAIN):
     x1 = coordinat[0]
     y1 = coordinat[1]
     x2 = coordinat[2]

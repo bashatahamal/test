@@ -103,7 +103,7 @@ def get_page():
     return render_template('public/page.html')
 
 
-def draw_bounding_box(img, coordinat, label, color, font_scale=0.5, font=cv2.FONT_HERSHEY_PLAIN):
+def draw_bounding_box(img, coordinat, label, color, font_scale=1, font=cv2.FONT_HERSHEY_PLAIN):
     x1 = coordinat[0]
     y1 = coordinat[1]
     x2 = coordinat[2]
@@ -144,11 +144,65 @@ def draw_bounding_box(img, coordinat, label, color, font_scale=0.5, font=cv2.FON
     )
     return img
 
+def draw_bounding_box_up(img, coordinat, label, color, font_scale=1, font=cv2.FONT_HERSHEY_PLAIN):
+    x1 = coordinat[0]
+    y1 = coordinat[1]
+    x2 = coordinat[2]
+    y2 = coordinat[3]
+    cv2.rectangle(
+        img,
+        (int(x1), int(y1)),
+        (int(x2), int(y2)),
+        color=color,
+        thickness=1
+    )
+    ((label_width, label_height), _) = cv2.getTextSize(
+        label,
+        fontFace=font,
+        fontScale=font_scale,
+        thickness=1
+    )
 
-def detected_and_segmented_image(save_state, bw_image):
+    cv2.rectangle(
+        img,
+        (int(x1), int(y1)),
+        (int(x1 + label_width + label_width * 0.05),
+          int(y1 - label_height - label_height * 0.25)),
+        #  int(y2 + label_height + label_height * 0.25)),
+        color=color,
+        thickness=cv2.FILLED
+    )
+    cv2.putText(
+        img,
+        label,
+        # org=(int(x1), int(y1 - label_height - label_height * 0.25)),
+        org=(int(x1), int(y1)),
+        # org=(int(x1), int(y2 + label_height + label_height * 0.25)),
+        fontFace=font,
+        fontScale=font_scale,
+        color=(255, 255, 255),
+        thickness=1
+    )
+    return img
+
+
+def detected_and_segmented_image(save_state, bw_image, pred_result):
     global skip_index
+    char_list_nameonly = [
+        'Alif‬', 'Bā’', 'Tā’', 'Ṡā’‬', 'Jīm', 'h_Ḥā’‬', 'Khā’‬',
+        'Dāl‬', 'Żāl‬', 'Rā’‬', 'zai‬', 'sīn‬', 'syīn‬', 's_ṣād',
+        'd_ḍād', 't_ṭā’‬', 'z_ẓȧ’‬', '‘ain', 'gain‬', 'fā’‬', 'qāf‬',
+        'kāf‬', 'lām‬', 'mīm‬', 'nūn‬', 'wāw‬', 'hā’‬', 'yā’‬'
+    ]
+    char_name = [
+        'Alif', 'Ba', 'Ta', 'Tsa', 'Jim', 'ha', 'Kha',
+        'Dal', 'Zal', 'Ra', 'Zai', 'Sin', 'Syin', 'Sad',
+        'Dad', 'Tho', 'Dza', 'Ain', 'Gain', 'Fa', 'Qaf',
+        'Kaf', 'Lam', 'Mim', 'Nun', 'Waw', 'Ha', 'Ya', '404'
+    ]
     bw_copy = bw_image.copy()
     count = 0
+    cn = 0
     for x in save_state:
         skip = False
         for index in skip_index:
@@ -157,7 +211,6 @@ def detected_and_segmented_image(save_state, bw_image):
                 break
         if len(save_state[x]) < 2 or skip:
             continue
-        count += 1
         coordinat = [save_state[x][3][0], save_state[x][3][1],
                      save_state[x][3][2], save_state[x][3][3]]
         bw_copy = draw_bounding_box(bw_copy, coordinat, str(count), (0, 0, 0))
@@ -167,8 +220,21 @@ def detected_and_segmented_image(save_state, bw_image):
         coordinat = [save_state[x][6][0][0], save_state[x][6][0][1],
                      save_state[x][6][1][0], save_state[x][6][1][1]]
         bw_copy = draw_bounding_box(bw_copy, coordinat, str(count), (100, 100, 100))
+        name_id = 28
+        if pred_result[count] == 'n/a':
+            cn = count
+            while pred_result[cn] == 'n/a':
+                cn += 1
+        for n in range(len(char_list_nameonly)):
+            if pred_result[cn] == char_list_nameonly[n]:
+                name_id = n
+                break
+        print(type(name_id))
+        bw_copy = draw_bounding_box_up(bw_copy, coordinat, char_name[name_id], (100, 100, 100))
         # cv2.rectangle(bw_copy, save_state[x][6][0], save_state[x][6][1],
         #               (200, 150, 0), 1)
+        count += 1
+        cn += 1
 
     return bw_copy
 
@@ -345,7 +411,7 @@ def processing():
                     )
                     yield str(global_count+1) + '_Saving Result_' + str(numfiles) + '$'
                     ds_image = detected_and_segmented_image(
-                        save_state, bw_image)
+                        save_state, bw_image, pred_result)
                     listof_imagelist_template_matching_result.append(
                         imagelist_template_matching_result)
                     listof_imagelist_template_scale_visualize.append(
@@ -953,7 +1019,7 @@ def sketch():
                 app.config["IMAGE_UPLOADS"], image.filename)
             list_image_files.append(saved_path)
             image.save(saved_path)
-            check_image_size(saved_path, 2000)
+            # check_image_size(saved_path, 4000)
             print("Image saved")
             print(list_image_files)
             res = make_response(jsonify(saved_path), 200)
