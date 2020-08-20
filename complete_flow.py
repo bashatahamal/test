@@ -744,7 +744,7 @@ def normal_image_processing_blok(imagePath, object_result, bw_method, list_start
     # cv2.imshow('otsu', image1)
     # cv2.imshow('simple', image2)
     # cv2.imshow('adapt mean', image3)
-    # cv2.imshow('adapt gaussian', image)
+    # cv2.imshow('start', image)
     # cv2.waitKey(0)
     # image = cv2.bitwise_not(image)
     # kernel = np.ones((1,1), np.uint8)
@@ -819,9 +819,25 @@ def normal_image_processing_blok(imagePath, object_result, bw_method, list_start
 #                                             height=int(h * scale))
         scale = 1
         gray = cv2.cvtColor(temp_image_ori, cv2.COLOR_BGR2GRAY)
-        temp_image = cv2.adaptiveThreshold(gray, 255,
-                                           cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-                                           cv2.THRESH_BINARY, 11, 2)
+        if bw_method == 0:
+            # Otsu threshold
+            ret_img, temp_image = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY
+                                        + cv2.THRESH_OTSU)
+        if bw_method == 1:
+            # Simple threshold
+            ret_img, temp_image = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY)
+        if bw_method == 2:
+            # Adaptive threshold value is the mean of neighbourhood area
+            temp_image = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_MEAN_C,
+                                        cv2.THRESH_BINARY, 11, 2)
+        if bw_method == 3:
+            # Adaptive threshold value is the weighted sum of neighbourhood
+            # values where weights are a gaussian window
+            temp_image = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                        cv2.THRESH_BINARY, 11, 2)
+        # cv2.imshow('line', temp_image)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
         # temp_image = temp_image_ori
         # Calculate base line processing from self.h_projection
         input_image.horizontal_projection(temp_image.copy())
@@ -951,7 +967,8 @@ def normal_image_processing_blok(imagePath, object_result, bw_method, list_start
                             region_yx = conn_pack_minus_body[
                                 region]
                             for y_x in region_yx:
-                                if y_x[1] < x1 - width_x:
+                                # if there is pixel marker that lower than the - x than it is inside
+                                if y_x[1] < x1 - 4/5 * width_x:
                                     print('add inside wall')
                                     crop_words['final_inside_' + name
                                                + '_' + str(arr)] \

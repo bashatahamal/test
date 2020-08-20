@@ -1338,7 +1338,7 @@ class FontWrapper(Marker):
             # Square, Portrait or Landscape image
             if width < scale * height:
                 if height < scale * width:
-                    #                 print('_square_')
+                    # print('_square_')
                     black = False
                     white = False
                     middle_hole = False
@@ -1351,7 +1351,7 @@ class FontWrapper(Marker):
                         if white and one_marker[y, round(width/2)] == 0:
                             middle_hole = True
                     if middle_hole:
-                        #                     print('_white hole in the middle_')
+                        # print('_white hole in the middle_')
                         write_canvas = False
                     else:
                         # Checking all pixel
@@ -1373,7 +1373,7 @@ class FontWrapper(Marker):
                                     white_hole = True
                                     break
                         if white_hole:
-                            #                         print('_there is a hole_')
+                            # print('_there is a hole_')
                             write_canvas = False
                         else:
                             # Check on 1/4 till 3/4 region
@@ -1398,10 +1398,10 @@ class FontWrapper(Marker):
                                         too_many_whites = True
                                         break
                                 if too_many_whites:
-                                    #                                 print('_too many white value in 1/5 till 1/2_')
+                                    # print('_too many white value in 1/5 till 1/2_')
                                     write_canvas = False
                                 else:
-                                    #                                 print('_DOT CONFIRM_')
+                                    # print('_DOT CONFIRM_')
                                     write_canvas = True
     #                         else:
     #                             print('not touching')
@@ -1412,7 +1412,7 @@ class FontWrapper(Marker):
                         # bwb_up = False
                         bwb_down = False
                         bwb_count = 0
-                        bwb_thresh = round(height/2.1)
+                        bwb_thresh = round(height/2)
                         addition = round(height/8)
                         up_limit = round(height/2)
                         down_limit = round(height/2)
@@ -1463,13 +1463,13 @@ class FontWrapper(Marker):
                             if bw_count > bw_max:
                                 bw_max = bw_count
                         if bwb_count >= bwb_thresh and bwb_down and bw_max < 3:
-                            #                         print('_KAF HAMZAH CONFIRM_')
+                            # print('_KAF HAMZAH CONFIRM_')
                             write_canvas = True
                         else:
-                            #                         print('_also not kaf hamzah_')
+                            # print('_also not kaf hamzah_')
                             write_canvas = False
                 else:
-                    #                 print('_portrait image_')
+                    # print('_portrait image_')
                     # Split image into two vertically and looking for bwb
                     # (Kaf Hamzah)
                     bwb_up = False
@@ -1501,12 +1501,12 @@ class FontWrapper(Marker):
                                 bwb_down = True
                                 break
                     if bwb_up and bwb_down:
-                        #                     print('_KAF HAMZAH CONFIRM_')
+                        # print('_KAF HAMZAH CONFIRM_')
                         write_canvas = True
                     else:
                         write_canvas = False
             else:
-                #             print('_landscape image_')
+                # print('_landscape image_')
                 black = False
                 white = False
                 wbw_confirm = False
@@ -1523,10 +1523,10 @@ class FontWrapper(Marker):
                         over_pattern = True
                         break
                 if over_pattern:
-                    #                 print('_too many wbw + b_')
+                    # print('_too many wbw + b_')
                     write_canvas = False
                 elif wbw_confirm:
-                    #                 print('_mid is wbw_')
+                    # print('_mid is wbw_')
                     too_many_white_val = False
                     # cut in the middle up vertically wether the pixel all white
                     for x in range(round(width/5), round(width/3)):
@@ -1538,7 +1538,7 @@ class FontWrapper(Marker):
                             too_many_white_val = True
                             break
                     if too_many_white_val:
-                        #                     print('_too many white val in 1/5 till 1/3_')
+                        # print('_too many white val in 1/5 till 1/3_')
                         write_canvas = False
                     else:
                         half_img = one_marker[:, 0:round(width/2)]
@@ -1566,13 +1566,13 @@ class FontWrapper(Marker):
                             if touch_up and touch_down:
                                 break
                         if touch_up and touch_down:
-                            #                         print('_DOT CONFIRM_')
+                            # print('_DOT CONFIRM_')
                             write_canvas = True
                         else:
-                            #                         print('_not touching_')
+                            # print('_not touching_')
                             write_canvas = False
                 else:
-                    #                 print('_middle is not wbw_')
+                    # print('_middle is not wbw_')
                     write_canvas = False
                     # Split image into two vertically and looking for bwb
                     # (Kaf Hamzah)
@@ -1605,7 +1605,7 @@ class FontWrapper(Marker):
                                 bwb_down = True
                                 break
                     if bwb_up and bwb_down:
-                        #                     print('_KAF HAMZAH CONFIRM_')
+                        # print('_KAF HAMZAH CONFIRM_')
                         write_canvas = True
                     else:
                         write_canvas = False
@@ -2007,12 +2007,16 @@ def font(imagePath, image, setting, markerPath):
     font_AlQalam = FontWrapper(thresh_list={'tanwin_1': float(setting['AlQalam'][0][0]),
                                             'tanwin_2': float(setting['AlQalam'][0][1]),
                                             'nun_isolated': float(setting['AlQalam'][0][2]),
-                                            'nun_begin': float(setting['AlQalam'][0][3]),
+                                            'nun_begin_1': float(setting['AlQalam'][0][3]),
+                                            'nun_begin_2': float(setting['AlQalam'][0][3]),
                                             'nun_middle_1': float(setting['AlQalam'][0][4]),
                                             'nun_middle_2': float(setting['AlQalam'][0][4]),
                                             'nun_middle_3': float(setting['AlQalam'][0][4]),
                                             'nun_middle_4': float(setting['AlQalam'][0][4]),
+                                            'nun_middle_5': float(setting['AlQalam'][0][4]),
+                                            'nun_middle_6': float(setting['AlQalam'][0][4]),
                                             'nun_end': float(setting['AlQalam'][0][5]),
+                                            'nun_end_2': float(setting['AlQalam'][0][5]),
                                             'mim_isolated': float(setting['AlQalam'][0][6]),
                                             'mim_begin': float(setting['AlQalam'][0][7]),
                                             'mim_middle': float(setting['AlQalam'][0][8]),

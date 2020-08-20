@@ -677,6 +677,9 @@ class ImageProcessing():
 
     def eight_connectivity(self, image, oneline_baseline):
         height, width = image.shape
+        # cv2.imshow('input eight con', image)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
         image_process = image.copy()
         # For image flag
         image_process[:] = 255
@@ -949,7 +952,7 @@ class ImageProcessing():
             # Square, Portrait or Landscape image
             if width < scale * height:
                 if height < scale * width:
-                    #                 print('_square_')
+                    # print('_square_')
                     black = False
                     white = False
                     middle_hole = False
@@ -962,7 +965,7 @@ class ImageProcessing():
                         if white and one_marker[y, round(width/2)] == 0:
                             middle_hole = True
                     if middle_hole:
-                        #                     print('_white hole in the middle_')
+                        # print('_white hole in the middle_')
                         write_canvas = False
                     else:
                         # Checking all pixel
@@ -984,7 +987,7 @@ class ImageProcessing():
                                     white_hole = True
                                     break
                         if white_hole:
-                            #                         print('_there is a hole_')
+                            # print('_there is a hole_')
                             write_canvas = False
                         else:
                             # Check on 1/4 till 3/4 region
@@ -1009,10 +1012,10 @@ class ImageProcessing():
                                         too_many_whites = True
                                         break
                                 if too_many_whites:
-                                    #                                 print('_too many white value in 1/5 till 1/2_')
+                                    # print('_too many white value in 1/5 till 1/2_')
                                     write_canvas = False
                                 else:
-                                    #                                 print('_DOT CONFIRM_')
+                                    # print('_DOT CONFIRM_')
                                     write_canvas = True
     #                         else:
     #                             print('not touching')
@@ -1023,7 +1026,7 @@ class ImageProcessing():
                         # bwb_up = False
                         bwb_down = False
                         bwb_count = 0
-                        bwb_thresh = round(height/2.1)
+                        bwb_thresh = round(height/2)
                         addition = round(height/8)
                         up_limit = round(height/2)
                         down_limit = round(height/2)
@@ -1074,13 +1077,13 @@ class ImageProcessing():
                             if bw_count > bw_max:
                                 bw_max = bw_count
                         if bwb_count >= bwb_thresh and bwb_down and bw_max < 3:
-                            #                         print('_KAF HAMZAH CONFIRM_')
+                            # print('_KAF HAMZAH CONFIRM_')
                             write_canvas = True
                         else:
-                            #                         print('_also not kaf hamzah_')
+                            # print('_also not kaf hamzah_')
                             write_canvas = False
                 else:
-                    #                 print('_portrait image_')
+                    # print('_portrait image_')
                     # Split image into two vertically and looking for bwb
                     # (Kaf Hamzah)
                     bwb_up = False
@@ -1112,12 +1115,12 @@ class ImageProcessing():
                                 bwb_down = True
                                 break
                     if bwb_up and bwb_down:
-                        #                     print('_KAF HAMZAH CONFIRM_')
+                        # print('_KAF HAMZAH CONFIRM_')
                         write_canvas = True
                     else:
                         write_canvas = False
             else:
-                #             print('_landscape image_')
+                # print('_landscape image_')
                 black = False
                 white = False
                 wbw_confirm = False
@@ -1134,10 +1137,10 @@ class ImageProcessing():
                         over_pattern = True
                         break
                 if over_pattern:
-                    #                 print('_too many wbw + b_')
+                    # print('_too many wbw + b_')
                     write_canvas = False
                 elif wbw_confirm:
-                    #                 print('_mid is wbw_')
+                    # print('_mid is wbw_')
                     too_many_white_val = False
                     # cut in the middle up vertically wether the pixel all white
                     for x in range(round(width/5), round(width/3)):
@@ -1149,7 +1152,7 @@ class ImageProcessing():
                             too_many_white_val = True
                             break
                     if too_many_white_val:
-                        #                     print('_too many white val in 1/5 till 1/3_')
+                        # print('_too many white val in 1/5 till 1/3_')
                         write_canvas = False
                     else:
                         half_img = one_marker[:, 0:round(width/2)]
@@ -1170,17 +1173,12 @@ class ImageProcessing():
                         # for x in range(one_3rd-1, 2*one_3rd):
                         # for x in range(one_4th-1, 3*one_4th):
                         for x in range(one_8th-1, 7*one_8th):
-                            try:
-                                half_img[0, x]
-                            except (ValueError, IndexError):
+                            if half_img[0, x] == 0:
+                                touch_up = True
+                            if half_img[half_height-1, x] == 0:
+                                touch_down = True
+                            if touch_up and touch_down:
                                 break
-                            else:
-                                if half_img[0, x] == 0:
-                                    touch_up = True
-                                if half_img[half_height-1, x] == 0:
-                                    touch_down = True
-                                if touch_up and touch_down:
-                                    break
                         if touch_up and touch_down:
                             # print('_DOT CONFIRM_')
                             write_canvas = True
@@ -1188,7 +1186,7 @@ class ImageProcessing():
                             # print('_not touching_')
                             write_canvas = False
                 else:
-                    #                 print('_middle is not wbw_')
+                    # print('_middle is not wbw_')
                     write_canvas = False
                     # Split image into two vertically and looking for bwb
                     # (Kaf Hamzah)

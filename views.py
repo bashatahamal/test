@@ -229,7 +229,7 @@ def detected_and_segmented_image(save_state, bw_image, pred_result):
             if pred_result[cn] == char_list_nameonly[n]:
                 name_id = n
                 break
-        print(type(name_id))
+        # print(type(name_id))
         bw_copy = draw_bounding_box_up(bw_copy, coordinat, char_name[name_id], (100, 100, 100))
         # cv2.rectangle(bw_copy, save_state[x][6][0], save_state[x][6][1],
         #               (200, 150, 0), 1)
