@@ -1,4 +1,4 @@
-import mess
+import mess 
 import cv2
 
 dot = mess.FontWrapper(image_loc='',
@@ -6,7 +6,7 @@ dot = mess.FontWrapper(image_loc='',
                        thresh_list={'': ''},
                        image='')
 
-image = cv2.imread('/home/mhbrt/Downloads/0_868.png')
+image = cv2.imread('/home/mhbrt/Downloads/0_436.png')
 #cv2.imshow('df', image)
 #cv2.waitKey(0)
 #cv2.destroyAllWindows()

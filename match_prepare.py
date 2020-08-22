@@ -1106,7 +1106,7 @@ class ImageProcessing():
                             break
                         black = False
                         white = False
-                        for y in range(round(height/2), height):
+                        for y in range(round(height/1.78), height):
                             if one_marker[y, x] == 0:
                                 black = True
                             if black and one_marker[y, x] > 0:
