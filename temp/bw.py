@@ -11,7 +11,7 @@ def horizontal_projection(image_h):
 
     return h_projection
 
-for imagePath in sorted(glob.glob("*.jpg")):
+for imagePath in sorted(glob.glob("*.png")):
     print('________________Next File_________________')
     image = cv2.imread(imagePath)
     original_image = cv2.imread(imagePath)

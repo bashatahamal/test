@@ -1332,17 +1332,19 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
         print('max height times x')
         max_height = max_height * 2
     # max_height = 20
-    # print('line height: ', max_height)
-    # print('black pixel: ', bp_max)
+    print('line height: ', max_height)
+    print('black pixel: ', bp_max)
+    cv2.waitKey(0)
 
     image1 = gray
     body_v_proj = horizontal_projection(image1)
     x = body_v_proj*-1
     if max(body_v_proj) > bp_max:
         peaks, _ = find_peaks(x, distance=max_height, prominence=bp_max*(2/3))
+        # peaks, _ = find_peaks(x, distance=max_height, prominence=0)
     else:
         print('no prominence')
-        peaks, _ = find_peaks(x, distance=max_height, prominence=0)
+        peaks, _ = find_peaks(x, distance=max_height, prominence=0,  threshold=[None, -0])
     prominences = peak_prominences(x, peaks)[0]
     contour_heights = x[peaks] - prominences
 
