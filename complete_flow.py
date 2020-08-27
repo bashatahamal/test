@@ -1330,8 +1330,9 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
 
     if not other_than_tanwin:
         print('max height times x')
-        max_height = max_height * 2
-    # max_height = 20
+        max_height = max_height * 1
+        # max_height = max_width * 1
+    # max_height = 50
     print('line height: ', max_height)
     print('black pixel: ', bp_max)
     cv2.waitKey(0)
@@ -1342,9 +1343,10 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
     if max(body_v_proj) > bp_max:
         peaks, _ = find_peaks(x, distance=max_height, prominence=bp_max*(2/3))
         # peaks, _ = find_peaks(x, distance=max_height, prominence=0)
+        # peaks, _ = find_peaks(x, distance=max_height, prominence=0,  threshold=[None, -0])
     else:
         print('no prominence')
-        peaks, _ = find_peaks(x, distance=max_height, prominence=0,  threshold=[None, -0])
+        peaks, _ = find_peaks(x, distance=max_height, plateau_size=8, threshold=[None, -0])
     prominences = peak_prominences(x, peaks)[0]
     contour_heights = x[peaks] - prominences
 
@@ -1854,7 +1856,7 @@ def draw_bounding_box(img, coordinat, label, color, font_scale=1, font=cv2.FONT_
         label,
         fontFace=font,
         fontScale=font_scale,
-        thickness=1
+        thickness=2
     )
 
     cv2.rectangle(
@@ -1874,8 +1876,8 @@ def draw_bounding_box(img, coordinat, label, color, font_scale=1, font=cv2.FONT_
         org=(int(x1), int(y2 + label_height + label_height * 0.25)),
         fontFace=font,
         fontScale=font_scale,
-        color=(255, 255, 255),
-        thickness=1
+        color=(0, 0, 0),
+        thickness=2
     )
     return img
 
@@ -1956,6 +1958,15 @@ def character_recognition(save_state, imagePath, model):
         'kāf‬', 'lām‬', 'mīm‬', 'nūn‬', 'wāw‬', 'hā’‬', 'yā’‬'
     ]
     pred_result = []
+    char_count = {}
+    char_count['IDM'] = 0
+    char_count['IDG'] = 0
+    char_count['IDL'] = 0 
+    char_count['IZH'] = 0
+    char_count['IZS'] = 0
+    char_count['IKH'] = 0
+    char_count['IKS'] = 0
+    char_count['IQB'] = 0
     for x in save_state:
         # skipping
         skip = False
@@ -2021,18 +2032,20 @@ def character_recognition(save_state, imagePath, model):
         coordinat = [final_box[0], final_box[1], final_box[2], final_box[3]]
         if marker[0] == 'nun' or marker[0] == 'tanwin':
             if y_pred[count] == iqlab[0]:
+                char_count['IQB'] += 1
                 original_image = draw_bounding_box(original_image,
                                                    coordinat,
-                                                   'IQB',
+                                                   'IQB_'+str(char_count['IQB']),
                                                    (8, 0, 255))
                 print('iqlab')
                 continue
             for c in idgham_bilagunnah:
                 if y_pred[count] == c:
                     print('idgham bilagunnah')
+                    char_count['IDL'] += 1
                     original_image = draw_bounding_box(original_image,
                                                        coordinat,
-                                                       'IDL',
+                                                       'IDL_'+str(char_count['IDL']),
                                                        (0, 153, 0))
                     found = True
                     break
@@ -2041,9 +2054,10 @@ def character_recognition(save_state, imagePath, model):
             for c in idgham_bigunnah:
                 if y_pred[count] == c:
                     print('idgham bigunnah')
+                    char_count['IDG'] += 1
                     original_image = draw_bounding_box(original_image,
                                                        coordinat,
-                                                       'IDG',
+                                                       'IDG_'+str(char_count['IDG']),
                                                        (0, 255, 0))
                     found = True
                     break
@@ -2052,9 +2066,10 @@ def character_recognition(save_state, imagePath, model):
             for c in idzhar_halqi:
                 if y_pred[count] == c:
                     print('idzhar halqi')
+                    char_count['IZH'] += 1
                     original_image = draw_bounding_box(original_image,
                                                        coordinat,
-                                                       'IZH',
+                                                       'IZH_'+str(char_count['IZH']),
                                                        (204, 0, 0))
                     found = True
                     break
@@ -2063,9 +2078,10 @@ def character_recognition(save_state, imagePath, model):
             for c in ikhfa_hakiki:
                 if y_pred[count] == c:
                     print('ikhfa hakiki')
+                    char_count['IKH'] += 1
                     original_image = draw_bounding_box(original_image,
                                                        coordinat,
-                                                       'IKH',
+                                                       'IKH_'+str(char_count['IKH']),
                                                        (96, 96, 96))
                     found = True
                     break
@@ -2075,23 +2091,26 @@ def character_recognition(save_state, imagePath, model):
         elif marker[0] == 'mim':
             if y_pred[count] == ikhfa_syafawi[0]:
                 print('ikfha syafawi')
+                char_count['IKS'] += 1
                 original_image = draw_bounding_box(original_image,
                                                    coordinat,
-                                                   'IKS',
+                                                   'IKS_'+str(char_count['IKS']),
                                                    (128, 128, 128))
                 continue
             elif y_pred[count] == idgham_mimi[0]:
                 print('idgham mimi')
+                char_count['IDM'] += 1
                 original_image = draw_bounding_box(original_image,
                                                    coordinat,
-                                                   'IDM',
+                                                   'IDM_'+str(char_count['IDM']),
                                                    (102, 255, 102))
                 continue
             else:
                 print('idzhar syafawi')
+                char_count['IZS'] += 1
                 original_image = draw_bounding_box(original_image,
                                                    coordinat,
-                                                   'IZS',
+                                                   'IZS_'+str(char_count['IZS']),
                                                    (255, 102, 102))
 
     # cv2.imshow('Final Result', original_image)

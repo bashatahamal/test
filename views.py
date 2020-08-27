@@ -203,6 +203,9 @@ def detected_and_segmented_image(save_state, bw_image, pred_result):
     bw_copy = bw_image.copy()
     count = 0
     cn = 0
+    char_count = {}
+    for char in char_name:
+        char_count[char] = 0
     for x in save_state:
         skip = False
         for index in skip_index:
@@ -230,7 +233,13 @@ def detected_and_segmented_image(save_state, bw_image, pred_result):
                 name_id = n
                 break
         # print(type(name_id))
-        bw_copy = draw_bounding_box_up(bw_copy, coordinat, char_name[name_id], (100, 100, 100))
+        char_now = 0
+        for char in char_name:
+            if char_name[name_id] == char:
+                char_count[char] += 1
+                char_now = char_count[char]
+        bw_copy = draw_bounding_box_up(bw_copy, coordinat, char_name[name_id]
+                                       + '_' + str(char_now), (100, 100, 100))
         # cv2.rectangle(bw_copy, save_state[x][6][0], save_state[x][6][1],
         #               (200, 150, 0), 1)
         count += 1

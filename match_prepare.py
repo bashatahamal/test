@@ -1101,20 +1101,22 @@ class ImageProcessing():
                             if white and one_marker[y, x] == 0:
                                 bwb_up = True
                                 break
+                    bwb_down_count = 0
                     for x in range(width):
-                        if bwb_down:
-                            break
+                        # if bwb_down:
+                        #     break
                         black = False
                         white = False
-                        for y in range(round(height/1.78), height):
+                        for y in range(round(height/1.5), height):
                             if one_marker[y, x] == 0:
                                 black = True
                             if black and one_marker[y, x] > 0:
                                 white = True
                             if white and one_marker[y, x] == 0:
                                 bwb_down = True
+                                bwb_down_count += 1
                                 break
-                    if bwb_up and bwb_down:
+                    if bwb_up and bwb_down and bwb_down_count > 1/5 * width:
                         # print('_KAF HAMZAH CONFIRM_')
                         write_canvas = True
                     else:

@@ -312,7 +312,7 @@ class FontWrapper(Marker):
     def get_object_name(self):
         return self.get_marker_location()[0].split('/')[2]
 
-    def draw_bounding_box(self, img, coordinat, label, color, font_scale=0.5, font=cv2.FONT_HERSHEY_PLAIN):
+    def draw_bounding_box(self, img, coordinat, label, color, font_scale=1, font=cv2.FONT_HERSHEY_PLAIN):
         x1 = coordinat[0]
         y1 = coordinat[1]
         x2 = coordinat[2]
@@ -328,7 +328,7 @@ class FontWrapper(Marker):
             label,
             fontFace=font,
             fontScale=font_scale,
-            thickness=1
+            thickness=2
         )
 
         cv2.rectangle(
@@ -348,15 +348,19 @@ class FontWrapper(Marker):
             org=(int(x1), int(y2 + label_height + label_height * 0.25)),
             fontFace=font,
             fontScale=font_scale,
-            color=(255, 255, 255),
-            thickness=1
+            color=(0, 0, 0),
+            thickness=2
         )
         return img
 
     def display_marker_result(self, input_image, skip_marker):
         # rectangle_image = self.get_original_image()
         rectangle_image = input_image.copy()
-        found = False
+        # found = False
+        char_count = {}
+        char_count['tanwin'] = 0
+        char_count['nun'] = 0
+        char_count['mim'] = 0
         for key in self.get_marker_thresh().keys():
             x = key.split('_')
             if x[0] == 'tanwin':
@@ -379,10 +383,11 @@ class FontWrapper(Marker):
                         self.get_object_result()['box_' + key]:
                     # cv2.rectangle(rectangle_image, (startX, startY),
                     #               (endX, endY), self.temp_colour[key], 2)
+                    char_count[x[0]] += 1
                     rectangle_image = self.draw_bounding_box(
                         rectangle_image,
                         [startX, startY, endX, endY],
-                        label,
+                        label + '_' + str(char_count[x[0]]),
                         colour,
                         font_scale=1
                     )
@@ -1487,20 +1492,22 @@ class FontWrapper(Marker):
                             if white and one_marker[y, x] == 0:
                                 bwb_up = True
                                 break
+                    bwb_down_count = 0
                     for x in range(width):
-                        if bwb_down:
-                            break
+                        # if bwb_down:
+                        #     break
                         black = False
                         white = False
-                        for y in range(round(height/1.78), height):
+                        for y in range(round(height/1.5), height):
                             if one_marker[y, x] == 0:
                                 black = True
                             if black and one_marker[y, x] > 0:
                                 white = True
                             if white and one_marker[y, x] == 0:
                                 bwb_down = True
+                                bwb_down_count += 1
                                 break
-                    if bwb_up and bwb_down:
+                    if bwb_up and bwb_down and bwb_down_count > 1/5 * width:
                         print('_KAF HAMZAH CONFIRM_')
                         write_canvas = True
                     else:
@@ -2039,7 +2046,8 @@ def font(imagePath, image, setting, markerPath):
                                             'mim_begin': float(setting['meQuran'][0][8]),
                                             'mim_middle': float(setting['meQuran'][0][9]),
                                             'mim_end_1': float(setting['meQuran'][0][10]),
-                                            'mim_end_2': float(setting['meQuran'][0][11])},
+                                            'mim_end_2': float(setting['meQuran'][0][11]),
+                                            'mim_end_3': float(setting['meQuran'][0][11])},
                                loc_list=loc_list_meQuran, image_loc=imagePath,
                                image=image, visualize=True, nms_thresh=0.3,
                                numstep=int(setting['meQuran'][1]))
@@ -2087,6 +2095,7 @@ def font(imagePath, image, setting, markerPath):
                                            'tanwin_2': float(setting['KFGQPC'][0][1]),
                                            'tanwin_3': float(setting['KFGQPC'][0][1]),
                                            'tanwin_4': float(setting['KFGQPC'][0][1]),
+                                           'tanwin_5': float(setting['KFGQPC'][0][1]),
                                            'nun_isolated': float(setting['KFGQPC'][0][2]),
                                            'nun_begin_1': float(setting['KFGQPC'][0][3]),
                                            'nun_begin_2': float(setting['KFGQPC'][0][4]),
@@ -2110,9 +2119,16 @@ def font(imagePath, image, setting, markerPath):
                                           'nun_isolated': float(setting['amiri'][0][2]),
                                           'nun_begin_1': float(setting['amiri'][0][3]),
                                           'nun_begin_2': float(setting['amiri'][0][4]),
+                                          'nun_begin_3': float(setting['amiri'][0][3]),
+                                          'nun_begin_4': float(setting['amiri'][0][4]),
+                                          'nun_begin_5': float(setting['amiri'][0][3]),
+                                          'nun_begin_6': float(setting['amiri'][0][4]),
+                                          'nun_begin_7': float(setting['amiri'][0][3]),
                                           'nun_middle_1': float(setting['amiri'][0][6]),
                                           'nun_middle_2': float(setting['amiri'][0][6]),
                                           'nun_middle_3': float(setting['amiri'][0][6]),
+                                          'nun_middle_4': float(setting['amiri'][0][6]),
+                                          'nun_middle_5': float(setting['amiri'][0][6]),
                                           'nun_end': float(setting['amiri'][0][7]),
                                           'mim_isolated': float(setting['amiri'][0][8]),
                                           'mim_begin_1': float(setting['amiri'][0][9]),
