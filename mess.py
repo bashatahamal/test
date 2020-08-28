@@ -2099,6 +2099,8 @@ def font(imagePath, image, setting, markerPath):
                                            'nun_isolated': float(setting['KFGQPC'][0][2]),
                                            'nun_begin_1': float(setting['KFGQPC'][0][3]),
                                            'nun_begin_2': float(setting['KFGQPC'][0][4]),
+                                           'nun_begin_3': float(setting['KFGQPC'][0][4]),
+                                           'nun_begin_4': float(setting['KFGQPC'][0][4]),
                                            'nun_middle_1': float(setting['KFGQPC'][0][5]),
                                            'nun_middle_2': float(setting['KFGQPC'][0][5]),
                                            'nun_middle_3': float(setting['KFGQPC'][0][5]),
