@@ -2047,7 +2047,8 @@ def font(imagePath, image, setting, markerPath):
                                             'mim_middle': float(setting['meQuran'][0][9]),
                                             'mim_end_1': float(setting['meQuran'][0][10]),
                                             'mim_end_2': float(setting['meQuran'][0][11]),
-                                            'mim_end_3': float(setting['meQuran'][0][11])},
+                                            'mim_end_3': float(setting['meQuran'][0][11]),
+                                            'mim_end_4': float(setting['meQuran'][0][11])},
                                loc_list=loc_list_meQuran, image_loc=imagePath,
                                image=image, visualize=True, nms_thresh=0.3,
                                numstep=int(setting['meQuran'][1]))
@@ -2140,7 +2141,9 @@ def font(imagePath, image, setting, markerPath):
                                           'mim_end_1': float(setting['amiri'][0][11]),
                                           'mim_end_2': float(setting['amiri'][0][12]),
                                           'mim_end_3': float(setting['amiri'][0][12]),
-                                          'mim_end_4': float(setting['amiri'][0][12])},
+                                          'mim_end_4': float(setting['amiri'][0][12]),
+                                          'mim_end_5': float(setting['amiri'][0][12]),
+                                          'mim_end_6': float(setting['amiri'][0][12])},
                              loc_list=loc_list_Amiri, image_loc=imagePath,
                              image=image, visualize=True, nms_thresh=0.3,
                              numstep=int(setting['amiri'][1]))
@@ -2169,6 +2172,7 @@ def font(imagePath, image, setting, markerPath):
     loc_list_Norehira = sorted(glob.glob(markerPath + '/norehira/*.png'))
     font_Norehira = FontWrapper(thresh_list={'tanwin_1': float(setting['norehira'][0][0]),
                                              'tanwin_2': float(setting['norehira'][0][1]),
+                                             'tanwin_3': float(setting['norehira'][0][1]),
                                              'nun_isolated': float(setting['norehira'][0][2]),
                                              'nun_begin_1': float(setting['norehira'][0][3]),
                                              'nun_begin_2': float(setting['norehira'][0][3]),
