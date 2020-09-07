@@ -2377,7 +2377,7 @@ class ImageProcessing():
 def main():
     # for imagePath in sorted(glob.glob(args["images"] + "/*.png")):
 
-    for imagePath in sorted(glob.glob("temp" + "/*.png")):
+    for imagePath in sorted(glob.glob("temp/mm" + "/*.png")):
         print('________________Next File_________________')
         original_image = cv2.imread(imagePath)
         gray = cv2.cvtColor(original_image, cv2.COLOR_BGR2GRAY)

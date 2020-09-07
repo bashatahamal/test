@@ -132,8 +132,15 @@ class Marker:
         self.imagelist_visualize = []
         self.image_visualize_white_block = []
         # print(numstep)
+        if numstep < 1:
+            start_scale = 1
+            end_scale = 1
+            numstep = 1
+        else:
+            start_scale = 0.2
+            end_scale = 2.0
         # Loop over scaled image (start stop numstep) from the back
-        for scale in np.linspace(0.2, 2.0, numstep)[::-1]:
+        for scale in np.linspace(start_scale, end_scale, numstep)[::-1]:
             resized = imutils.resize(image, width=int(image.shape[1] * scale))
             r = image.shape[1] / float(resized.shape[1])
             # If resized image smaller than template, then break the loop
