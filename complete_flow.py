@@ -15,7 +15,7 @@ import copy
 import pickle
 from scipy.signal import find_peaks, peak_prominences
 from matplotlib.figure import Figure
-
+import time
 
 # #### horizontal projection
 
@@ -804,6 +804,9 @@ def normal_image_processing_blok(imagePath, object_result, bw_method, list_start
         # Get original cropped one line binary image
         temp_image_ori = input_image.bag_of_h_crop[image]
         h, _, _ = temp_image_ori.shape
+        print('temp image ori: ', temp_image_ori.shape)
+        if h < 1 :
+            continue
         # Scaled image by height ratio
 #         scaled_one_line_img_size = 1.3 * max(marker_height_list)
 #         if h > scaled_one_line_img_size:
@@ -1337,6 +1340,7 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
     print('black pixel: ', bp_max)
     cv2.waitKey(0)
 
+    t1 = time.time()
     image1 = gray
     body_v_proj = horizontal_projection(image1)
     x = body_v_proj*-1
@@ -1346,7 +1350,8 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
         # peaks, _ = find_peaks(x, distance=max_height, prominence=0,  threshold=[None, -0])
     else:
         print('no prominence')
-        peaks, _ = find_peaks(x, distance=max_height, plateau_size=8, threshold=[None, -0])
+        peaks, _ = find_peaks(x, distance=max_height, prominence=0)
+        # peaks, _ = find_peaks(x, distance=max_height, plateau_size=8, threshold=[None, -0])
     prominences = peak_prominences(x, peaks)[0]
     contour_heights = x[peaks] - prominences
 
@@ -1410,7 +1415,9 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
         font_object.vertical_projection(image_v)
         font_object.detect_vertical_line(image_v.copy(), 5)
         start_point_v = font_object.start_point_v
-        max_v = max(np.diff(start_point_v))
+        print('start point v: ', start_point_v)
+        if len(start_point_v) > 0:
+            max_v = max(np.diff(start_point_v))
         if max_v > max_v_width:
             max_v_width = max_v
         # print('start point v:', start_point_v)
@@ -1514,7 +1521,10 @@ def define_normal_or_crop_processing(imagePath, temp_object, max_id, font_object
             imagelist_bag_of_h_with_baseline, imagelist_image_final_body, imagelist_image_final_marker,\
             horizontal_image = normal_image_processing_blok(
                 imagePath, temp_object[max_id], bw_method, list_for_mpclass)
-
+        t2 = time.time()
+        thefile = open('/home/mhbrt/Desktop/Wind/Multiscale/templates/Saved Time.txt', 'a')
+        thefile.write('IP = ' + str(t2-t1) + ' s \n')
+        thefile.close()
         normal_processing_result = [imagelist_perchar_marker,
                                     imagelist_final_word_img,
                                     imagelist_final_segmented_char,
@@ -1898,7 +1908,7 @@ def character_recognition(save_state, imagePath, model):
     GREEN = (0, 255, 0)
 
     # In[27]:
-
+    imagePath = '/home/mhbrt/Desktop/write_file/scanned quran/croppedalbaqarah.png'
     original_image = cv2.imread(imagePath)
     # save_state = image_processing_blok(imagePath)
     #     print(save_state)
@@ -1907,6 +1917,7 @@ def character_recognition(save_state, imagePath, model):
     saved_char_recog = []
     skip_index = []
     character_y = {}
+    t1 = time.time()
     for x in save_state:
         if len(save_state[x]) < 2:
             continue
@@ -2112,7 +2123,10 @@ def character_recognition(save_state, imagePath, model):
                                                    coordinat,
                                                    'IZS_'+str(char_count['IZS']),
                                                    (255, 102, 102))
-
+    t2 = time.time()
+    thefile = open('/home/mhbrt/Desktop/Wind/Multiscale/templates/Saved Time.txt', 'a')
+    thefile.write('R = ' + str(t2-t1) + ' s \n')
+    thefile.close()
     # cv2.imshow('Final Result', original_image)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()

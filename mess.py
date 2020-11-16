@@ -4,6 +4,7 @@ import imutils
 import glob
 import cv2
 import copy
+import time
 
 
 class Marker:
@@ -88,7 +89,7 @@ class Marker:
         # return only the bounding boxes that were picked
         return boxes[pick]
 
-    def match_template(self, visualize=False, numstep=100, bw_method=0):
+    def match_template(self, visualize=False, numstep=10, bw_method=0):
         # Get template
         # print('.')
         template = cv2.imread(self.get_template_location())
@@ -140,7 +141,30 @@ class Marker:
             start_scale = 0.2
             end_scale = 2.0
         # Loop over scaled image (start stop numstep) from the back
-        for scale in np.linspace(start_scale, end_scale, numstep)[::-1]:
+        # t1 = time.time()
+        temp_scale = np.linspace(start_scale, end_scale, numstep)
+        to_low = []
+        to_up = []
+        to_scale = []
+        mid = int(len(temp_scale)/2)
+        for x in range(mid)[::-1]:
+            to_low.append(temp_scale[x])
+        for x in range(mid, len(temp_scale)):
+            to_up.append(temp_scale[x])
+        if len(to_low) >= len(to_up):
+            half = len(to_low)
+        else:
+            half = len(to_up)
+        for x in range(half):
+            if x <= len(to_low)-1:
+                to_scale.append(to_low[x])
+            if x <= len(to_up)-1:
+                to_scale.append(to_up[x])
+        print(to_scale)
+
+        # for scale in np.linspace(start_scale, end_scale, numstep)[::-1]:
+        for scale in to_scale:
+            print(scale)
             resized = imutils.resize(image, width=int(image.shape[1] * scale))
             r = image.shape[1] / float(resized.shape[1])
             # If resized image smaller than template, then break the loop
@@ -184,36 +208,53 @@ class Marker:
                 # cv2.waitKey(0)
                 # plt.imshow(clone)
 
-            if maxVal > self.get_template_thresh():
+            loc = np.where( result >= self.get_template_thresh())
+            print(loc)
+            for maxLoc in zip(*loc[::-1]):
                 (startX, startY) = (int(maxLoc[0] * r), int(maxLoc[1] * r))
                 (endX, endY) = (int((maxLoc[0] + tW) * r),
                                 int((maxLoc[1] + tH) * r))
                 temp = [startX, startY, endX, endY]
-                # boundingBoxes = np.append(boundingBoxes, [temp], axis=0)
-                # max_value_list = np.append(max_value_list, [maxVal], axis=0)
                 boundingBoxes.append(temp)
                 max_value_list.append(maxVal)
-                # print("Max val = {} location {}".format(maxVal, temp))
-                cv2.rectangle(image, (startX, startY), (endX, endY),
-                              (255, 255, 255), -1)
-                cv2.rectangle(resized, (int(maxLoc[0]), int(maxLoc[1])),
-                              (int(maxLoc[0] + tW), int(maxLoc[1] + tH)),
-                              (255, 255, 255), -1)
-                while(maxVal > self.get_template_thresh()):
-                    print('checking in scale size: ', scale)
-                    result = cv2.matchTemplate(resized, template,
-                                               cv2.TM_CCOEFF_NORMED)
-                    (_, maxVal, _, maxLoc) = cv2.minMaxLoc(result)
-                    cv2.rectangle(resized, (int(maxLoc[0]), int(maxLoc[1])),
-                                  (int(maxLoc[0] + tW), int(maxLoc[1] + tH)),
-                                  (255, 255, 255), -1)
-                    (startX, startY) = (int(maxLoc[0] * r), int(maxLoc[1] * r))
-                    (endX, endY) = (int((maxLoc[0] + tW) * r),
-                                    int((maxLoc[1] + tH) * r))
-                    temp = [startX, startY, endX, endY]
-                    boundingBoxes.append(temp)
-                self.image_visualize_white_block.append(resized)
+            
+            if len(loc[0]) > 0:
+                break
+
+            # if maxVal > self.get_template_thresh():
+            #     (startX, startY) = (int(maxLoc[0] * r), int(maxLoc[1] * r))
+            #     (endX, endY) = (int((maxLoc[0] + tW) * r),
+            #                     int((maxLoc[1] + tH) * r))
+            #     temp = [startX, startY, endX, endY]
+            #     # boundingBoxes = np.append(boundingBoxes, [temp], axis=0)
+            #     # max_value_list = np.append(max_value_list, [maxVal], axis=0)
+            #     boundingBoxes.append(temp)
+            #     max_value_list.append(maxVal)
+            #     # print("Max val = {} location {}".format(maxVal, temp))
+            #     cv2.rectangle(image, (startX, startY), (endX, endY),
+            #                   (255, 255, 255), -1)
+            #     cv2.rectangle(resized, (int(maxLoc[0]), int(maxLoc[1])),
+            #                   (int(maxLoc[0] + tW), int(maxLoc[1] + tH)),
+            #                   (255, 255, 255), -1)
+            #     while(maxVal > self.get_template_thresh()):
+            #         print('checking in scale size: ', scale)
+            #         result = cv2.matchTemplate(resized, template,
+            #                                    cv2.TM_CCOEFF_NORMED)
+            #         (_, maxVal, _, maxLoc) = cv2.minMaxLoc(result)
+            #         cv2.rectangle(resized, (int(maxLoc[0]), int(maxLoc[1])),
+            #                       (int(maxLoc[0] + tW), int(maxLoc[1] + tH)),
+            #                       (255, 255, 255), -1)
+            #         (startX, startY) = (int(maxLoc[0] * r), int(maxLoc[1] * r))
+            #         (endX, endY) = (int((maxLoc[0] + tW) * r),
+            #                         int((maxLoc[1] + tH) * r))
+            #         temp = [startX, startY, endX, endY]
+            #         boundingBoxes.append(temp)
+            #     self.image_visualize_white_block.append(resized)
 #                     print(boundingBoxes)
+        # t2 = time.time()
+        # thefile = open('/home/mhbrt/Desktop/Wind/Multiscale/templates/Saved Time.txt', 'a')
+        # thefile.write('TM = ' + str(t2-t1) + ' s')
+        # thefile.close()
 
         # If detected on this scale size
         # if len(boundingBoxes) > 1:
@@ -226,6 +267,7 @@ class Marker:
         boundingBoxes = np.array(boundingBoxes)
         pick = self.non_max_suppression_slow(boundingBoxes,
                                              self.get_nms_thresh())
+        # pick = boundingBoxes
 
         if len(max_value_list) >= 1:
             max_local_value = max(max_value_list)
@@ -412,19 +454,23 @@ class FontWrapper(Marker):
         # cv2.destroyWindow("Detected Image_" + self.get_object_name())
         return rectangle_image
 
-    def run(self, view=False, numstep=100, bw_method=0, skip_marker=''):
+    def run(self, view=False, numstep=10, bw_method=0, skip_marker=''):
         # Tanwin
         # print(self.get_marker_thresh())
         print('run() Marker Font')
         # gray = cv2.cvtColor(self.get_original_image(), cv2.COLOR_BGR2GRAY)
-        if self.numstep == 0:
-            numstep = numstep
-        else:
-            numstep = self.numstep
+        # if self.numstep == 0:
+        #     numstep = numstep
+        # else:
+        #     numstep = self.numstep
+        numstep = self.numstep
         print("numstep = ", numstep)
         pocketData = {}
         first = True
+        # print(self.get_marker_thresh())
+        t1 = time.time()
         for x in range(len(self.get_marker_thresh())):
+            print(self.get_marker_location()[x])
             # print(len(template_thresh))
             # print(list(template_thresh.values())[x])
             marker_name = list(self.get_marker_thresh().keys())[x]
@@ -445,6 +491,10 @@ class FontWrapper(Marker):
                 first = False
                 self.imagelist_visualize_white_blok.append(
                     self.image_visualize_white_block)
+        t2 = time.time()
+        thefile = open('/home/mhbrt/Desktop/Wind/Multiscale/templates/Saved Time.txt', 'a')
+        thefile.write('TM = ' + str(t2-t1) + ' s \n')
+        thefile.close()
 
             # print(type(pocketData[x]))
 
@@ -2093,6 +2143,23 @@ def font(imagePath, image, setting, markerPath):
                                              'mim_middle_2': float(setting['AlKareem'][0][8]),
                                              'mim_end_1': float(setting['AlKareem'][0][9]),
                                              'mim_end_2': float(setting['AlKareem'][0][10])},
+                                loc_list=loc_list_AlKareem, image_loc=imagePath,
+                                image=image, visualize=True, nms_thresh=0.3,
+                                numstep=int(setting['AlKareem'][1]))
+
+    # FAKE AlKareem_Font
+    loc_list_AlKareem = sorted(glob.glob(markerPath + '/AlKareem/*.png'))
+    font_AlKareem = FontWrapper(thresh_list={'tanwin_1': float(setting['AlKareem'][0][0]),
+                                             'tanwin_2': float(setting['AlKareem'][0][1]),
+                                             'nun_isolated': float(setting['AlKareem'][0][2]),
+                                             'nun_begin': float(setting['AlKareem'][0][3]),
+                                             'nun_middle': float(setting['AlKareem'][0][4]),
+                                             'nun_end': float(setting['AlKareem'][0][5]),
+                                             'mim_isolated': float(setting['AlKareem'][0][6]),
+                                             'mim_begin': float(setting['AlKareem'][0][7]),
+                                             'mim_middle_1': float(setting['AlKareem'][0][8]),
+                                             'mim_middle_2': float(setting['AlKareem'][0][8]),
+                                             'mim_end_1': float(setting['AlKareem'][0][9]),},
                                 loc_list=loc_list_AlKareem, image_loc=imagePath,
                                 image=image, visualize=True, nms_thresh=0.3,
                                 numstep=int(setting['AlKareem'][1]))

@@ -510,7 +510,13 @@ def display_result(filename, processed_font):
                 </div>\
             </div>' + '\n\n'
 
-        blok_process += input_image + begin_file + sv_perfile + white_block + wb_perfile + template_matching \
+        # blok_process += input_image + begin_file + sv_perfile \ 
+        #     + white_block + wb_perfile + template_matching \
+        #     + tm_perfile + h_line + hl_perfile + v_check + vc_perfile + p_perfile_html \
+        #     + ds_image + char_recog + cr_perfile + end_file
+        
+        blok_process += input_image + begin_file + sv_perfile \
+            + wb_perfile + template_matching \
             + tm_perfile + h_line + hl_perfile + v_check + vc_perfile + p_perfile_html \
             + ds_image + char_recog + cr_perfile + end_file
 

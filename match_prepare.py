@@ -449,6 +449,10 @@ class ImageProcessing():
         h_projection = self.h_projection
         # print(h_projection)
         # original_image = one_line_image
+
+        self.base_start = 0
+        self.base_end = 0
+        
         self.one_line_image = one_line_image
         cut_at = int(len(h_projection)/4)  # crop projection by
         start_at = int(len(h_projection)/3)
@@ -483,7 +487,7 @@ class ImageProcessing():
                 self.base_start = x + start_at
         self.base_end = x + start_at
 
-        if view:
+        if view and self.base_start > 0 and self.base_end > 0:
             cv2.line(self.one_line_image, (0, self.base_start),
                      (self.width, self.base_start), (0, 255, 0), 2)
             cv2.line(self.one_line_image, (0, self.base_end),

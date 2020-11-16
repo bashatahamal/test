@@ -1,12 +1,12 @@
 import flask
-from tensorflow.keras.models import model_from_json
+from tensorflow.keras.models import model_from_json, load_model
 from flask import Response
 import subprocess
 import pickle
 from flask import jsonify, make_response
 import time
 from Multiscale import app
-from flask import render_template, request, redirect, url_for, send_from_directory
+from flask import render_template, request, redirect, url_for, send_from_directory, after_this_request
 import os
 import shutil
 import cv2
@@ -18,11 +18,16 @@ import write_html
 
 # model_name = '/home/mhbrt/Desktop/Wind/Multiscale/Colab/best_model_DenseNet_DD.pkl'
 # model = pickle.load(open(model_name, 'rb'))
-json_file = open('/home/mhbrt/Desktop/Wind/Multiscale/Colab/model.json', 'r')
-loaded_model_json = json_file.read()
-json_file.close()
-model = model_from_json(loaded_model_json)
-model.load_weights("/home/mhbrt/Desktop/Wind/Multiscale/Colab/model.h5")
+
+#json_file = open('/home/mhbrt/Desktop/Wind/Multiscale/Colab/model.json', 'r')
+#loaded_model_json = json_file.read()
+#json_file.close()
+#model = model_from_json(loaded_model_json)
+#model.load_weights("/home/mhbrt/Desktop/Wind/Multiscale/Colab/model.h5")
+
+model_name = '/home/mhbrt/Desktop/Wind/Multiscale/Colab/DenseNet_150_16_DD_FINALMODEL.h5'
+model = load_model(model_name)
+
 print('_LOAD MODEL DONE_')
 # model = ''
 
@@ -98,6 +103,10 @@ def yieldd():
 
 @app.route('/processing_page')
 def get_page():
+    @after_this_request
+    def add_header(response):
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
     # if from_sketch_button:
     # return flask.send_file('templates/public/page.html')
     return render_template('public/page.html')
@@ -250,8 +259,15 @@ def detected_and_segmented_image(save_state, bw_image, pred_result):
 
 @app.route('/processing')
 def processing():
+    @after_this_request
+    def add_header(response):
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
     global from_sketch_button
     req['A message from python'] = 'Initialiation'
+
+    from_sketch_button = True
+
     if from_sketch_button:
         # resetting all global variable
         from_sketch_button = False
@@ -281,6 +297,8 @@ def processing():
             font_folder = ['AlKareem', 'AlQalam', 'KFGQPC', 'LPMQ', 'PDMS',
                            'amiri', 'meQuran', 'norehidayat', 'norehira', 'norehuda']
             global processed_font
+
+            yield '0_Start_0$'
             for global_count in range(len(list_image_files)):
 
                 font_list = 0
@@ -348,6 +366,7 @@ def processing():
                     imagePath=imagePath, image=gray, setting=setting, markerPath=markerPath)
                 local_count = -1
                 first = False
+                t1 = time.time()
                 for font_object in font_list:
                     local_count += 1
                     if setting[font_folder[local_count]][2] == 'true':
@@ -356,6 +375,7 @@ def processing():
                     else:
                         processed_font.append(font_folder[local_count])
                     yield str(global_count+1)+'_'+font_folder[local_count]+'_' + str(numfiles) + '$'
+                    print(str(global_count+1)+'_'+font_folder[local_count]+'_' + str(numfiles) + '$')
                     skip_marker = []
                     for sm in setting[font_folder[local_count]][3]:
                         split = sm.split(' ')
@@ -442,13 +462,20 @@ def processing():
                         imagelist_horizontal_line_by_eight_conn)
                     if global_count+1 == numfiles:
                         yield str(global_count+1) + '_DONE!_' + str(numfiles) + '$'
+                t2 = time.time()
             print('processed font: ', processed_font)
+            print('processed time: ', str(t2-t1))
+            thefile = open('/home/mhbrt/Desktop/Wind/Multiscale/templates/Saved Time.txt', 'a')
+            thefile.write(str(global_count+1) + ' = ' + str(t2-t1) + ' s \n')
+            thefile.close()
+            # input("Press Enter to continue...")
         time.sleep(2)  # wait for class init done
         return Response(runner(), mimetype='text/event-stream')
         # return render_template('public/sketch_.html', next='/number1', req=req)
 
     # return render_template('public/sketch.html')
-    return redirect('/processing_result')
+    return Response(runner(), mimetype='text/event-stream')
+    # return redirect('/processing_result')
 
 
 def save_image_to_disk():
@@ -984,6 +1011,8 @@ def sketch():
 
             if res == 'start':
                 from_sketch_button = True
+                thefile = open('/home/mhbrt/Desktop/Wind/Multiscale/templates/Saved Time.txt', 'w')
+                thefile.close()
                 response = make_response(jsonify('processing'), 200)
                 return response
             setting = res

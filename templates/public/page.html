@@ -26,6 +26,7 @@
     watching = setInterval(updating_status, 1000);
     function updating_status() {
         rsplit = xhr.responseText.split('$')
+        console.log(rsplit);
         get_latest = rsplit[rsplit.length - 2]
         latest = get_latest.split('_')
         console.log(latest);
@@ -35,7 +36,7 @@
         // document.getElementById("numfiles").innerHTML = "<h3>" + latest[0] +"/"+latest[2] + "</h3>"
         if (message == 'DONE!') {
             clearInterval(watching)
-            location.replace('processing')
+            location.replace('processing_result')
         }
     }
 </script>
