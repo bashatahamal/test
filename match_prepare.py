@@ -694,9 +694,17 @@ class ImageProcessing():
             oneline_height_sorted = oneline_height
         self.conn_pack = {}
         reg = 1
+        too_many = False
         # Doing eight conn on every pixel one by one
         for x in range(width):
+            # print('pixel limit ', width*height/8)
+            # cv2.waitKey(0)
+            if too_many:
+                break
             for y in range(height):
+                count = 0
+                if too_many:
+                    break
                 if image_process[y, x] == 0:
                     continue
                 if image[y, x] == 0:
@@ -710,7 +718,21 @@ class ImageProcessing():
                     first = True
                     sub = False
                     init = True
+                    if too_many:
+                        break
                     while(True):
+                        # if count > int(width*height/8):
+                        #     too_many = True
+                        #     print('itshouldhavestop ', width*height/8)
+                        #     break
+                        # if count > int(width*height/16):
+                        #     print('morethan 16')
+                        #     too_many = True
+                        #     break
+                        if count > int(width*height/32):
+                            print('morethan 32')
+                            too_many = True
+                            break
                         if first:
                             length_ = length_
                             first = False
@@ -721,6 +743,7 @@ class ImageProcessing():
                             l_after_init = len(self.conn_pack[
                                 'region_{:03d}'.format(reg)])
                             for k in range(length_, l_after_init):
+                                count += 1
                                 x_y_sub = self.find_connectivity(
                                     self.conn_pack[
                                         'region_{:03d}'.format(reg)][k][1],
@@ -743,6 +766,7 @@ class ImageProcessing():
                             l_after_sub = len(self.conn_pack[
                                 'region_{:03d}'.format(reg)])
                             for k in range(l_after_init, l_after_sub):
+                                count += 1
                                 x_y_sub = self.find_connectivity(
                                     self.conn_pack[
                                         'region_{:03d}'.format(reg)][k][1],
@@ -761,6 +785,7 @@ class ImageProcessing():
                         sub = False
 
                         if not sub and not init:
+                            # print('ratio : ', count/(width*height))
                             break
 
                     for val in self.conn_pack['region_{:03d}'.format(reg)]:

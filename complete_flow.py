@@ -838,6 +838,16 @@ def normal_image_processing_blok(imagePath, object_result, bw_method, list_start
             # values where weights are a gaussian window
             temp_image = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                                         cv2.THRESH_BINARY, 11, 2)
+
+        # Morphological Operation
+        # kernel =  cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
+        # kernel =  cv2.getStructuringElement(cv2.MORPH_RECT,(3,3))
+        kernel = cv2.getStructuringElement(cv2.MORPH_CROSS,(3,3))
+        temp_image = cv2.bitwise_not(temp_image)
+        # bw_image = cv2.dilate(bw_image, kernel, iterations=1)
+        temp_image = cv2.morphologyEx(temp_image, cv2.MORPH_CLOSE, kernel)
+        temp_image = cv2.bitwise_not(temp_image)
+
         # cv2.imshow('line', temp_image)
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()
@@ -1908,7 +1918,9 @@ def character_recognition(save_state, imagePath, model):
     GREEN = (0, 255, 0)
 
     # In[27]:
-    imagePath = '/home/mhbrt/Desktop/write_file/scanned quran/croppedalbaqarah.png'
+    # imagePath = '/home/mhbrt/Desktop/write_file/scanned quran/croppedalbaqarah.png'
+    # imagePath = '/home/mhbrt/Desktop/write_file/scanned quran/albaqarah.png'
+    imagePath = '/home/mhbrt/Desktop/write_file/scanned quran/Al-Baqarah.png'
     original_image = cv2.imread(imagePath)
     # save_state = image_processing_blok(imagePath)
     #     print(save_state)
