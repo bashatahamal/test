@@ -1,0 +1,40 @@
+{% extends 'public/template/public_template.html' %}
+
+{% block title %}Sketch{% endblock %}
+
+{% block main %}
+<div class="demo-gallery">
+    <ul id="lightgallery" class="list-unstyled row">
+        {% for font in marker_folder %}
+        {{ 'file://' + marker_folder[font][0]}}
+        <li class="col-xs-6 col-sm-4 col-md-3" data-src="{{ 'file://' + marker_folder[font][0]}}"
+            data-sub-html="<h4>{{ font }}</h4>">
+            <a href="">
+                <img class="img-responsive" src="{{ 'file://' + marker_folder[font][0]}}">
+                <div class="demo-gallery-poster">
+                    <img src="static/light_gallery/img/zoom.png">
+                </div>
+            </a>
+        </li>
+        {% for type_path in marker_folder[font] %}
+        {% if not loop.first %}
+        <li style="display: none;" data-src="static/img_temp/4-1600.jpg" data-sub-html="<h4>Bowness Bay</h4>">
+            <a href="">
+                <img class="img-responsive" src="static/img_temp/thumb-4.jpg">
+            </a>
+        </li>
+        {% endif %}
+        {% endfor %}
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+    // lightGallery(document.getElementById('lightgallery'))
+    $(document).ready(function () {
+        $('#lightgallery').lightGallery();
+    });
+</script>
+{% endblock %}

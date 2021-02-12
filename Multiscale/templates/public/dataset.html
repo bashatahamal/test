@@ -1,0 +1,97 @@
+{% extends 'public/template/public_template.html' %}
+
+{% block title %}Sketch{% endblock %}
+
+{% block main %}
+<div class="wrapper">
+    <div class="box box0" style="display: none;">
+    </div>
+    <div class="box box1"></div>
+    <div class="box box2">
+        <button class="btn btn-primary" id='show_training_result' onclick="show_tr()"> Show Training Result</button>
+        <div id="training_result" style="display: none;">
+            <iframe src="/training_result" frameborder="0" width="100%" height="900"
+                style="margin-left: auto; margin-right: auto;"></iframe>
+        </div>
+    </div>
+    <div class="box box3"></div>
+    <div class="box box4">
+        <h4><b>Template Images</b></h4>
+        {% for font in marker_folder %}
+        <div class="{{font}}">
+            <div class="demo-gallery">
+                <ul id="{{font}}" class="list-unstyled column">
+                    <!-- <div class="grid-container">f  -->
+                    <!-- {{marker_folder[font][0]}} -->
+                    <li class="col-xs-6 col-sm-4 col-md-3" data-src="{{ marker_folder[font][0] }}"
+                        data-sub-html="<h3>{{ font }}</h3><p>{{ marker_type[font][0] }}</p>">
+                        <a href="">
+                            <img class="img-responsive" src="/static/img/folder1.png" style="max-width: 150px;">
+                            <div class="demo-gallery-poster">
+                                <img src="static/light_gallery/img/zoom.png">
+                            </div>
+                        </a>
+                        <div>
+                            <h6>{{ font }}</h6>
+                        </div>
+                    </li>
+                    <!-- </div> -->
+                    {% for x in range(marker_folder[font]|count) %}
+                    {% if not loop.first %}
+                    <li style="display: none;" data-src="{{ marker_folder[font][x] }}"
+                        data-sub-html="<h3>{{ font }}</h3><p>{{ marker_type[font][x] }}<p>">
+                        <a href="">
+                            <img class="img-responsive" src="{{ marker_folder[font][x] }}">
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        {% endfor %}
+    </div>
+</div>
+
+<footer>
+    <p>Departemen Ilmu Komputer dan Elektronika <br>2020</p>
+</footer>
+
+
+<div class="loader-wrapper">
+    <div class="loader_text"></div>
+    <span class="loader"><span class="loader-inner"></span></span>
+</div>
+
+{% endblock %}
+
+{% block script %}
+<script>
+    function show_tr() {
+        iframe = document.getElementById('training_result').style.display
+        frame = document.getElementById('training_result')
+        btn = document.getElementById('show_training_result')
+        if (iframe == 'block') {
+            frame.style.display = 'none'
+            btn.innerHTML = 'Show Training Result'
+        } else {
+            frame.style.display = 'block'
+            btn.innerHTML = 'Hide Training Result'
+        }
+    }
+    // lightGallery(document.getElementById('lightgallery'))
+    marker_folder = JSON.parse('{{marker_folder | tojson|safe}}')
+
+    $(document).ready(function () {
+        for (font in marker_folder) {
+            $('#' + font).lightGallery();
+        }
+    });
+    $(window).on("load", function () {
+        $(".loader-wrapper").fadeOut("fast");
+    });
+
+
+</script>
+{% endblock %}

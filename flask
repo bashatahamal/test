@@ -1,0 +1,6 @@
+#!/usr/bin/zsh
+source virtualenvwrapper.sh
+workon tf2
+export FLASK_ENV=development
+flask run
+

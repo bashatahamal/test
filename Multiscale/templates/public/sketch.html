@@ -1,0 +1,882 @@
+{% extends 'public/template/public_template.html' %}
+
+{% block title %}Sketch{% endblock %}
+
+{% macro input(label="", type="text", id="", name="", placeholder="") -%}
+<div class="form-group">
+    <label>{{ label }}</label>
+    <input type="{{ type }}" class="form-control" id="{{ id }}" name="{{ name }}" placeholder="{{ placeholder }}">
+</div>
+{%- endmacro %}
+
+{% macro input_number(label="", step="", type="text", id="", name="", placeholder="") -%}
+<div class="form-inline">
+    <div class="form-group">
+        <label>{{ label }}</label>
+        <input type="{{ type }}" step="{{step}}" min=0 class="form-control" id="{{ id }}" name="{{ name }}"
+            placeholder="{{ placeholder }}">
+    </div>
+</div>
+{%- endmacro %}
+
+
+{% block main %}
+
+<div class="wrapper">
+    {% for font in marker_type %}
+    <div id="{{ font }}" class="nested">
+        <h1><b> {{ font }} </b></h1>
+        <hr>
+        {% for marker in marker_type[font] %}
+        <div class="m_value">
+            <div class="m_name">{{ marker }}</div>
+            <input style="width: 25px; height: 20px;" type="checkbox" class="form-check-input"
+                id="skip_{{font}}_{{marker}}" value="{{font}}_{{marker}}" checked>
+            <div class="box">
+                <input id='{{ font }}_{{ marker }}' type="number" min="0" , class="form-control" step="0.1"
+                    placeholder="0.0" , value=0.0></div>
+        </div>
+        {% endfor %}
+        <hr>
+        <div class="m_value">
+            <div class="m_name1">Number of step</div>
+            <div class="box">
+                <input id='{{ font }}_numstep' type="number" min="0" , class="form-control" step="1"
+                    placeholder="numstep" , value=0></div>
+        </div>
+        <hr>
+        <button class="btn btn-primary btn-block" id="submit_{{font}}" onclick="submit_marker();">Submit</button>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="wrapper">
+    <div id="view_font" class="nested">
+        <!-- <div class="form-inline"> -->
+        <div class="form-group">
+            <!-- <label for="image_path_box">Load Image File</label> -->
+            <!-- <p class="help-block">Load Image File</p> -->
+            <!-- <input type="file" accept=".png, .jpeg, .bmp" multiple="" , id="image_path_box"> -->
+            <!-- <input type="file" accept="image/png, image/jpeg, image/bmp" multiple="" , id="image_path_box"> -->
+            <!-- <button class="btn btn-primary" onclick='function_image_path()' id='image_path_button'>load image</button> -->
+        </div>
+        <hr>
+        {% for font in marker_type %}
+        <!-- <button id='{{font}}'>{{font}}</button> -->
+        <div class="box2" style="padding-left: 5%;">
+            <span>
+                <input style="width: 20px; height: 28px;" type="checkbox" class="form-check-input" id="skip_{{font}}"
+                    value="{{font}}" checked>
+                <button type="button" class="btn btn-outline-dark btn-block" id='trig_{{font}}'>{{font}}</button>
+            </span>
+            <!-- <hr> -->
+            <!-- <button id='{{font}}'>{{font}}</button> -->
+            <!-- <a href="#" class='{{font}}'>Lorem ipsum dolor sit amet.</a> -->
+        </div>
+        {% endfor %}
+        <hr>
+        <div class="form-inline">
+            <input type="number" step="0.1" min=0 class="form-control" id="setall_box" placeholder="set all font value"
+                style="width: 65%;">
+            <button class="btn btn-primary" onclick='setall_marker()' id='setall_button'>set</button>
+        </div>
+        <div class="form-inline">
+            <input type="number" step="0.1" min=0 class="form-control" id="setfont_box" placeholder="set font value"
+                style="width: 65%;">
+            <button class="btn btn-primary" onclick='set_font()' id='setfont_button'>set</button>
+        </div>
+        <div class="form-inline">
+            <input type="number" step="1" min=0 class="form-control" id="setnumstep_all" placeholder="set numstep"
+                style="width: 65%;">
+            <button class="btn btn-primary" onclick='setall_numstep()' id='setnumstep_all_button'>set</button>
+        </div>
+        <!-- <hr> -->
+
+        <hr>
+        <div>
+            <div class="form-inline">
+                <select class="form-control" style="width: 70%; overflow: scroll;" , aria-placeholder="load" ,
+                    id='list_config'>
+                </select>
+
+                <body>
+                    <!-- <button style="display:block;width:120px; height:30px;" onclick="document.getElementById('getFile').click()">Your text here</button> -->
+                    <button class="btn btn-primary" onclick="document.getElementById('getFile').click()">file</button>
+                    <input type='file' id="getFile" style="display:none">
+                </body>
+                <!-- <button class="btn btn-primary" onclick="load_config()" id='loadconfig_file'>file</button> -->
+            </div>
+            <div class="btn-group" role="group" aria-label="Configuration File">
+                <button id='load_config_button' type="button" class="btn btn-secondary">Load</button>
+                <button id='save_config_button' type="button" class="btn btn-secondary"
+                    onclick="saveBlob();return false">Save</button>
+                <button id='delete_config_button' type="button" class="btn btn-secondary"
+                    onclick="delete_config();return false">Delete</button>
+                <!-- <input id="fileField" type="file" placeholder="file"/>    -->
+            </div>
+            <!-- <button class="btn btn-primary" onclick="save_to_file()" id='savetofile_button'>save configuration</button> -->
+        </div>
+    </div>
+</div>
+
+
+
+<div class="wrapper">
+    <div class="box box0">
+        <nav class="navbar navbar-expand-lg navbar-dark mb-3" style="background-color: #333;">
+            <div id='bp1'>
+                <a class="navbar-brand" href="#" onclick="myfunction1();return false;" id='input_image'>Input
+                    Image</a>
+            </div>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <div id='bp2'>
+                        <li class="nav-item">
+                            <a id='configuration' href="#" onclick="myfunction2();return false;">Configuration</a>
+                        </li>
+                    </div>
+                    <!-- <div id='bp3'>
+                        <li class="nav-item">
+                            <a id='preprocessing' href="#" onclick="myfunction3();return false;">Preprocessing</a>
+                        </li>
+                    </div>
+                    <div id='bp4'>
+                        <li class="nav-item">
+                            <a id='template_matching' href="#" onclick="myfunction4();return false;">Template
+                                Matching</a>
+                        </li>
+                    </div>
+                    <div id='bp5'>
+                        <li class="nav-item">
+                            <a id='segmentation' href="#" onclick="myfunction5();return false;">Segmentation</a>
+                        </li>
+                    </div>
+                    <div id='bp6'>
+                        <li class="nav-item">
+                            <a id='recognition' href="#" onclick="myfunction6();return false;">Recognition</a>
+                        </li>
+                    </div> -->
+                </ul>
+            </div>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item">
+                        <button class="btn btn-primary" id='menu'>Setting</button>
+                    </li>
+                </ul>
+            </div>
+
+        </nav>
+
+        <div class="container">
+            <div class="row">
+                <div class="col">
+
+                    <h1>Upload Images</h1>
+                    <hr>
+
+                    <!-- <form action="/sketch" method="POST" enctype="multipart/form-data"> -->
+
+                    <div class="form-group">
+                        <!-- <label>Select image</label> -->
+                        <!-- <div class="custom-file"> -->
+                        <!-- <input type="file" class="custom-file-input" name="image" id="image"> -->
+                        <input type="file" accept=".png, .jpeg, .bmp" multiple="" , id="image_path_box">
+                        <!-- <input type="file" accept=".png, .jpeg, .bmp" multiple="" , id="image_path_box", class="custom-file-input" > -->
+                        <!-- <label class="custom-file-label" for="image">Select image...</label> -->
+                        <!-- </div> -->
+                    </div>
+
+                    <button type="button" class="btn btn-primary" onclick="show_input_image()">Show</button>
+                    <button type="button" class="btn btn-warning" onclick="start_processing()" id="start_process"
+                        disabled='disabled'>Process</button>
+                    <!-- </form> -->
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="box box1"></div>
+    <div class="box box2">
+
+
+        <div class="page" id='page1'>
+            <h2>Page 1</h2>
+            <hr>
+        </div>
+        <div class="page" id='page2'>
+            <!-- <h2>Page 2</h2> -->
+            <div class="demo-gallery">
+                <ul id="lightgallery" class="list-unstyled column">
+                </ul>
+            </div>
+        </div>
+        <div class="page" id='page3'>
+            <h2></h2>
+            <hr>
+        </div>
+        <div class="page" id='page4'>
+            <h2>Page 4</h2>
+            <hr>
+        </div>
+        <div class="page" id='page5'>
+            <h2>Page 5</h2>
+            <hr>
+        </div>
+        <div class="page" id='page6'>
+            <h2>Page 6</h2>
+            <hr>
+        </div>
+    </div>
+    <div class="box box3" style="display: block;">
+        <div id="config"></div>
+    </div>
+    <div class="box box4" style="display: none;"></div>
+
+</div>
+<footer>
+    <p>Departemen Ilmu Komputer dan Elektronika <br>2020</p>
+</footer>
+
+<div class="loader-wrapper">
+    <div class="loader_text"></div>
+    <span class="loader"><span class="loader-inner"></span></span>
+</div>
+
+{% endblock %}
+
+
+{% block script %}
+<script>
+
+    var setting_done
+    var image_ready
+    var selectedD
+
+    // lightGallery(document.getElementById('lightgallery'))
+    $(document).ready(function () {
+        $('#lightgallery').lightGallery();
+    });
+
+    var refreshIntervalId = setInterval(waiting_button, 3000);
+    function waiting_button() {
+        console.log('waiting')
+        // console.log(list_entry)
+        if (setting_done == true && image_ready == true) {
+            document.getElementById('start_process').disabled = false
+            clearInterval(refreshIntervalId);
+        }
+    }
+
+
+    var entry = {}
+    var list_entry = []
+    function saveBlob() {
+        if (list_entry.length == 0) {
+            var save_entry = []
+            save_entry.push(entry)
+        } else {
+            var save_entry = []
+            list_entry.push(entry)
+            save_entry = list_entry
+        }
+        const blob = new Blob([JSON.stringify(save_entry, null, 2)], { type: 'application/json' });
+        // download(blob, "dlTextBlob.txt", "text/plain");
+        fetch(`${window.origin}/sketch`, {
+            method: "POST",
+            credentials: "include",
+            body: JSON.stringify(save_entry, null, 2),
+            cache: "no-cache",
+            headers: new Headers({
+                "content-type": "application/json"
+            })
+        })
+            .then(function (response) {
+                if (response.status !== 200) {
+                    console.log('error')
+                    return
+                }
+                response.json().then(function (data) {
+                    // console.log(data);
+                    list_entry = data
+                    display_list()
+                    submit_marker()
+                });
+            })
+            .catch(function (error) {
+                console.log("Fetch error: " + error)
+            })
+        alert('Configuration Saved')
+    }
+
+    function delete_config() {
+        list_entry.splice(selectedD, 1)
+        fetch(`${window.origin}/sketch`, {
+            method: "POST",
+            credentials: "include",
+            body: JSON.stringify(list_entry, null, 2),
+            cache: "no-cache",
+            headers: new Headers({
+                "content-type": "application/json"
+            })
+        })
+            .then(function (response) {
+                if (response.status !== 200) {
+                    console.log('error')
+                    return
+                }
+                response.json().then(function (data) {
+                    // console.log(data);
+                    list_entry = data
+                    display_list()
+                });
+            })
+            .catch(function (error) {
+                console.log("Fetch error: " + error)
+            })
+        alert('Delete config ' + selectedD + ' success')
+    }
+
+    function start_processing() {
+        fetch(`${window.origin}/sketch`, {
+            method: "POST",
+            credentials: "include",
+            body: JSON.stringify('start'),
+            cache: "no-cache",
+            headers: new Headers({
+                "content-type": "application/json"
+            })
+        })
+            .then(function (response) {
+                if (response.status !== 200) {
+                    console.log('error')
+                    return
+                }
+                response.json().then(function (data) {
+                    console.log(data);
+                    if (data == 'processing') {
+                        location.replace('processing_page')
+                    }
+                });
+            })
+            .catch(function (error) {
+                console.log("Fetch error: " + error)
+            })
+    }
+
+    $(document).ready(function () {
+        // p2.style.display = 'block'
+        // myfunction2()
+        // myfunction2()
+    });
+    $("#getFile").change(function () {
+        loadFileAsText()
+        // alert("A file has been selected.");
+    });
+
+    $("#image_path_box").change(function () {
+        // inside_carousel = document.getElementById('page1_carousel')
+        // inside_carousel.innerHTML = ''
+        post_image()
+        // alert("A file has been selected.");
+    });
+
+
+    var in_text = ''
+    // var list_data = []
+    function post_image() {
+        var image_file = document.getElementById('image_path_box').files
+        var file_count = image_file['length']
+        var list_data = []
+        in_text = ''
+        console.log(image_file)
+        for (x = 0; x < file_count; x++) {
+            let h = new Headers();
+            h.append('Accept', 'application/json'); // expect back
+            let fd = new FormData();
+            fd.append('image', image_file[x], image_file[x].name)
+            fetch(`${window.origin}/sketch`, {
+                method: "POST",
+                body: fd,
+                cache: "no-cache",
+                headers: h
+            })
+                .then(function (response) {
+                    if (response.status !== 200) {
+                        console.log('error')
+                        return
+                    }
+                    response.json().then(function (data) {
+                        console.log(data);
+                        list_data.push(data)
+                        // in_text += '<div class="carousel-item"><img class=d-block w-100 src="' + data.slice(43) + '"></div>'
+                        // in_text += '<li style="display: block;" class="col-xs-6 col-sm-4 col-md-3" data-src="' + data.slice(43) + '"\
+                        // data-sub-html="<h3>'+ data.slice(63) + '</h3>">\
+                        // <a href="">\
+                        //     <img class="img-responsive" src="/static/img/folder1.png" style="max-width: 150px;">\
+                        //     <div class="demo-gallery-poster">\
+                        //         <img src="static/light_gallery/img/zoom.png">\
+                        //     </div>\
+                        // </a>\
+                        // </li>'
+                        // console.log(in_text)
+                    });
+                })
+                .catch(function (error) {
+                    console.log("Fetch error: " + error)
+                })
+        }
+        image_ready = true
+    }
+
+    function show_input_image() {
+        // m = in_text.slice(0, 25) + ' active' + in_text.slice(25)
+        // inside_carousel = document.getElementById('page1_carousel')
+        inner = document.getElementById('lightgallery')
+        inner.innerHTML = in_text
+        lgal_text = document.getElementById('lightgallery').innerHTML
+        // fetch(`${window.origin}/sketch`, {
+        //     method: "POST",
+        //     credentials: "include",
+        //     body: JSON.stringify(lgal_text),
+        //     cache: "no-cache",
+        //     headers: new Headers({
+        //         "content-type": "application/json"
+        //     })
+        // })
+        // p2.style.display = 'block'
+
+    }
+
+    function loadFileAsText() {
+        var fileToLoad = document.getElementById("getFile").files[0];
+
+        var fileReader = new FileReader();
+        fileReader.onload = function (fileLoadedEvent) {
+            var textFromFileLoaded = fileLoadedEvent.target.result;
+            list_entry = JSON.parse(textFromFileLoaded)
+            display_list()
+        };
+        fileReader.readAsText(fileToLoad, "UTF-8");
+    }
+
+    function display_list() {
+        inner = document.getElementById('list_config')
+        in_text = ''
+        for (x = list_entry.length - 1; x >= 0; x--) {
+            in_text += '<option value="' + x + '">config_' + x + '</option>'
+        }
+        inner.innerHTML = in_text
+        inner.selectedIndex = 0
+        selectedD = list_entry.length - 1
+    }
+
+    $("#list_config").on("click", function (value) {
+        var This = $(this);
+        selectedD = $(this).val();
+        selected_setting = list_entry[selectedD]
+        console.log(selected_setting)
+        console.log(selectedD)
+        for (font in parsed) {
+            numstep_id = font + '_numstep'
+            numstep = document.getElementById(numstep_id)
+            numstep.value = selected_setting[font][1]
+            set_font_func(selected_setting[font][0], font)
+            temp_id = document.getElementById('skip_' + font)
+            if (selected_setting[font][2] == 'true') {
+                temp_id.checked = false
+            } else { temp_id.checked = true }
+            for (marker in parsed[font]) {
+                temp_id = document.getElementById('skip_' + font + '_' + parsed[font][marker])
+                if (selected_setting[font][3].includes(parsed[font][marker])) {
+                    temp_id.checked = false
+                } else { temp_id.checked = true }
+            }
+        };
+        submit_marker()
+    });
+
+    function save_button_id(clicked) {
+        last_clicked_font = this.id
+    }
+    $(window).on("load", function () {
+        $(".loader-wrapper").fadeOut("fast");
+    });
+
+    var parsed = JSON.parse('{{marker_type | tojson|safe}}');
+    for (font in parsed) {
+        $('#' + font).slideReveal({
+            trigger: $("#trig_" + font),
+            autoEscape: true,
+            push: false,
+            position: "left",
+            width: 300,
+            overlay: true,
+            show: function (slider, trigger) {
+                // alert("Before open!");
+                for (font in parsed) {
+                    $('#' + font).slideReveal("hide");
+                }
+            }
+        });
+        console.log('#' + font)
+    };
+
+    $('#view_font').slideReveal({
+        trigger: $("#menu"),
+        // autoEscape: true,
+        push: false,
+        overlay: true,
+        position: "right",
+        // width: 400,
+        hide: function (slider, trigger) {
+            for (font in parsed) {
+                $('#' + font).slideReveal("hide");
+            }
+        }
+    });
+
+    var last_clicked_font = ''
+    for (font in parsed) {
+        button_id = 'trig_' + font
+        button = document.getElementById(button_id)
+        button.onclick = save_button_id
+    }
+
+    function show_config() {
+        page3 = document.getElementById('page3')
+        page3.innerHTML = ''
+        var text = ''
+        for (font in entry) {
+            if (entry[font][2] == 'false') {
+                if (entry[font][3].length < 1) {
+                    text = font + ' (' + String(entry[font][1]) + ') = ' + String(entry[font][0]) + '\n'
+                } else {
+                    text = font + ' (' + String(entry[font][1]) + ') = ' + String(entry[font][0]) + '; skipping;' + String(entry[font][3]) + '\n'
+                }
+            } else {
+                text = font + ' (' + String(entry[font][1]) + ') = skip' + '\n'
+            }
+            page3.innerHTML += '<li>' + text + '</li>'
+        }
+        p3.style.display = 'block'
+    }
+
+    function submit_marker() {
+
+        // var parsed = JSON.parse('{{marker_type | tojson|safe}}');
+        for (font in parsed) {
+            var list = []
+            var temp_skip = []
+            button_id = 'submit_' + font
+            numstep_id = font + '_numstep'
+            button = document.getElementById(button_id)
+            numstep = document.getElementById(numstep_id)
+            for (marker in parsed[font]) {
+                box_nameid = font + '_' + parsed[font][marker]
+                box = document.getElementById(box_nameid)
+                if (box.readOnly == false) {
+                    value_box = box.value;
+                    box.readOnly = true
+                    // console.log(name)
+                    list.push(value_box)
+                } else {
+                    box.readOnly = false
+                };
+
+                temp_id = document.getElementById('skip_' + font + '_' + parsed[font][marker])
+                if (temp_id.checked == false) {
+                    temp_skip.push(parsed[font][marker])
+                };
+            };
+            // entry[font] = list
+            if (button.innerText == 'Submit') {
+                entry[font] = [list]
+                entry[font].push(numstep.value)
+                temp_id = document.getElementById('skip_' + font)
+                if (temp_id.checked == false) {
+                    entry[font].push('true')
+                } else { entry[font].push('false') }
+                entry[font].push(temp_skip)
+                button.innerText = 'Edit'
+                button.className = "btn btn-success btn-block"
+            } else {
+                button.innerText = 'Submit'
+                button.className = "btn btn-primary btn-block"
+            };
+        };
+        if (box.readOnly == true) {
+            // if (button.innerText == 'Submit') {
+            console.log(entry)
+            fetch(`${window.origin}/sketch`, {
+                // fetch(`${window.origin}/guestbook/create-entry`, {
+                method: "POST",
+                credentials: "include",
+                body: JSON.stringify(entry),
+                cache: "no-cache",
+                headers: new Headers({
+                    "content-type": "application/json"
+                })
+            }).then(function (response) {
+                if (response.status !== 200) {
+                    console.log('error')
+                    return
+                }
+                response.json().then(function (data) {
+                    setting_done = true
+                    show_config()
+                });
+            })
+                .catch(function (error) {
+                    console.log("Fetch error: " + error)
+                })
+        }
+    };
+
+    function setall_marker() {
+        var setall_value = document.getElementById('setall_box').value
+        // var parsed = JSON.parse('{{marker_type | tojson|safe}}');
+        for (font in parsed) {
+            for (marker in parsed[font]) {
+                box_nameid = font + '_' + parsed[font][marker]
+                box = document.getElementById(box_nameid)
+                box.value = setall_value
+            };
+        };
+    }
+
+    function setall_numstep() {
+        var setall_value = document.getElementById('setnumstep_all').value
+        // var parsed = JSON.parse('{{marker_type | tojson|safe}}');
+        for (font in parsed) {
+            numstep_id = font + '_numstep'
+            numstep = document.getElementById(numstep_id)
+            numstep.value = setall_value
+        };
+    }
+
+    function set_font() {
+        box = document.getElementById('setfont_box')
+        set_value = Number(box.value)
+        clicked_font = last_clicked_font.split('_')[1]
+        set_font_func(set_value, clicked_font)
+    }
+
+    function set_font_func(set_value, font) {
+        // var parsed = JSON.parse('{{marker_type | tojson|safe}}');
+        if (typeof (set_value) == "number") {
+            for (marker in parsed[font]) {
+                box_nameid = font + '_' + parsed[font][marker]
+                box = document.getElementById(box_nameid)
+                box.value = set_value
+            };
+        } else if (typeof (set_value) == "object") {
+            for (marker in parsed[font]) {
+                box_nameid = font + '_' + parsed[font][marker]
+                box = document.getElementById(box_nameid)
+                box.value = set_value[marker]
+            };
+        };
+    };
+
+    function set_from_file(choosen_dict) {
+        var parsed = JSON.parse('{{' + choosen_dict + '| tojson|safe}}');
+        for (font in parsed) {
+            set_font(parsed[font], font)
+        };
+    };
+
+    function set_skip_checkbox(setting) {
+        for (font in parsed) {
+            temp_id = document.getElementById('skip_' + font)
+            if (setting[font][2] == 'true') {
+                temp_id.checked = false
+            } else { temp_id.checked = true }
+            for (marker in parsed[font]) {
+                temp_id = document.getElementById('skip_' + font + '_' + parsed[font][marker])
+                if (setting[font][3].includes(marker)) {
+                    temp_id.checked = false
+                } else { temp_id.checked = true }
+            }
+        }
+    }
+
+    select_color = '#555'
+    default_color = '#333'
+    p1 = document.getElementById('page1')
+    b1 = document.getElementById('bp1')
+    p2 = document.getElementById('page2')
+    b2 = document.getElementById('bp2')
+    p3 = document.getElementById('page3')
+    b3 = document.getElementById('bp3')
+    p4 = document.getElementById('page4')
+    b4 = document.getElementById('bp4')
+    p5 = document.getElementById('page5')
+    b5 = document.getElementById('bp5')
+    p6 = document.getElementById('page6')
+    b6 = document.getElementById('bp6')
+    function myfunction1() {
+        bp2.style.backgroundColor = default_color
+        bp3.style.backgroundColor = default_color
+        bp4.style.backgroundColor = default_color
+        bp5.style.backgroundColor = default_color
+        bp6.style.backgroundColor = default_color
+        if (p1.style.display == 'none') {
+            p1.style.display = 'block'
+            p2.style.display = 'none'
+            p3.style.display = 'none'
+            p4.style.display = 'none'
+            p5.style.display = 'none'
+            p6.style.display = 'none'
+            bp1.style.backgroundColor = select_color
+
+        } else {
+            p1.style.display = 'none'
+            bp1.style.backgroundColor = default_color
+            bp2.style.backgroundColor = default_color
+            bp3.style.backgroundColor = default_color
+            bp4.style.backgroundColor = default_color
+            bp5.style.backgroundColor = default_color
+            bp6.style.backgroundColor = default_color
+        }
+    }
+
+    function myfunction2() {
+        bp1.style.backgroundColor = default_color
+        bp3.style.backgroundColor = default_color
+        bp4.style.backgroundColor = default_color
+        bp5.style.backgroundColor = default_color
+        bp6.style.backgroundColor = default_color
+        if (p2.style.display == 'none') {
+            p2.style.display = 'block'
+            p1.style.display = 'none'
+            p3.style.display = 'none'
+            p4.style.display = 'none'
+            p5.style.display = 'none'
+            p6.style.display = 'none'
+            bp2.style.backgroundColor = select_color
+
+        } else {
+            p2.style.display = 'none'
+            bp1.style.backgroundColor = default_color
+            bp2.style.backgroundColor = default_color
+            bp3.style.backgroundColor = default_color
+            bp4.style.backgroundColor = default_color
+            bp5.style.backgroundColor = default_color
+            bp6.style.backgroundColor = default_color
+        }
+    }
+
+    function myfunction3() {
+        bp1.style.backgroundColor = default_color
+        bp2.style.backgroundColor = default_color
+        bp4.style.backgroundColor = default_color
+        bp5.style.backgroundColor = default_color
+        bp6.style.backgroundColor = default_color
+        if (p3.style.display == 'none') {
+            p3.style.display = 'block'
+            p1.style.display = 'none'
+            p2.style.display = 'none'
+            p4.style.display = 'none'
+            p5.style.display = 'none'
+            p6.style.display = 'none'
+            bp3.style.backgroundColor = select_color
+
+        } else {
+            p3.style.display = 'none'
+            bp1.style.backgroundColor = default_color
+            bp2.style.backgroundColor = default_color
+            bp3.style.backgroundColor = default_color
+            bp4.style.backgroundColor = default_color
+            bp5.style.backgroundColor = default_color
+            bp6.style.backgroundColor = default_color
+        }
+    }
+
+    function myfunction4() {
+        bp1.style.backgroundColor = default_color
+        bp3.style.backgroundColor = default_color
+        bp2.style.backgroundColor = default_color
+        bp5.style.backgroundColor = default_color
+        bp6.style.backgroundColor = default_color
+        if (p4.style.display == 'none') {
+            p4.style.display = 'block'
+            p1.style.display = 'none'
+            p3.style.display = 'none'
+            p2.style.display = 'none'
+            p5.style.display = 'none'
+            p6.style.display = 'none'
+            bp4.style.backgroundColor = select_color
+
+        } else {
+            p4.style.display = 'none'
+            bp1.style.backgroundColor = default_color
+            bp2.style.backgroundColor = default_color
+            bp3.style.backgroundColor = default_color
+            bp4.style.backgroundColor = default_color
+            bp5.style.backgroundColor = default_color
+            bp6.style.backgroundColor = default_color
+        }
+    }
+
+    function myfunction5() {
+        bp1.style.backgroundColor = default_color
+        bp3.style.backgroundColor = default_color
+        bp4.style.backgroundColor = default_color
+        bp2.style.backgroundColor = default_color
+        bp6.style.backgroundColor = default_color
+        if (p5.style.display == 'none') {
+            p5.style.display = 'block'
+            p1.style.display = 'none'
+            p3.style.display = 'none'
+            p4.style.display = 'none'
+            p2.style.display = 'none'
+            p6.style.display = 'none'
+            bp5.style.backgroundColor = select_color
+
+        } else {
+            p5.style.display = 'none'
+            bp1.style.backgroundColor = default_color
+            bp2.style.backgroundColor = default_color
+            bp3.style.backgroundColor = default_color
+            bp4.style.backgroundColor = default_color
+            bp5.style.backgroundColor = default_color
+            bp6.style.backgroundColor = default_color
+        }
+    }
+
+    function myfunction6() {
+        bp1.style.backgroundColor = default_color
+        bp3.style.backgroundColor = default_color
+        bp4.style.backgroundColor = default_color
+        bp5.style.backgroundColor = default_color
+        bp2.style.backgroundColor = default_color
+        if (p6.style.display == 'none') {
+            p6.style.display = 'block'
+            p1.style.display = 'none'
+            p3.style.display = 'none'
+            p4.style.display = 'none'
+            p5.style.display = 'none'
+            p2.style.display = 'none'
+            bp6.style.backgroundColor = select_color
+
+        } else {
+            p6.style.display = 'none'
+            bp1.style.backgroundColor = default_color
+            bp2.style.backgroundColor = default_color
+            bp3.style.backgroundColor = default_color
+            bp4.style.backgroundColor = default_color
+            bp5.style.backgroundColor = default_color
+            bp6.style.backgroundColor = default_color
+        }
+    }
+</script>
+{% endblock %}

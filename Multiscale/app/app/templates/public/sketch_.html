@@ -1,0 +1,66 @@
+{% extends 'public/template/public_template.html' %}
+
+{% block title %}_Sketch Fire_{% endblock %}
+
+{% block main %}
+<div class="loader-wrapper">
+    <div class="loader_text" id='message'>
+        <h3>
+            {{req['A message from python']}}
+        </h3>
+    </div>
+    <span class="loader"><span class="loader-inner"></span></span>
+</div>
+{% endblock %}
+
+{% block script %}
+<!-- <script>
+    $(window).on("load", function () {
+        $(".loader-wrapper").fadeOut("slow");
+    });
+</script> -->
+<script>
+    $(document).ready(function() {
+        // auto refresh page after 1 second
+        // setInterval('refreshPage()', 1200);
+        location.replace('{{next}}')
+    });
+ 
+    // function refreshPage() { 
+        // location.reload(); 
+        // location.replace('{{next}}')
+    // }
+    // setTimeout(function () {
+        // window.location.reload(1);
+    //     location.replace('sketch_')
+    // }, 1200);
+    // document.getElementById('message').innerHTML = "{{req['A message from python']}}"
+    // location.replace('sketch_')
+    // setInterval(()=>{
+    //     fetch(`${window.origin}/sketch_`, {
+    //         // fetch(`${window.origin}/guestbook/create-entry`, {
+    //         method: "POST",
+    //         credentials: "include",
+    //         body: JSON.stringify(entry),
+    //         cache: "no-cache",
+    //         headers: new Headers({
+    //             "content-type": "application/json"
+    //         })
+    //     })
+
+    //     location.replace('sketch_')
+    //     .then(function (response) {
+    //         if (response.status !== 200) {
+    //             console.log(`Looks like there was a problem. Status code: ${response.status}`);
+    //             return;
+    //         }
+    //         response.json().then(function (data) {
+    //             console.log(data);
+    //         });
+    //     })
+    //     .catch(function (error) {
+    //         console.log("Fetch error: " + error);
+    //     });
+    // }, 500)
+</script>
+{% endblock %}

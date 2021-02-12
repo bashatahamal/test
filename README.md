@@ -1,7 +1,9 @@
-# Multiscale Template Matching
+# Tajweed Rules Recognition
 
 #Nun Sukun, Mim Sukun , Tanwin
 
-Add some text here 
+> pip install -r requirements.txt
 
-And Another text 
+> flask run 
+
+~ MHBRT (2020)
