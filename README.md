@@ -1,6 +1,6 @@
 # Tajweed Rules Recognition
 
-#Nun Sukun, Mim Sukun , Tanwin
+Nun Sukun, Mim Sukun , Tanwin
 
 > pip install -r requirements.txt
 
